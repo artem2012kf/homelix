@@ -165,7 +165,7 @@ export default function HomePage() {
           </article>
           <article>
             <span>Адрес</span>
-            <strong>г. Тюмень, Улица Республики, 150, Офис 403</strong>
+            <strong>г. Москва, ул. Солнечная, 12</strong>
             <p>Шоурум, консультации и подбор квартиры</p>
           </article>
           <article>

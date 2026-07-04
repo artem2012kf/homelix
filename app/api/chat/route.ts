@@ -69,7 +69,7 @@ function compactApartment(apartment: Apartment, room?: Room | null) {
           description: room.description,
           furnitureTips: room.furnitureTips.slice(0, 3),
           aiHints: room.aiHints.slice(0, 3),
-          chatPrompts: room.chatPrompts.slice(0, 3)
+          chatPrompts: room.chatPrompts?.slice(0, 3) ?? []
         }
       : null,
     rooms: apartment.rooms.map((item) => ({
