@@ -25,11 +25,30 @@ type TrackInterestDetail = {
   sort?: string;
 };
 
-const PROFILE_KEY = "sq-smart-recommendations-v1";
+type Recommendation = {
+  apartment: Apartment;
+  score: number;
+  match: number;
+  tag: string;
+  reason: string;
+  details: string[];
+};
+
+type PreferenceStats = {
+  hasSignal: boolean;
+  avgPrice?: number;
+  avgArea?: number;
+  avgFloor?: number;
+  preferredRooms?: number;
+  lastApartment?: Apartment;
+  profileLabel: string;
+};
+
+const PROFILE_KEY = "sq-smart-recommendations-v2";
 const COOKIE_CONSENT = "sq_cookie_recommendations";
 const COOKIE_LAST_APARTMENT = "sq_last_apartment";
 const COOKIE_INTEREST = "sq_interest_hint";
-const MAX_VIEWED = 12;
+const MAX_VIEWED = 16;
 
 const defaultProfile: InterestProfile = {
   acceptedCookies: false,
@@ -39,15 +58,30 @@ const defaultProfile: InterestProfile = {
   updatedAt: Date.now()
 };
 
+const sortPreferenceLabels: Record<string, string> = {
+  "price-asc": "цена ниже",
+  "price-desc": "варианты дороже",
+  "area-asc": "компактная площадь",
+  "area-desc": "больше площадь",
+  "floor-asc": "нижние этажи",
+  "floor-desc": "верхние этажи",
+  "rooms-asc": "меньше комнат",
+  "rooms-desc": "больше комнат",
+  "mortgage-asc": "ниже ипотечный платеж",
+  recommended: "свободные варианты"
+};
+
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
 
-  return document.cookie
-    .split("; ")
-    .find((item) => item.startsWith(`${name}=`))
-    ?.split("=")
-    .slice(1)
-    .join("=") ?? "";
+  return (
+    document.cookie
+      .split("; ")
+      .find((item) => item.startsWith(`${name}=`))
+      ?.split("=")
+      .slice(1)
+      .join("=") ?? ""
+  );
 }
 
 function writeCookie(name: string, value: string, maxAgeDays = 180) {
@@ -59,7 +93,7 @@ function writeCookie(name: string, value: string, maxAgeDays = 180) {
 function uniqueLatest(items: string[]) {
   const result: string[] = [];
 
-  for (const item of items.reverse()) {
+  for (const item of [...items].reverse()) {
     if (item && !result.includes(item)) {
       result.push(item);
     }
@@ -114,29 +148,180 @@ function apartmentIdFromPath(pathname: string) {
 
 function roomLabel(count: number) {
   if (count === 0) return "студия";
-  if (count === 1) return "1 комната";
-  if (count >= 2 && count <= 4) return `${count} комнаты`;
-  return `${count} комнат`;
+  if (count === 1) return "1-комнатная";
+  if (count >= 2 && count <= 4) return `${count}-комнатная`;
+  return `${count}-комнатная`;
 }
 
-function buildReason(apartment: Apartment, seed?: Apartment) {
-  if (!seed) {
-    return "Подходит как стартовый вариант для знакомства с каталогом.";
+function roomPreferenceLabel(count?: number) {
+  if (count === undefined) return "любая комнатность";
+  if (count === 0) return "студии";
+  if (count === 1) return "1-комнатные";
+  return `${count}-комнатные`;
+}
+
+function formatDelta(value: number) {
+  return formatPrice(Math.abs(Math.round(value)));
+}
+
+function getApartmentById(apartments: Apartment[], id?: string) {
+  if (!id) return undefined;
+  return apartments.find((apartment) => apartment.id === id);
+}
+
+function weightedEvidence(apartments: Apartment[], profile: InterestProfile, favorites: string[], reservations: string[]) {
+  const result: { apartment: Apartment; weight: number }[] = [];
+  const add = (id: string | undefined, weight: number) => {
+    const apartment = getApartmentById(apartments, id);
+    if (apartment) result.push({ apartment, weight });
+  };
+
+  profile.viewedApartmentIds.forEach((id, index) => add(id, 1 + index / Math.max(profile.viewedApartmentIds.length, 1)));
+  [...profile.favoriteApartmentIds, ...favorites].forEach((id) => add(id, 4));
+  [...profile.reservedApartmentIds, ...reservations].forEach((id) => add(id, 5));
+  add(profile.lastApartmentId, 3);
+
+  return result;
+}
+
+function buildPreferenceStats(apartments: Apartment[], profile: InterestProfile, favorites: string[], reservations: string[]): PreferenceStats {
+  const evidence = weightedEvidence(apartments, profile, favorites, reservations);
+
+  if (!evidence.length) {
+    return {
+      hasSignal: false,
+      profileLabel: "Пока мало данных: покажем надежные свободные варианты из каталога."
+    };
   }
 
-  if (apartment.roomsCount === seed.roomsCount && apartment.price <= seed.price) {
-    return "Похожа на ваш просмотренный вариант, но цена не выше.";
+  const totalWeight = evidence.reduce((sum, item) => sum + item.weight, 0);
+  const avgPrice = evidence.reduce((sum, item) => sum + item.apartment.price * item.weight, 0) / totalWeight;
+  const avgArea = evidence.reduce((sum, item) => sum + item.apartment.totalArea * item.weight, 0) / totalWeight;
+  const avgFloor = evidence.reduce((sum, item) => sum + item.apartment.floor * item.weight, 0) / totalWeight;
+  const roomWeights = new Map<number, number>();
+
+  evidence.forEach(({ apartment, weight }) => {
+    roomWeights.set(apartment.roomsCount, (roomWeights.get(apartment.roomsCount) ?? 0) + weight);
+  });
+
+  const preferredRooms = [...roomWeights.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const lastApartment = getApartmentById(apartments, profile.lastApartmentId) ?? evidence[evidence.length - 1]?.apartment;
+  const sortLabel = profile.lastSort ? sortPreferenceLabels[profile.lastSort] : undefined;
+  const budgetLabel = avgPrice ? `около ${formatPrice(avgPrice)}` : "без бюджета";
+  const profileLabel = [roomPreferenceLabel(preferredRooms), budgetLabel, sortLabel].filter(Boolean).join(" · ");
+
+  return {
+    hasSignal: true,
+    avgPrice,
+    avgArea,
+    avgFloor,
+    preferredRooms,
+    lastApartment,
+    profileLabel
+  };
+}
+
+function valueScore(apartment: Apartment) {
+  return apartment.price / apartment.totalArea;
+}
+
+function buildDefaultRecommendations(apartments: Apartment[]) {
+  const available = apartments.filter((apartment) => apartment.status === "available");
+  const cheapest = [...available].sort((a, b) => a.price - b.price)[0];
+  const bestMeter = [...available].sort((a, b) => valueScore(a) - valueScore(b))[0];
+  const family = [...available].filter((item) => item.roomsCount >= 2).sort((a, b) => b.totalArea - a.totalArea || a.price - b.price)[0];
+  const compact = [...available].filter((item) => item.roomsCount <= 1).sort((a, b) => a.mortgagePayment - b.mortgagePayment)[0];
+  const picked = [cheapest, bestMeter, family, compact].filter((apartment): apartment is Apartment => Boolean(apartment));
+  const unique = picked.filter((apartment, index) => picked.findIndex((item) => item.id === apartment.id) === index).slice(0, 3);
+
+  return unique.map((apartment, index): Recommendation => {
+    const tags = ["Самый доступный", "Выгоднее за м²", "Для семьи"];
+    const reasons = [
+      "Хороший стартовый вариант: минимальная цена среди свободных квартир.",
+      "Сильный вариант по соотношению цены и площади.",
+      "Больше пространства для семьи и хранения."
+    ];
+
+    return {
+      apartment,
+      score: 100 - index,
+      match: 82 - index * 3,
+      tag: tags[index] ?? "Свободный вариант",
+      reason: reasons[index] ?? "Подходит для первого сравнения с другими квартирами.",
+      details: [`${roomLabel(apartment.roomsCount)}, ${formatArea(apartment.totalArea)}`, `Ипотека от ${formatPrice(apartment.mortgagePayment)}/мес.`]
+    };
+  });
+}
+
+function buildPersonalReason(apartment: Apartment, stats: PreferenceStats, sort?: string) {
+  const details: string[] = [];
+  const last = stats.lastApartment;
+
+  if (last) {
+    const priceDelta = apartment.price - last.price;
+    const areaDelta = apartment.totalArea - last.totalArea;
+
+    if (priceDelta < -100_000) details.push(`Дешевле последнего просмотра на ${formatDelta(priceDelta)}`);
+    if (priceDelta > 100_000) details.push(`Дороже последнего просмотра на ${formatDelta(priceDelta)}, но может дать больше метража`);
+    if (areaDelta > 1) details.push(`Площадь больше на ${areaDelta.toLocaleString("ru-RU")} м²`);
+    if (areaDelta < -1) details.push(`Компактнее на ${Math.abs(areaDelta).toLocaleString("ru-RU")} м²`);
   }
 
-  if (apartment.totalArea > seed.totalArea) {
-    return "Больше площадь, чем у последнего просмотренного варианта.";
+  if (stats.preferredRooms !== undefined && apartment.roomsCount === stats.preferredRooms) {
+    details.unshift(`Совпадает по комнатности: ${roomPreferenceLabel(stats.preferredRooms)}`);
   }
 
-  if (apartment.mortgagePayment < seed.mortgagePayment) {
-    return "Ниже ориентировочный ипотечный платеж.";
+  if (sort === "mortgage-asc") details.push(`Ипотечный платеж: ${formatPrice(apartment.mortgagePayment)}/мес.`);
+  if (sort === "floor-desc") details.push(`${apartment.floor} этаж — выше большинства вариантов в подборке`);
+  if (sort === "area-desc") details.push(`Площадь ${formatArea(apartment.totalArea)} — хороший запас пространства`);
+
+  const reason = details[0] ?? "Близка к вашим просмотрам по цене, площади и формату квартиры.";
+  return { reason, details: details.slice(0, 3) };
+}
+
+function scoreApartment(apartment: Apartment, stats: PreferenceStats, profile: InterestProfile, favorites: string[]) {
+  let score = 40;
+  const last = stats.lastApartment;
+
+  if (stats.preferredRooms !== undefined) {
+    const roomsDiff = Math.abs(apartment.roomsCount - stats.preferredRooms);
+    score += roomsDiff === 0 ? 26 : roomsDiff === 1 ? 12 : -10;
   }
 
-  return "Близка к вашим последним просмотрам по площади, комнатности и бюджету.";
+  if (stats.avgPrice) {
+    const priceDiffPercent = Math.abs(apartment.price - stats.avgPrice) / stats.avgPrice;
+    score += Math.max(0, 28 - priceDiffPercent * 70);
+    if (apartment.price <= stats.avgPrice) score += 8;
+  }
+
+  if (stats.avgArea) {
+    const areaDiffPercent = Math.abs(apartment.totalArea - stats.avgArea) / stats.avgArea;
+    score += Math.max(0, 18 - areaDiffPercent * 40);
+  }
+
+  if (last) {
+    if (apartment.price <= last.price && apartment.totalArea >= last.totalArea * 0.92) score += 18;
+    if (apartment.totalArea > last.totalArea && apartment.price <= last.price * 1.12) score += 14;
+  }
+
+  if (profile.lastSort === "price-asc" && stats.avgPrice && apartment.price <= stats.avgPrice) score += 12;
+  if (profile.lastSort === "area-desc" && stats.avgArea && apartment.totalArea >= stats.avgArea) score += 12;
+  if (profile.lastSort === "floor-desc" && stats.avgFloor && apartment.floor >= stats.avgFloor) score += 9;
+  if (profile.lastSort === "mortgage-asc") score += Math.max(0, 12 - apartment.mortgagePayment / 20_000);
+
+  if (favorites.includes(apartment.id) || profile.favoriteApartmentIds.includes(apartment.id)) score += 20;
+  if (profile.viewedApartmentIds.includes(apartment.id)) score -= 8;
+
+  return score;
+}
+
+function recommendationTag(apartment: Apartment, stats: PreferenceStats, profile: InterestProfile) {
+  if (profile.favoriteApartmentIds.includes(apartment.id)) return "Вы сохранили";
+  if (stats.avgPrice && apartment.price <= stats.avgPrice * 0.96) return "В бюджете";
+  if (stats.avgArea && apartment.totalArea >= stats.avgArea * 1.08) return "Больше площадь";
+  if (stats.preferredRooms !== undefined && apartment.roomsCount === stats.preferredRooms) return "Похожий формат";
+  if (profile.lastSort === "mortgage-asc") return "Ниже платеж";
+  return "Подходит вам";
 }
 
 function buildRecommendations({
@@ -152,47 +337,40 @@ function buildRecommendations({
   reservations: string[];
   getApartmentStatus: (apartmentId: string, baseStatus: Apartment["status"]) => Apartment["status"];
 }) {
-  const favoriteIds = favorites.length ? favorites : profile.favoriteApartmentIds;
-  const reservedIds = reservations.length ? reservations : profile.reservedApartmentIds;
-  const viewedIds = profile.viewedApartmentIds;
-  const sourceIds = [...favoriteIds, ...viewedIds].filter(Boolean);
+  const stats = buildPreferenceStats(apartments, profile, favorites, reservations);
+  const unavailableIds = new Set([...reservations, ...profile.reservedApartmentIds]);
+  const available = apartments.filter((apartment) => getApartmentStatus(apartment.id, apartment.status) === "available" && !unavailableIds.has(apartment.id));
 
-  const seeds = sourceIds
-    .map((id) => apartments.find((apartment) => apartment.id === id))
-    .filter((apartment): apartment is Apartment => Boolean(apartment));
+  if (!stats.hasSignal) {
+    return { recommendations: buildDefaultRecommendations(available), stats };
+  }
 
-  const mainSeed = seeds.at(-1);
-  const averagePrice =
-    seeds.length > 0 ? seeds.reduce((sum, apartment) => sum + apartment.price, 0) / seeds.length : undefined;
-  const averageRooms =
-    seeds.length > 0 ? seeds.reduce((sum, apartment) => sum + apartment.roomsCount, 0) / seeds.length : undefined;
-
-  const ignored = new Set([...viewedIds, ...favoriteIds, ...reservedIds]);
-
-  const available = apartments.filter((apartment) => getApartmentStatus(apartment.id, apartment.status) === "available");
-  const baseList = available.filter((apartment) => !ignored.has(apartment.id));
-
-  const scored = baseList.map((apartment) => {
-    const priceScore = averagePrice ? Math.abs(apartment.price - averagePrice) / 100_000 : apartment.price / 100_000;
-    const roomsScore = averageRooms !== undefined ? Math.abs(apartment.roomsCount - averageRooms) * 10 : 0;
-    const seedScore = mainSeed ? Math.abs(apartment.totalArea - mainSeed.totalArea) * 1.3 : 0;
-    const mortgageScore = apartment.mortgagePayment / 20_000;
+  const scored = available.map((apartment): Recommendation => {
+    const score = scoreApartment(apartment, stats, profile, favorites);
+    const { reason, details } = buildPersonalReason(apartment, stats, profile.lastSort);
+    const match = Math.max(64, Math.min(98, Math.round(score)));
 
     return {
       apartment,
-      score: priceScore + roomsScore + seedScore + mortgageScore,
-      reason: buildReason(apartment, mainSeed)
+      score,
+      match,
+      tag: recommendationTag(apartment, stats, profile),
+      reason,
+      details: details.length
+        ? details
+        : [`${roomLabel(apartment.roomsCount)}, ${formatArea(apartment.totalArea)}`, `Ипотека от ${formatPrice(apartment.mortgagePayment)}/мес.`]
     };
   });
 
-  return scored
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 3)
-    .map((item) => item);
+  const recommendations = scored
+    .sort((a, b) => b.score - a.score || a.apartment.price - b.apartment.price)
+    .slice(0, 3);
+
+  return { recommendations, stats };
 }
 
-function signatureFor(recommendations: { apartment: Apartment }[]) {
-  return recommendations.map((item) => item.apartment.id).join("|");
+function signatureFor(recommendations: { apartment: Apartment; match?: number }[]) {
+  return recommendations.map((item) => `${item.apartment.id}:${item.match ?? 0}`).join("|");
 }
 
 export function SmartRecommendationBell({ apartments }: { apartments: Apartment[] }) {
@@ -266,7 +444,7 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
     return () => window.removeEventListener("sq-track-interest", handleTrack);
   }, [isReady]);
 
-  const recommendations = useMemo(
+  const { recommendations, stats } = useMemo(
     () =>
       buildRecommendations({
         apartments,
@@ -315,7 +493,7 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
       {isOpen ? (
         <aside className="smart-reco-panel">
           <div className="smart-reco-panel-head">
-            <span className="eyebrow">Персональные подсказки</span>
+            <span className="eyebrow">Умные рекомендации</span>
             <button type="button" onClick={() => setIsOpen(false)} aria-label="Закрыть рекомендации">
               ×
             </button>
@@ -323,10 +501,10 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
 
           {!profile.acceptedCookies ? (
             <div className="smart-reco-cookie-card">
-              <h3>Включить рекомендации?</h3>
+              <h3>Включить персональный подбор?</h3>
               <p>
-                Сайт будет сохранять first-party cookies и историю просмотров только в этом браузере, чтобы показывать более
-                подходящие квартиры.
+                Мы сохраним просмотры, избранное и сортировку только в этом браузере. Так рекомендации будут похожи на ваши
+                реальные интересы, а не на случайный список квартир.
               </p>
               <button type="button" className="button button-primary" onClick={acceptCookies}>
                 Разрешить рекомендации
@@ -334,23 +512,36 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
             </div>
           ) : (
             <>
-              <h3>ИИ нашел варианты, которые могут подойти</h3>
-              <p>
-                Рекомендации строятся по вашим просмотрам, избранному, бронированиям и выбранной сортировке.
-              </p>
+              <h3>Подборка под ваши интересы</h3>
+              <p className="smart-reco-profile">{stats.profileLabel}</p>
 
               <div className="smart-reco-list">
-                {recommendations.map(({ apartment, reason }) => (
-                  <Link href={`/apartment/${apartment.id}`} key={apartment.id} className="smart-reco-item">
-                    <span>{statusLabel(getApartmentStatus(apartment.id, apartment.status))}</span>
-                    <strong>{apartment.title}</strong>
-                    <small>
-                      {formatArea(apartment.totalArea)}, {roomLabel(apartment.roomsCount)}, {apartment.floor} этаж
-                    </small>
-                    <em>{formatPrice(apartment.price)}</em>
-                    <p>{reason}</p>
-                  </Link>
-                ))}
+                {recommendations.length ? (
+                  recommendations.map(({ apartment, reason, tag, match, details }) => (
+                    <Link href={`/apartment/${apartment.id}`} key={apartment.id} className="smart-reco-item">
+                      <div className="smart-reco-item-top">
+                        <span>{tag}</span>
+                        <b>{match}% совпадение</b>
+                      </div>
+                      <strong>{apartment.title}</strong>
+                      <small>
+                        {formatArea(apartment.totalArea)}, {roomLabel(apartment.roomsCount)}, {apartment.floor} этаж · {statusLabel(getApartmentStatus(apartment.id, apartment.status))}
+                      </small>
+                      <em>{formatPrice(apartment.price)}</em>
+                      <p>{reason}</p>
+                      <ul>
+                        {details.slice(0, 2).map((detail) => (
+                          <li key={detail}>{detail}</li>
+                        ))}
+                      </ul>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="smart-reco-empty">
+                    <strong>Пока нет свободных вариантов для рекомендации.</strong>
+                    <p>Можно открыть каталог и посмотреть квартиры вручную или написать ИИ-консультанту.</p>
+                  </div>
+                )}
               </div>
 
               <Link href="/ai" className="smart-reco-ai-link">
@@ -363,8 +554,8 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
 
       {!profile.acceptedCookies ? (
         <div className="smart-reco-consent">
-          <strong>Cookies для рекомендаций</strong>
-          <span>Сохраним просмотры в браузере и подскажем похожие квартиры.</span>
+          <strong>Персональные рекомендации</strong>
+          <span>Сохраним просмотры в браузере и подберем похожие квартиры.</span>
           <button type="button" onClick={acceptCookies}>
             ОК
           </button>

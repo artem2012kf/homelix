@@ -2410,3 +2410,59 @@ input {
     bottom: 68px;
   }
 }
+
+/* Улучшенные персональные рекомендации */
+.smart-reco-profile {
+  margin-top: 8px !important;
+  padding: 10px 12px;
+  border: 1px solid rgba(216, 132, 47, 0.18);
+  border-radius: 16px;
+  color: var(--text) !important;
+  background: rgba(216, 132, 47, 0.08);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.smart-reco-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.smart-reco-item-top b {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #2f6f3a;
+  background: rgba(83, 152, 92, 0.12);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.smart-reco-item ul {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding-left: 17px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.smart-reco-item li::marker {
+  color: var(--primary);
+}
+
+.smart-reco-empty {
+  padding: 14px;
+  border: 1px dashed rgba(216, 132, 47, 0.35);
+  border-radius: 18px;
+  background: #fffaf1;
+}
+
+.smart-reco-empty strong {
+  display: block;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
