@@ -2164,3 +2164,249 @@ input {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Умные рекомендации по cookies */
+.smart-reco-shell {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 90;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.smart-reco-shell > * {
+  pointer-events: auto;
+}
+
+.smart-reco-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  box-shadow: 0 18px 40px rgba(86, 52, 17, 0.24);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.smart-reco-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 46px rgba(86, 52, 17, 0.3);
+}
+
+.smart-reco-button span {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.smart-reco-button i {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #e73535;
+  box-shadow: 0 0 0 4px rgba(231, 53, 53, 0.16);
+}
+
+.smart-reco-button.has-unread {
+  animation: smart-reco-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes smart-reco-pulse {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.smart-reco-panel {
+  position: absolute;
+  right: 0;
+  bottom: 74px;
+  width: min(380px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid rgba(216, 132, 47, 0.2);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 70px rgba(45, 30, 15, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.smart-reco-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.smart-reco-panel-head button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--text);
+  background: #fff;
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.smart-reco-panel h3 {
+  margin: 12px 0 8px;
+  font-size: 22px;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+.smart-reco-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.smart-reco-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.smart-reco-item {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: inherit;
+  text-decoration: none;
+  background: #fffaf1;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.smart-reco-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(216, 132, 47, 0.42);
+}
+
+.smart-reco-item span {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--primary-dark);
+  background: rgba(216, 132, 47, 0.14);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.smart-reco-item strong {
+  font-size: 17px;
+  letter-spacing: -0.03em;
+}
+
+.smart-reco-item small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.smart-reco-item em {
+  color: var(--text);
+  font-style: normal;
+  font-weight: 900;
+}
+
+.smart-reco-item p {
+  font-size: 13px;
+}
+
+.smart-reco-ai-link {
+  display: block;
+  margin-top: 14px;
+  padding: 13px 16px;
+  border-radius: 999px;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 900;
+  background: var(--primary-dark);
+}
+
+.smart-reco-cookie-card {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.smart-reco-cookie-card .button {
+  width: 100%;
+}
+
+.smart-reco-consent {
+  width: min(330px, calc(100vw - 108px));
+  padding: 14px;
+  border: 1px solid rgba(216, 132, 47, 0.22);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 38px rgba(45, 30, 15, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.smart-reco-consent strong,
+.smart-reco-consent span {
+  display: block;
+}
+
+.smart-reco-consent span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.smart-reco-consent button {
+  margin-top: 10px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--primary-dark);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .smart-reco-shell {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .smart-reco-consent {
+    display: none;
+  }
+
+  .smart-reco-button {
+    width: 54px;
+    height: 54px;
+  }
+
+  .smart-reco-panel {
+    right: -2px;
+    bottom: 68px;
+  }
+}

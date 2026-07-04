@@ -51,6 +51,21 @@ function compareInsideStatus(a: Apartment, b: Apartment, sort: SortOption) {
   return a.price - b.price;
 }
 
+
+
+function trackSortInterest(sort: SortOption) {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(
+    new CustomEvent("sq-track-interest", {
+      detail: {
+        type: "sort",
+        sort
+      }
+    })
+  );
+}
+
 function sortApartments(items: Apartment[], sort: SortOption) {
   return [...items].sort((a, b) => {
     const statusCompare = statusWeight[a.status] - statusWeight[b.status];
@@ -108,7 +123,14 @@ export function ApartmentCatalog({ apartments }: { apartments: Apartment[] }) {
 
         <label className="sort-control">
           <span>Сортировать</span>
-          <select value={sort} onChange={(event) => setSort(event.target.value as SortOption)}>
+          <select
+            value={sort}
+            onChange={(event) => {
+              const nextSort = event.target.value as SortOption;
+              setSort(nextSort);
+              trackSortInterest(nextSort);
+            }}
+          >
             {Object.entries(sortLabels).map(([value, label]) => (
               <option value={value} key={value}>
                 {label}
@@ -120,19 +142,19 @@ export function ApartmentCatalog({ apartments }: { apartments: Apartment[] }) {
 
 
       <div className="quick-sort-row" aria-label="Быстрая сортировка квартир">
-        <button type="button" onClick={() => setSort("price-asc")}>
+        <button type="button" onClick={() => { setSort("price-asc"); trackSortInterest("price-asc"); }}>
           Дешевле
           {cheapestApartment ? <small>от {formatPrice(cheapestApartment.price)}</small> : null}
         </button>
-        <button type="button" onClick={() => setSort("area-desc")}>
+        <button type="button" onClick={() => { setSort("area-desc"); trackSortInterest("area-desc"); }}>
           Больше площадь
           {largestApartment ? <small>до {formatArea(largestApartment.totalArea)}</small> : null}
         </button>
-        <button type="button" onClick={() => setSort("floor-desc")}>
+        <button type="button" onClick={() => { setSort("floor-desc"); trackSortInterest("floor-desc"); }}>
           Выше этаж
           {highestFloorApartment ? <small>до {highestFloorApartment.floor} этажа</small> : null}
         </button>
-        <button type="button" onClick={() => setSort("mortgage-asc")}>
+        <button type="button" onClick={() => { setSort("mortgage-asc"); trackSortInterest("mortgage-asc"); }}>
           Ниже ипотека
           <small>по платежу</small>
         </button>

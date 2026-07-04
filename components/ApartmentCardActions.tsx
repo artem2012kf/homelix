@@ -5,6 +5,20 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import type { Apartment, ApartmentStatus } from "@/types/apartment";
 
+
+function trackInterest(type: "view" | "favorite" | "reserve", apartmentId: string) {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(
+    new CustomEvent("sq-track-interest", {
+      detail: {
+        type,
+        apartmentId
+      }
+    })
+  );
+}
+
 export function ApartmentCardActions({
   apartment,
   effectiveStatus,
@@ -46,6 +60,9 @@ export function ApartmentCardActions({
 
     setMessage("Обновляем избранное...");
     const result = await toggleFavorite(apartment.id);
+    if (result.ok && !favorite) {
+      trackInterest("favorite", apartment.id);
+    }
     setMessage(result.ok ? (favorite ? "Удалено из избранного." : "Добавлено в избранное.") : result.error ?? "Не удалось обновить избранное.");
   }
 
@@ -69,6 +86,9 @@ export function ApartmentCardActions({
 
     setMessage("Создаем бронь...");
     const result = await reserveApartment(apartment.id, status);
+    if (result.ok) {
+      trackInterest("reserve", apartment.id);
+    }
     setMessage(result.ok ? "Квартира забронирована. Статус изменен на «Бронь»." : result.error ?? "Не удалось забронировать квартиру.");
   }
 
@@ -77,7 +97,7 @@ export function ApartmentCardActions({
       {reservedByUser ? <span className="local-reserve-badge">Ваша бронь</span> : null}
       <div className={`card-action-row ${showPlanLink ? "" : "card-action-row-single"}`}>
         {showPlanLink ? (
-          <Link className="button button-primary" href={`/apartment/${apartment.id}`}>
+          <Link className="button button-primary" href={`/apartment/${apartment.id}`} onClick={() => trackInterest("view", apartment.id)}>
             Смотреть планировку
           </Link>
         ) : null}
