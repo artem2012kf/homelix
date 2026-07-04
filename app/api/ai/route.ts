@@ -31,6 +31,13 @@ function replaceApartmentIdsWithTitles(answer: string) {
   }, answer);
 }
 
+function statusLabel(status: Apartment["status"]) {
+  if (status === "available") return "Свободна";
+  if (status === "reserved") return "Бронь";
+  if (status === "sold") return "Продана";
+  return status;
+}
+
 function isComplexRequest(message: string) {
   const lower = message.toLowerCase();
 
@@ -149,7 +156,7 @@ function demoAnswer(message: string, apartments: Apartment[]) {
 function limitAnswer(reason: "timeout" | "credits" | "unknown", relevantApartments: Apartment[], message = "") {
   const options = relevantApartments
     .slice(0, 3)
-    .map((item) => `- **${item.title}** — ${item.totalArea} м², ${item.floor} этаж, ${item.price.toLocaleString("ru-RU")} ₽, статус: ${item.status}.`)
+    .map((item) => `- **${item.title}** — ${item.totalArea} м², ${item.floor} этаж, ${item.price.toLocaleString("ru-RU")} ₽, статус: ${statusLabel(item.status)}.`)
     .join("\n");
 
   const lower = message.toLowerCase();
@@ -215,6 +222,7 @@ function isOpenRouterLimitError(status: number, errorText: string) {
   return (
     status === 400 ||
     status === 402 ||
+    status === 404 ||
     status === 413 ||
     lower.includes("credits") ||
     lower.includes("tokens") ||
@@ -226,8 +234,32 @@ function isOpenRouterLimitError(status: number, errorText: string) {
 
 async function getOpenRouterAnswer(response: Response) {
   const data = await response.json();
-  const answer = data?.choices?.[0]?.message?.content;
-  return typeof answer === "string" ? answer : "";
+
+  const directText = data?.output_text;
+  if (typeof directText === "string" && directText.trim()) return directText.trim();
+
+  const choice = data?.choices?.[0];
+  const text = choice?.text;
+  if (typeof text === "string" && text.trim()) return text.trim();
+
+  const content = choice?.message?.content;
+  if (typeof content === "string" && content.trim()) return content.trim();
+
+  if (Array.isArray(content)) {
+    const parts = content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (typeof part?.text === "string") return part.text;
+        if (typeof part?.content === "string") return part.content;
+        return "";
+      })
+      .join("\n")
+      .trim();
+
+    if (parts) return parts;
+  }
+
+  return "";
 }
 
 export async function POST(request: Request) {
@@ -326,7 +358,7 @@ export async function POST(request: Request) {
 
     const answer = await getOpenRouterAnswer(openRouterResponse);
 
-    return Response.json({ answer: answer ? replaceApartmentIdsWithTitles(answer) : "ИИ не вернул текстовый ответ." });
+    return Response.json({ answer: answer ? replaceApartmentIdsWithTitles(answer) : limitAnswer("unknown", relevantApartments, rawMessage) });
   } catch (error) {
     return Response.json(
       {
