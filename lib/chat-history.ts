@@ -5,7 +5,7 @@ export type StoredChatMessage = {
 
 const MAX_STORED_MESSAGES = 40;
 const MAX_MESSAGE_LENGTH = 4000;
-const CHAT_HISTORY_VERSION = "v3";
+const CHAT_HISTORY_VERSION = "v4";
 
 const OLD_LIMIT_ERROR_MARKERS = [
   "Запрос получился слишком объемным",
@@ -26,10 +26,20 @@ function isStoredMessage(value: unknown): value is StoredChatMessage {
   return (message.role === "user" || message.role === "assistant") && typeof message.content === "string";
 }
 
+export function hasOldLimitErrorText(content: string) {
+  return OLD_LIMIT_ERROR_MARKERS.some((marker) => content.includes(marker));
+}
+
+export function sanitizeAssistantContent(content: unknown, fallback: string) {
+  if (typeof content !== "string" || !content.trim()) return fallback;
+
+  return hasOldLimitErrorText(content) ? fallback : content;
+}
+
 function isOldLimitErrorMessage(message: StoredChatMessage) {
   if (message.role !== "assistant") return false;
 
-  return OLD_LIMIT_ERROR_MARKERS.some((marker) => message.content.includes(marker));
+  return hasOldLimitErrorText(message.content);
 }
 
 function cleanupLegacyLimitHistory(currentKey: string) {
@@ -42,9 +52,8 @@ function cleanupLegacyLimitHistory(currentKey: string) {
       if (!key || key === currentKey || !key.startsWith("sq-ai-chat-")) continue;
 
       const value = window.localStorage.getItem(key) || "";
-      const hasOldLimitMessage = OLD_LIMIT_ERROR_MARKERS.some((marker) => value.includes(marker));
 
-      if (hasOldLimitMessage) {
+      if (hasOldLimitErrorText(value)) {
         window.localStorage.removeItem(key);
       }
     }

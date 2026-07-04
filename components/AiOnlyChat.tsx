@@ -7,6 +7,7 @@ import {
   clearChatHistory,
   generalChatHistoryKey,
   loadChatHistory,
+  sanitizeAssistantContent,
   saveChatHistory,
   type StoredChatMessage
 } from "@/lib/chat-history";
@@ -63,7 +64,10 @@ export function AiOnlyChat() {
         ...current,
         {
           role: "assistant",
-          content: data.answer ?? data.error ?? "Не удалось получить ответ. Проверьте настройки API."
+          content: sanitizeAssistantContent(
+            data.answer ?? data.error,
+            "**Краткая консультация:** старый ответ про лимит OpenRouter скрыт. Напишите вопрос еще раз коротко: например, **какие квартиры доступны?**, **до 12 млн**, **для аренды** или **для семьи**."
+          )
         }
       ]);
     } catch (error) {
