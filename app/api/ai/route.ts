@@ -4,9 +4,12 @@ import type { Apartment } from "@/types/apartment";
 export const runtime = "nodejs";
 
 const OPENROUTER_TIMEOUT_MS = 28_000;
-const MAX_USER_MESSAGE_LENGTH = 900;
-const SIMPLE_MAX_TOKENS = 220;
-const NORMAL_MAX_TOKENS = 280;
+const MAX_USER_MESSAGE_LENGTH = 450;
+const HISTORY_LIMIT = 2;
+const HISTORY_MESSAGE_LENGTH = 300;
+const SIMPLE_MAX_TOKENS = 160;
+const NORMAL_MAX_TOKENS = 200;
+const RETRY_MAX_TOKENS = 120;
 
 type ChatMessage = {
   role: "user" | "assistant" | "system";
@@ -50,23 +53,36 @@ function trimUserMessage(message: string) {
   return `${message.slice(0, MAX_USER_MESSAGE_LENGTH)}\n\n[Сообщение клиента было сокращено системой, потому что бесплатная модель OpenRouter имеет ограничение по объему запроса.]`;
 }
 
-function compactApartmentsForAi(apartments: Apartment[]) {
-  return apartments.map((apartment) => ({
-    name: apartment.title,
-    project: apartment.project,
-    building: apartment.building,
-    section: apartment.section,
-    floor: apartment.floor,
-    roomsCount: apartment.roomsCount,
-    totalArea: apartment.totalArea,
-    price: apartment.price,
-    mortgagePayment: apartment.mortgagePayment,
-    status: apartment.status,
-    windowView: apartment.windowView,
-    finishing: apartment.finishing,
-    advantages: apartment.advantages.slice(0, 2),
-    rooms: apartment.rooms.slice(0, 6).map((room) => `${room.name}: ${room.area} м²`).join("; ")
-  }));
+function shortText(value: string | undefined, max = 160) {
+  if (!value) return "";
+  return value.length <= max ? value : `${value.slice(0, max)}...`;
+}
+
+function compactApartmentsForAi(apartments: Apartment[], ultraCompact = false) {
+  return apartments.map((apartment) => {
+    const base = {
+      name: apartment.title,
+      floor: apartment.floor,
+      roomsCount: apartment.roomsCount,
+      totalArea: apartment.totalArea,
+      price: apartment.price,
+      mortgagePayment: apartment.mortgagePayment,
+      status: apartment.status
+    };
+
+    if (ultraCompact) {
+      return base;
+    }
+
+    return {
+      ...base,
+      project: apartment.project,
+      building: apartment.building,
+      finishing: apartment.finishing,
+      advantages: apartment.advantages.slice(0, 1).map((advantage) => shortText(advantage, 100)),
+      rooms: apartment.rooms.slice(0, 4).map((room) => `${room.name}: ${room.area} м²`).join("; ")
+    };
+  });
 }
 
 function findRelevantApartments(message: string, apartments: Apartment[], limit = 6) {
@@ -173,13 +189,34 @@ async function askOpenRouter(args: {
       body: JSON.stringify({
         model: args.model,
         messages: args.messages,
-        temperature: 0.25,
+        temperature: 0.2,
         max_tokens: args.maxTokens
       })
     });
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function isOpenRouterLimitError(status: number, errorText: string) {
+  const lower = errorText.toLowerCase();
+
+  return (
+    status === 400 ||
+    status === 402 ||
+    status === 413 ||
+    lower.includes("credits") ||
+    lower.includes("tokens") ||
+    lower.includes("context") ||
+    lower.includes("limit") ||
+    lower.includes("too large")
+  );
+}
+
+async function getOpenRouterAnswer(response: Response) {
+  const data = await response.json();
+  const answer = data?.choices?.[0]?.message?.content;
+  return typeof answer === "string" ? answer : "";
 }
 
 export async function POST(request: Request) {
@@ -195,7 +232,7 @@ export async function POST(request: Request) {
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = process.env.OPENROUTER_MODEL || "qwen/qwen3-next-80b-a3b-instruct:free";
     const complex = isComplexRequest(rawMessage);
-    const relevantApartments = findRelevantApartments(rawMessage, sourceApartments, complex ? 4 : 6);
+    const relevantApartments = findRelevantApartments(rawMessage, sourceApartments, complex ? 3 : 4);
 
     if (!apiKey) {
       return Response.json({ answer: demoAnswer(rawMessage, relevantApartments) });
@@ -204,29 +241,30 @@ export async function POST(request: Request) {
     const messages: ChatMessage[] = [
       {
         role: "system",
-        content: `
-Ты официальный ИИ-консультант сайта застройщика.
-Это отдельная страница консультации без выбора комнат на планировке.
-Помогай клиенту подобрать квартиру, сравнить варианты, оценить площадь, цену, этаж, отделку, преимущества и сценарии проживания.
-Отвечай по-русски в деловом, вежливом и сдержанном тоне. Обращайся к клиенту на «вы».
-Не начинай каждый ответ с приветствия. Приветствие допустимо только в первом сообщении диалога; дальше сразу отвечай по сути и учитывай историю.
-Ответ должен быть кратким: максимум 2–3 абзаца или 3–5 пунктов.
-Если вопрос сложный, не пытайся описывать все 30 квартир. Выбери 2–3 наиболее подходящих варианта и предложи уточнить критерии.
-Форматируй ответ в Markdown: выделяй главное через **жирный текст**, уточнения через *курсив*, списки через "-". Не используй HTML.
-Называй квартиры только по полю name/title, не используй технические идентификаторы вида apt-204.
-Не выдумывай цену, сроки, скидки, юридические условия, ипотечные ставки и условия бронирования.
-Если данных не хватает, корректно напиши: «Эту информацию лучше уточнить у менеджера отдела продаж».
-        `.trim()
+        content:
+          "Ты краткий ИИ-консультант сайта застройщика. Подбери квартиру по данным ниже. Отвечай по-русски, без повторных приветствий, максимум 4 пункта. Не описывай все квартиры сразу, выбери 2–3 лучших варианта. Не выдумывай цены и условия."
       },
       {
         role: "system",
-        content: `Короткая подборка релевантных квартир. Используй только эти данные, называй варианты по name:\n${JSON.stringify(compactApartmentsForAi(relevantApartments), null, 0)}`
+        content: `Короткая подборка квартир JSON:\n${JSON.stringify(compactApartmentsForAi(relevantApartments), null, 0)}`
       },
       ...((body.history ?? [])
         .filter((item) => item.role === "user" || item.role === "assistant")
-        .slice(-4)
-        .map((item) => ({ role: item.role, content: item.content.slice(0, 700) })) as ChatMessage[]),
+        .slice(-HISTORY_LIMIT)
+        .map((item) => ({ role: item.role, content: shortText(item.content, HISTORY_MESSAGE_LENGTH) })) as ChatMessage[]),
       { role: "user", content: message }
+    ];
+
+    const retryMessages: ChatMessage[] = [
+      {
+        role: "system",
+        content: "Ты краткий ИИ-консультант по квартирам. Ответь максимум 3 пунктами по-русски, без приветствия."
+      },
+      {
+        role: "system",
+        content: `Мини-подборка JSON:\n${JSON.stringify(compactApartmentsForAi(relevantApartments.slice(0, 2), true), null, 0)}`
+      },
+      { role: "user", content: shortText(message, 320) }
     ];
 
     let openRouterResponse: Response;
@@ -245,13 +283,27 @@ export async function POST(request: Request) {
 
     if (!openRouterResponse.ok) {
       const errorText = await openRouterResponse.text();
-      const isLimitError =
-        openRouterResponse.status === 402 ||
-        errorText.toLowerCase().includes("credits") ||
-        errorText.toLowerCase().includes("tokens") ||
-        errorText.toLowerCase().includes("limit");
 
-      if (isLimitError) {
+      if (isOpenRouterLimitError(openRouterResponse.status, errorText)) {
+        try {
+          const retryResponse = await askOpenRouter({
+            apiKey,
+            model,
+            siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+            messages: retryMessages,
+            maxTokens: RETRY_MAX_TOKENS
+          });
+
+          if (retryResponse.ok) {
+            const retryAnswer = await getOpenRouterAnswer(retryResponse);
+            return Response.json({
+              answer: retryAnswer ? replaceApartmentIdsWithTitles(retryAnswer) : limitAnswer("credits", relevantApartments)
+            });
+          }
+        } catch {
+          // Если короткий повтор тоже не прошел, вернем понятный ответ ниже.
+        }
+
         return Response.json({ answer: limitAnswer("credits", relevantApartments) });
       }
 
@@ -261,8 +313,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const data = await openRouterResponse.json();
-    const answer = data?.choices?.[0]?.message?.content;
+    const answer = await getOpenRouterAnswer(openRouterResponse);
 
     return Response.json({ answer: answer ? replaceApartmentIdsWithTitles(answer) : "ИИ не вернул текстовый ответ." });
   } catch (error) {
