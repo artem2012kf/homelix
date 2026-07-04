@@ -6,6 +6,12 @@ export type StoredChatMessage = {
 const MAX_STORED_MESSAGES = 40;
 const MAX_MESSAGE_LENGTH = 4000;
 
+const OLD_LIMIT_ERROR_MARKERS = [
+  "Запрос получился слишком объемным",
+  "бесплатная модель OpenRouter ограничила объем запроса или ответа",
+  "Я могу продолжить консультацию, но лучше разделить вопрос на несколько коротких частей"
+];
+
 export function apartmentChatHistoryKey(apartmentId: string) {
   return `sq-ai-chat-apartment-${apartmentId}`;
 }
@@ -19,6 +25,23 @@ function isStoredMessage(value: unknown): value is StoredChatMessage {
   return (message.role === "user" || message.role === "assistant") && typeof message.content === "string";
 }
 
+function isOldLimitErrorMessage(message: StoredChatMessage) {
+  if (message.role !== "assistant") return false;
+
+  return OLD_LIMIT_ERROR_MARKERS.some((marker) => message.content.includes(marker));
+}
+
+function normalizeMessages(messages: StoredChatMessage[]) {
+  return messages
+    .filter(isStoredMessage)
+    .filter((message) => !isOldLimitErrorMessage(message))
+    .map((message) => ({
+      role: message.role,
+      content: message.content.slice(0, MAX_MESSAGE_LENGTH)
+    }))
+    .slice(-MAX_STORED_MESSAGES);
+}
+
 export function loadChatHistory(key: string, fallback: StoredChatMessage[]) {
   if (typeof window === "undefined") return fallback;
 
@@ -28,13 +51,13 @@ export function loadChatHistory(key: string, fallback: StoredChatMessage[]) {
 
     if (!Array.isArray(parsed)) return fallback;
 
-    const messages = parsed
-      .filter(isStoredMessage)
-      .map((message) => ({
-        role: message.role,
-        content: message.content.slice(0, MAX_MESSAGE_LENGTH)
-      }))
-      .slice(-MAX_STORED_MESSAGES);
+    const messages = normalizeMessages(parsed);
+
+    if (messages.length > 0) {
+      window.localStorage.setItem(key, JSON.stringify(messages));
+    } else {
+      window.localStorage.removeItem(key);
+    }
 
     return messages.length > 0 ? messages : fallback;
   } catch {
@@ -46,13 +69,7 @@ export function saveChatHistory(key: string, messages: StoredChatMessage[]) {
   if (typeof window === "undefined") return;
 
   try {
-    const safeMessages = messages
-      .filter(isStoredMessage)
-      .map((message) => ({
-        role: message.role,
-        content: message.content.slice(0, MAX_MESSAGE_LENGTH)
-      }))
-      .slice(-MAX_STORED_MESSAGES);
+    const safeMessages = normalizeMessages(messages);
 
     window.localStorage.setItem(key, JSON.stringify(safeMessages));
   } catch {
