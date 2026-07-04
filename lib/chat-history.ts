@@ -5,7 +5,7 @@ export type StoredChatMessage = {
 
 const MAX_STORED_MESSAGES = 40;
 const MAX_MESSAGE_LENGTH = 4000;
-const CHAT_HISTORY_VERSION = "v4";
+const CHAT_HISTORY_VERSION = "v5";
 
 const OLD_LIMIT_ERROR_MARKERS = [
   "Запрос получился слишком объемным",
@@ -107,6 +107,23 @@ export function saveChatHistory(key: string, messages: StoredChatMessage[]) {
     window.localStorage.setItem(key, JSON.stringify(safeMessages));
   } catch {
     // Если браузер запретил localStorage, чат продолжит работать без сохранения истории.
+  }
+}
+
+
+export function clearAllChatHistory() {
+  if (typeof window === "undefined") return;
+
+  try {
+    for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.localStorage.key(index);
+
+      if (key?.startsWith("sq-ai-chat-")) {
+        window.localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Игнорируем ошибку очистки localStorage.
   }
 }
 

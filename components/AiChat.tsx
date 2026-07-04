@@ -11,7 +11,9 @@ import { furnitureItems } from "@/lib/furniture";
 import { formatPrice } from "@/lib/format";
 import {
   apartmentChatHistoryKey,
+  clearAllChatHistory,
   clearChatHistory,
+  hasOldLimitErrorText,
   loadChatHistory,
   sanitizeAssistantContent,
   saveChatHistory,
@@ -62,7 +64,7 @@ function getInitialMessages(apartment: Apartment): Message[] {
   return [
     {
       role: "assistant",
-      content: `Здравствуйте. Я ИИ-консультант по квартире **${apartment.title}**. История диалога сохраняется, поэтому можно продолжать разговор с прошлого места.`
+      content: `Здравствуйте. Я ИИ-консультант по квартире **${apartment.title}**. История чата обновлена, старые сообщения про лимит OpenRouter скрываются автоматически.`
     }
   ];
 }
@@ -564,7 +566,8 @@ export function AiChat({
   const [lastFurnitureRequest, setLastFurnitureRequest] = useState<FurniturePlacementRequest | null>(null);
 
   useEffect(() => {
-    setMessages(loadChatHistory(chatHistoryKey, initialMessages));
+    clearAllChatHistory();
+    setMessages(initialMessages);
     setHistoryLoaded(true);
   }, [chatHistoryKey, initialMessages]);
 
@@ -826,6 +829,7 @@ export function AiChat({
 
   function clearCurrentChat() {
     clearChatHistory(chatHistoryKey);
+    clearAllChatHistory();
     setMessages(initialMessages);
     setInput("");
     setPendingFurnitureRequest(null);
@@ -836,6 +840,8 @@ export function AiChat({
     event.preventDefault();
     void sendMessage(input);
   }
+
+  const visibleMessages = messages.filter((message) => !hasOldLimitErrorText(message.content));
 
   return (
     <section className="chat-card" id="ai">
@@ -872,7 +878,7 @@ export function AiChat({
       </div>
 
       <div className="chat-messages" aria-live="polite">
-        {messages.map((message, index) => (
+        {visibleMessages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`chat-message chat-${message.role}`}>
             <MarkdownText content={message.content} />
           </div>

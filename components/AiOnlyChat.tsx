@@ -4,8 +4,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { MarkdownText } from "@/components/MarkdownText";
 import { postJson } from "@/lib/client-api";
 import {
+  clearAllChatHistory,
   clearChatHistory,
   generalChatHistoryKey,
+  hasOldLimitErrorText,
   loadChatHistory,
   sanitizeAssistantContent,
   saveChatHistory,
@@ -25,7 +27,7 @@ const initialMessages: Message[] = [
   {
     role: "assistant",
     content:
-      "Здравствуйте. Я ИИ-консультант жилого комплекса. История диалога теперь сохраняется, поэтому можно продолжать подбор квартиры с прошлого места."
+      "Здравствуйте. Я ИИ-консультант жилого комплекса. История чата обновлена, старые сообщения про лимит OpenRouter скрываются автоматически."
   }
 ];
 
@@ -36,7 +38,8 @@ export function AiOnlyChat() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
   useEffect(() => {
-    setMessages(loadChatHistory(generalChatHistoryKey, initialMessages));
+    clearAllChatHistory();
+    setMessages(initialMessages);
     setHistoryLoaded(true);
   }, []);
 
@@ -88,6 +91,7 @@ export function AiOnlyChat() {
 
   function clearCurrentChat() {
     clearChatHistory(generalChatHistoryKey);
+    clearAllChatHistory();
     setMessages(initialMessages);
     setInput("");
   }
@@ -96,6 +100,8 @@ export function AiOnlyChat() {
     event.preventDefault();
     void sendMessage(input);
   }
+
+  const visibleMessages = messages.filter((message) => !hasOldLimitErrorText(message.content));
 
   return (
     <section className="chat-card ai-only-chat" id="ai-only-chat">
@@ -126,7 +132,7 @@ export function AiOnlyChat() {
       </div>
 
       <div className="chat-messages ai-only-messages" aria-live="polite">
-        {messages.map((message, index) => (
+        {visibleMessages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`chat-message chat-${message.role}`}>
             <MarkdownText content={message.content} />
           </div>
