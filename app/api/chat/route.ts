@@ -107,17 +107,43 @@ function demoAnswer(message: string, apartment: Apartment, room?: Room | null) {
   ].join("\n\n");
 }
 
-function limitAnswer(reason: "timeout" | "credits", apartment: Apartment, room?: Room | null) {
-  const roomText = room ? `по помещению **${room.name}**` : "по квартире в целом";
-  const reasonText =
-    reason === "timeout"
-      ? "модель слишком долго обрабатывала расширенный запрос"
-      : "бесплатная модель OpenRouter ограничила объем запроса или ответа";
+function limitAnswer(reason: "timeout" | "credits", apartment: Apartment, room?: Room | null, message = "") {
+  const lower = message.toLowerCase();
+  const roomName = room?.name ?? "квартира";
+  const roomArea = room ? `${room.area} м²` : `${apartment.totalArea} м²`;
+
+  if (lower.includes("кроват")) {
+    return [
+      `**По кровати:** лучше ориентироваться на выбранную зону **${roomName}** (${roomArea}).`,
+      "- Поставьте кровать у самой длинной свободной стены, чтобы оставить проходы по бокам.",
+      "- Не перекрывайте дверь, окно и место под шкаф.",
+      "- Для подбора модели напишите бюджет: например, **до 70 000 ₽** или **40–90 тыс. ₽**."
+    ].join("\n");
+  }
+
+  if (lower.includes("шкаф") || lower.includes("хранен") || lower.includes("гардероб")) {
+    return [
+      `**По хранению:** для зоны **${roomName}** лучше использовать стену рядом со входом или глухую стену без окна.`,
+      "- Шкаф лучше ставить вдоль стены, а не в центре комнаты.",
+      "- Глубина 55–60 см обычно удобна для одежды.",
+      "- Если нужен подбор из магазина, напишите бюджет — подберу средний вариант."
+    ].join("\n");
+  }
+
+  if (lower.includes("диван")) {
+    return [
+      `**По дивану:** в зоне **${roomName}** его лучше ставить так, чтобы он не перекрывал проход к окну и двери.`,
+      "- Для кухни-гостиной диван можно использовать как мягкое зонирование.",
+      "- Напишите бюджет, и сайт подберет подходящий вариант из магазина мебели.",
+      "- Если расположение не понравится, напишите: **передвинь диван**."
+    ].join("\n");
+  }
 
   return [
-    `**Запрос получился слишком объемным:** ${reasonText}.`,
-    `Чтобы не потерять консультацию, предлагаю уточнить вопрос ${roomText}. Например: «поместится ли кровать», «где поставить шкаф», «какие преимущества у этой комнаты».`,
-    `Текущий объект: **${apartment.title}**, ${apartment.totalArea} м², ${apartment.floor} этаж.`
+    `**Краткая консультация по объекту:** **${apartment.title}**, ${apartment.totalArea} м², ${apartment.floor} этаж.`,
+    room ? `Сейчас выбранная зона: **${room.name}**, ${room.area} м². ${shortText(room.description, 160)}` : "Можно выбрать комнату на планировке и задать вопрос именно по ней.",
+    `Стоимость: **${apartment.price.toLocaleString("ru-RU")} ₽**. Статус: **${apartment.status}**.`,
+    "Для более точного ответа задайте короткий вопрос: например, **где поставить кровать**, **куда шкаф**, **подбери диван до 80 тыс.**"
   ].join("\n\n");
 }
 
@@ -242,7 +268,7 @@ export async function POST(request: Request) {
         maxTokens: complex ? COMPLEX_MAX_TOKENS : NORMAL_MAX_TOKENS
       });
     } catch (error) {
-      return Response.json({ answer: limitAnswer("timeout", apartment, room) });
+      return Response.json({ answer: limitAnswer("timeout", apartment, room, rawMessage) });
     }
 
     if (!openRouterResponse.ok) {
@@ -263,14 +289,14 @@ export async function POST(request: Request) {
             return Response.json({
               answer: retryAnswer
                 ? replaceTechnicalApartmentId(retryAnswer, apartment)
-                : limitAnswer("credits", apartment, room)
+                : limitAnswer("credits", apartment, room, rawMessage)
             });
           }
         } catch {
           // Если короткий повтор тоже не прошел, вернем понятный ответ ниже.
         }
 
-        return Response.json({ answer: limitAnswer("credits", apartment, room) });
+        return Response.json({ answer: limitAnswer("credits", apartment, room, rawMessage) });
       }
 
       return Response.json(

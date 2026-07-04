@@ -146,23 +146,34 @@ function demoAnswer(message: string, apartments: Apartment[]) {
   ].join("\n\n");
 }
 
-function limitAnswer(reason: "timeout" | "credits" | "unknown", relevantApartments: Apartment[]) {
+function limitAnswer(reason: "timeout" | "credits" | "unknown", relevantApartments: Apartment[], message = "") {
   const options = relevantApartments
     .slice(0, 3)
-    .map((item) => `- **${item.title}** — ${item.totalArea} м², ${item.floor} этаж, ${item.price.toLocaleString("ru-RU")} ₽.`)
+    .map((item) => `- **${item.title}** — ${item.totalArea} м², ${item.floor} этаж, ${item.price.toLocaleString("ru-RU")} ₽, статус: ${item.status}.`)
     .join("\n");
 
-  const reasonText =
-    reason === "timeout"
-      ? "модель слишком долго обрабатывала расширенный запрос"
-      : reason === "credits"
-        ? "бесплатная модель OpenRouter ограничила объем запроса или ответа"
-        : "OpenRouter не смог обработать расширенный запрос";
+  const lower = message.toLowerCase();
+
+  if (lower.includes("семь") || lower.includes("ребен") || lower.includes("ребён")) {
+    return [
+      "**Для семьи** лучше смотреть варианты от 2 комнат или евро-планировки с отдельной спальней.",
+      options ? `Подходящие варианты:\n${options}` : "По текущим условиям подходящие варианты не найдены.",
+      "Для точного подбора уточните бюджет и желаемую комнатность."
+    ].join("\n\n");
+  }
+
+  if (lower.includes("аренд") || lower.includes("инвест")) {
+    return [
+      "**Для аренды** чаще удобнее компактные квартиры с понятной планировкой и умеренной ценой входа.",
+      options ? `Можно рассмотреть:\n${options}` : "По текущим условиям подходящие варианты не найдены.",
+      "Следующий шаг — сравнить цену, площадь и этаж 2–3 выбранных вариантов."
+    ].join("\n\n");
+  }
 
   return [
-    `**Запрос получился слишком объемным:** ${reasonText}.`,
-    "Я могу продолжить консультацию, но лучше разделить вопрос на несколько коротких частей: например, отдельно спросить про бюджет, затем про планировку и затем про сравнение 2–3 вариантов.",
-    options ? `По текущей подборке можно начать с этих вариантов:\n${options}` : "Подходящие варианты не найдены по текущему запросу. Попробуйте уточнить бюджет, комнатность или площадь."
+    "**Краткая подборка по вашему запросу:**",
+    options || "Подходящие варианты не найдены. Попробуйте уточнить бюджет, комнатность или площадь.",
+    "Для более точного ответа напишите коротко: например, **до 12 млн**, **для семьи**, **для аренды**, **2-комнатная**."
   ].join("\n\n");
 }
 
@@ -278,7 +289,7 @@ export async function POST(request: Request) {
         maxTokens: complex ? SIMPLE_MAX_TOKENS : NORMAL_MAX_TOKENS
       });
     } catch (error) {
-      return Response.json({ answer: limitAnswer("timeout", relevantApartments) });
+      return Response.json({ answer: limitAnswer("timeout", relevantApartments, rawMessage) });
     }
 
     if (!openRouterResponse.ok) {
@@ -297,14 +308,14 @@ export async function POST(request: Request) {
           if (retryResponse.ok) {
             const retryAnswer = await getOpenRouterAnswer(retryResponse);
             return Response.json({
-              answer: retryAnswer ? replaceApartmentIdsWithTitles(retryAnswer) : limitAnswer("credits", relevantApartments)
+              answer: retryAnswer ? replaceApartmentIdsWithTitles(retryAnswer) : limitAnswer("credits", relevantApartments, rawMessage)
             });
           }
         } catch {
           // Если короткий повтор тоже не прошел, вернем понятный ответ ниже.
         }
 
-        return Response.json({ answer: limitAnswer("credits", relevantApartments) });
+        return Response.json({ answer: limitAnswer("credits", relevantApartments, rawMessage) });
       }
 
       return Response.json(
