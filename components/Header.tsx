@@ -13,6 +13,7 @@ export function Header() {
       </Link>
       <nav className="header-nav" aria-label="Главная навигация">
         <a href="/#apartments">Квартиры</a>
+        <Link href="/map">Карта Тюмени</Link>
         <Link href="/ai">ИИ без комнат</Link>
         <Link href="/furniture">Магазин мебели</Link>
         <a href="/#contacts">Контакты</a>

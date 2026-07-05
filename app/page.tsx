@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { ApartmentBuildingMap } from "@/components/ApartmentBuildingMap";
+import { TyumenCityMap } from "@/components/TyumenCityMap";
 import { ApartmentCatalog } from "@/components/ApartmentCatalog";
 import { apartments } from "@/lib/apartments";
 import { formatPrice } from "@/lib/format";
@@ -52,6 +55,25 @@ export default function HomePage() {
             <span />
           </div>
         </div>
+      </section>
+
+
+      <section className="section map-preview-section" id="map">
+        <div className="section-heading">
+          <span className="eyebrow">Карта Тюмени</span>
+          <h2>Где ЖК расположен в Тюмени</h2>
+          <p>
+            Сначала клиент видит расположение проекта на схематической карте Тюмени, а затем может перейти
+            к корпусам, свободным квартирам и подбору с ИИ-консультантом.
+          </p>
+          <div className="hero-actions">
+            <Link className="button button-primary" href="/map">
+              Открыть большую карту
+            </Link>
+          </div>
+        </div>
+        <TyumenCityMap compact />
+        <ApartmentBuildingMap apartments={apartments} compact />
       </section>
 
       <section className="section" id="apartments">
@@ -151,7 +173,7 @@ export default function HomePage() {
       <section className="section contacts-section" id="contacts">
         <div className="section-heading">
           <span className="eyebrow">Контакты</span>
-          <h2>Офис продаж ЖК «Солнечный квартал»</h2>
+          <h2>Офис продаж ЖК «Солнечный квартал» в Тюмени</h2>
           <p>
             Оставьте заявку на сайте, сохраните квартиру в личном кабинете или забронируйте свободный вариант для
             дальнейшего звонка менеджера.
@@ -165,7 +187,7 @@ export default function HomePage() {
           </article>
           <article>
             <span>Адрес</span>
-            <strong>г. Москва, ул. Солнечная, 12</strong>
+            <strong>г. Тюмень, ул. Солнечная, 12</strong>
             <p>Шоурум, консультации и подбор квартиры</p>
           </article>
           <article>

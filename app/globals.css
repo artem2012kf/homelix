@@ -2578,3 +2578,506 @@ main, section, header, footer {
     opacity: 0.28;
   }
 }
+
+
+/* Карта расположения корпусов */
+.map-preview-section,
+.map-page-section,
+.apartment-location-section {
+  overflow: hidden;
+}
+
+.map-page-hero h1 {
+  margin: 0;
+  max-width: 900px;
+  color: var(--text);
+  font-size: clamp(40px, 6vw, 74px);
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+}
+
+.building-map {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: clamp(18px, 4vw, 36px);
+  align-items: start;
+}
+
+.building-map-compact {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.building-map-visual {
+  overflow: hidden;
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(135deg, rgba(0, 59, 166, 0.04), rgba(249, 62, 62, 0.04)),
+    #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.building-map-visual svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.map-ground {
+  fill: #ffffff;
+  stroke: rgba(0, 59, 166, 0.16);
+  stroke-width: 2;
+}
+
+.map-road,
+.map-walk {
+  fill: none;
+  stroke: #003BA6;
+  stroke-width: 12;
+  stroke-linecap: round;
+  opacity: 0.18;
+}
+
+.map-road-secondary {
+  stroke-width: 7;
+  opacity: 0.12;
+}
+
+.map-walk {
+  stroke: #F93E3E;
+  stroke-width: 5;
+  stroke-dasharray: 18 16;
+  opacity: 0.28;
+}
+
+.map-yard {
+  fill: rgba(0, 59, 166, 0.06);
+  stroke: rgba(0, 59, 166, 0.22);
+  stroke-width: 2;
+}
+
+.map-yard-small {
+  fill: rgba(249, 62, 62, 0.06);
+  stroke: rgba(249, 62, 62, 0.22);
+}
+
+.map-tree circle {
+  fill: rgba(249, 62, 62, 0.92);
+}
+
+.map-tree path {
+  stroke: #003BA6;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.map-building {
+  cursor: pointer;
+}
+
+.map-building rect {
+  fill: url(#mapBuildingGradient);
+  stroke: #003BA6;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 16px 24px rgba(0, 59, 166, 0.12));
+  transition: fill 0.18s ease, stroke 0.18s ease, transform 0.18s ease;
+}
+
+.map-building:hover rect,
+.map-building-active rect {
+  fill: url(#mapBuildingActiveGradient);
+  stroke: #F93E3E;
+  transform: translateY(-3px);
+}
+
+.map-building-title,
+.map-building-subtitle {
+  fill: #003BA6;
+  font-weight: 900;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.map-building-title {
+  font-size: 19px;
+}
+
+.map-building-subtitle {
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0.72;
+}
+
+.map-building:hover .map-building-title,
+.map-building:hover .map-building-subtitle,
+.map-building-active .map-building-title,
+.map-building-active .map-building-subtitle {
+  fill: #ffffff;
+  opacity: 1;
+}
+
+.map-compass circle {
+  fill: #003BA6;
+}
+
+.map-compass text {
+  fill: #ffffff;
+  font-size: 18px;
+  font-weight: 900;
+  text-anchor: middle;
+}
+
+.building-map-cards {
+  display: grid;
+  gap: 14px;
+}
+
+.building-map-compact .building-map-cards {
+  grid-template-columns: repeat(5, minmax(160px, 1fr));
+}
+
+.building-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(0, 59, 166, 0.08);
+  scroll-margin-top: 110px;
+}
+
+.building-card-active {
+  border-color: rgba(249, 62, 62, 0.75);
+  box-shadow: 0 22px 46px rgba(249, 62, 62, 0.18);
+}
+
+.building-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.building-card-header span {
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.building-card h3 {
+  margin: 5px 0 0;
+  color: var(--text);
+  font-size: 24px;
+}
+
+.building-card-header strong {
+  display: grid;
+  min-width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  color: #ffffff;
+  background: #F93E3E;
+}
+
+.building-card-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.building-card-stats span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(0, 59, 166, 0.07);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.building-card p {
+  margin: 14px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.building-apartment-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.building-apartment-list a {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid rgba(0, 59, 166, 0.12);
+  border-radius: 14px;
+  background: rgba(0, 59, 166, 0.035);
+}
+
+.building-apartment-list a:hover {
+  border-color: rgba(249, 62, 62, 0.55);
+}
+
+.building-apartment-list span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .building-map,
+  .building-map-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .building-map-compact .building-map-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .building-map-visual {
+    min-height: 260px;
+    border-radius: 24px;
+  }
+
+  .building-map-cards,
+  .building-map-compact .building-map-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .map-building-title {
+    font-size: 16px;
+  }
+
+  .map-building-subtitle {
+    font-size: 11px;
+  }
+}
+
+
+/* Схематическая карта Тюмени */
+.tyumen-city-map-section,
+.map-preview-section {
+  overflow: hidden;
+}
+
+.tyumen-map {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: clamp(18px, 4vw, 36px);
+  align-items: stretch;
+}
+
+.tyumen-map-compact {
+  grid-template-columns: 1fr;
+  margin-bottom: 20px;
+}
+
+.tyumen-map-visual {
+  overflow: hidden;
+  min-height: 380px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(135deg, rgba(0, 59, 166, 0.04), rgba(249, 62, 62, 0.035)),
+    #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.tyumen-map-visual svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tyumen-ground {
+  fill: #ffffff;
+  stroke: rgba(0, 59, 166, 0.16);
+  stroke-width: 2;
+}
+
+.tyumen-river {
+  fill: none;
+  stroke: url(#tyumenWater);
+  stroke-width: 56;
+  stroke-linecap: round;
+}
+
+.tyumen-river-line {
+  fill: none;
+  stroke: #003BA6;
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.56;
+}
+
+.tyumen-road-main,
+.tyumen-road {
+  fill: none;
+  stroke: #003BA6;
+  stroke-linecap: round;
+}
+
+.tyumen-road-main {
+  stroke-width: 12;
+  opacity: 0.18;
+}
+
+.tyumen-road {
+  stroke-width: 7;
+  opacity: 0.12;
+}
+
+.tyumen-center-ring {
+  fill: rgba(0, 59, 166, 0.05);
+  stroke: rgba(0, 59, 166, 0.22);
+  stroke-width: 2;
+  stroke-dasharray: 9 10;
+}
+
+.tyumen-center-ring-small {
+  fill: rgba(249, 62, 62, 0.06);
+  stroke: rgba(249, 62, 62, 0.26);
+}
+
+.tyumen-city-point circle {
+  fill: #003BA6;
+  stroke: #ffffff;
+  stroke-width: 4;
+}
+
+.tyumen-city-point text {
+  fill: #003BA6;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.tyumen-city-note {
+  opacity: 0.68;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.tyumen-project-pin path {
+  fill: url(#tyumenPin);
+  filter: drop-shadow(0 14px 22px rgba(249, 62, 62, 0.28));
+}
+
+.tyumen-project-pin circle {
+  fill: #ffffff;
+}
+
+.tyumen-project-pin text {
+  fill: #F93E3E;
+  font-size: 18px;
+  font-weight: 950;
+  text-anchor: middle;
+}
+
+.tyumen-project-label rect {
+  fill: #ffffff;
+  stroke: rgba(249, 62, 62, 0.45);
+  stroke-width: 2;
+  filter: drop-shadow(0 18px 26px rgba(0, 59, 166, 0.12));
+}
+
+.tyumen-project-label text {
+  fill: #003BA6;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.tyumen-project-label-small {
+  fill: rgba(0, 59, 166, 0.72) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+.tyumen-compass circle {
+  fill: #003BA6;
+}
+
+.tyumen-compass text {
+  fill: #ffffff;
+  font-size: 18px;
+  font-weight: 950;
+  text-anchor: middle;
+}
+
+.tyumen-map-info {
+  padding: clamp(22px, 4vw, 34px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.tyumen-map-compact .tyumen-map-info {
+  display: none;
+}
+
+.tyumen-map-info h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.tyumen-map-info p {
+  margin: 16px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.tyumen-map-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.tyumen-map-tags span {
+  padding: 8px 11px;
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(0, 59, 166, 0.07);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tyumen-map-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+@media (max-width: 1100px) {
+  .tyumen-map {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .tyumen-map-visual {
+    min-height: 260px;
+    border-radius: 24px;
+  }
+
+  .tyumen-city-point text,
+  .tyumen-city-note {
+    display: none;
+  }
+
+  .tyumen-project-label {
+    display: none;
+  }
+}
