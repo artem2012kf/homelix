@@ -1,16 +1,16 @@
 :root {
-  --bg: #f6f4ef;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #fff8ea;
-  --text: #1c1a17;
-  --muted: #746d63;
-  --line: #e6dfd2;
-  --primary: #d8842f;
-  --primary-dark: #9d5a14;
-  --green: #2c8d57;
-  --red: #b44949;
-  --blue: #3779b7;
-  --shadow: 0 24px 70px rgba(65, 45, 20, 0.12);
+  --surface-2: #ffffff;
+  --text: #003BA6;
+  --muted: rgba(0, 59, 166, 0.72);
+  --line: rgba(0, 59, 166, 0.18);
+  --primary: #003BA6;
+  --primary-dark: #F93E3E;
+  --green: #003BA6;
+  --red: #F93E3E;
+  --blue: #003BA6;
+  --shadow: 0 24px 70px rgba(0, 59, 166, 0.14);
   --radius-xl: 32px;
   --radius-lg: 22px;
   --radius-md: 16px;
@@ -27,9 +27,9 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 10% 0%, rgba(216, 132, 47, 0.18), transparent 28rem),
-    radial-gradient(circle at 90% 10%, rgba(55, 121, 183, 0.12), transparent 30rem),
-    var(--bg);
+    radial-gradient(circle at 8% 0%, rgba(0, 59, 166, 0.10), transparent 28rem),
+    radial-gradient(circle at 92% 8%, rgba(249, 62, 62, 0.08), transparent 30rem),
+    #ffffff;
   color: var(--text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -55,8 +55,8 @@ textarea {
   justify-content: space-between;
   gap: 24px;
   padding: 18px clamp(18px, 4vw, 64px);
-  background: rgba(246, 244, 239, 0.86);
-  border-bottom: 1px solid rgba(230, 223, 210, 0.86);
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(0, 59, 166, 0.16);
   backdrop-filter: blur(18px);
 }
 
@@ -75,7 +75,7 @@ textarea {
   color: #fff;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   font-weight: 900;
-  box-shadow: 0 12px 30px rgba(216, 132, 47, 0.28);
+  box-shadow: 0 12px 30px rgba(0, 59, 166, 0.25);
 }
 
 .brand strong,
@@ -176,7 +176,7 @@ textarea {
 .button-primary {
   color: #fff;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  box-shadow: 0 15px 34px rgba(216, 132, 47, 0.25);
+  box-shadow: 0 15px 34px rgba(0, 59, 166, 0.22);
 }
 
 .button-ghost {
@@ -328,7 +328,7 @@ textarea {
 
 .status-reserved {
   color: #8a560a;
-  background: rgba(216, 132, 47, 0.14);
+  background: rgba(0, 59, 166, 0.10);
 }
 
 .status-sold {
@@ -538,7 +538,7 @@ textarea {
   outline: none;
   stroke: #c8b694;
   stroke-width: 4;
-  fill: rgba(216, 132, 47, 0.12);
+  fill: rgba(0, 59, 166, 0.10);
   cursor: pointer;
   transition: fill 0.18s ease, stroke 0.18s ease, filter 0.18s ease;
 }
@@ -548,7 +548,7 @@ textarea {
 .room-selected {
   fill: rgba(216, 132, 47, 0.34);
   stroke: var(--primary);
-  filter: drop-shadow(0 10px 20px rgba(216, 132, 47, 0.22));
+  filter: drop-shadow(0 10px 20px rgba(0, 59, 166, 0.18));
 }
 
 .room-kitchen,
@@ -582,7 +582,7 @@ textarea {
 }
 
 .room-balcony {
-  fill: rgba(216, 132, 47, 0.1);
+  fill: rgba(0, 59, 166, 0.08);
 }
 
 .room-label {
@@ -660,7 +660,7 @@ textarea {
   height: 74px;
   border-radius: 26px 26px 32px 32px;
   background: linear-gradient(135deg, #ffb45b, var(--primary));
-  box-shadow: 0 18px 32px rgba(216, 132, 47, 0.25);
+  box-shadow: 0 18px 32px rgba(0, 59, 166, 0.22);
   animation: mascotFloat 3.2s ease-in-out infinite;
 }
 
@@ -793,7 +793,7 @@ textarea {
 .chat-form input:focus,
 .chat-form textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(216, 132, 47, 0.12);
+  box-shadow: 0 0 0 4px rgba(0, 59, 166, 0.10);
 }
 
 @keyframes mascotFloat {
@@ -1127,7 +1127,7 @@ textarea {
 
 .room-group:focus .room-zone {
   stroke: var(--primary);
-  filter: drop-shadow(0 10px 20px rgba(216, 132, 47, 0.22));
+  filter: drop-shadow(0 10px 20px rgba(0, 59, 166, 0.18));
 }
 
 .room-tabs {
@@ -1166,13 +1166,13 @@ textarea {
 .room-tab-selected {
   border-color: var(--primary);
   background: #fff7e8;
-  box-shadow: 0 10px 22px rgba(216, 132, 47, 0.1);
+  box-shadow: 0 10px 22px rgba(0, 59, 166, 0.08);
 }
 
 .selected-room-note {
   margin-top: -4px;
   padding: 10px 12px;
-  border: 1px solid rgba(216, 132, 47, 0.22);
+  border: 1px solid rgba(0, 59, 166, 0.18);
   border-radius: 16px;
   color: #594634;
   background: #fff7e8;
@@ -1654,7 +1654,7 @@ textarea {
 .mini-room {
   stroke: #c7b796;
   stroke-width: 6;
-  fill: rgba(216, 132, 47, 0.16);
+  fill: rgba(0, 59, 166, 0.12);
 }
 
 .mini-room-kitchen {
@@ -1670,11 +1670,11 @@ textarea {
 }
 
 .mini-room-hall {
-  fill: rgba(216, 132, 47, 0.18);
+  fill: rgba(0, 59, 166, 0.12);
 }
 
 .mini-room-balcony {
-  fill: rgba(216, 132, 47, 0.12);
+  fill: rgba(0, 59, 166, 0.10);
 }
 
 .mini-room-wardrobe {
@@ -1979,7 +1979,7 @@ textarea {
   min-height: 220px;
   padding: 24px;
   background:
-    radial-gradient(circle at 15% 0%, rgba(216, 132, 47, 0.16), transparent 14rem),
+    radial-gradient(circle at 15% 0%, rgba(0, 59, 166, 0.12), transparent 14rem),
     rgba(255, 255, 255, 0.78);
 }
 
@@ -2166,7 +2166,7 @@ textarea {
 }
 
 .furniture-budget-note {
-  border-color: rgba(216, 132, 47, 0.28);
+  border-color: rgba(0, 59, 166, 0.25);
   background: #fff5e5;
 }
 
@@ -2380,7 +2380,7 @@ textarea {
   padding: 4px 8px;
   border-radius: 999px;
   color: var(--primary-dark);
-  background: rgba(216, 132, 47, 0.14);
+  background: rgba(0, 59, 166, 0.10);
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
@@ -2431,7 +2431,7 @@ textarea {
 .smart-reco-consent {
   width: min(330px, calc(100vw - 108px));
   padding: 14px;
-  border: 1px solid rgba(216, 132, 47, 0.22);
+  border: 1px solid rgba(0, 59, 166, 0.18);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 16px 38px rgba(45, 30, 15, 0.16);
@@ -2486,10 +2486,10 @@ textarea {
 .smart-reco-profile {
   margin-top: 8px !important;
   padding: 10px 12px;
-  border: 1px solid rgba(216, 132, 47, 0.18);
+  border: 1px solid rgba(0, 59, 166, 0.12);
   border-radius: 16px;
   color: var(--text) !important;
-  background: rgba(216, 132, 47, 0.08);
+  background: rgba(0, 59, 166, 0.07);
   font-size: 13px;
   font-weight: 800;
 }
@@ -2527,7 +2527,7 @@ textarea {
 
 .smart-reco-empty {
   padding: 14px;
-  border: 1px dashed rgba(216, 132, 47, 0.35);
+  border: 1px dashed rgba(0, 59, 166, 0.28);
   border-radius: 18px;
   background: #fffaf1;
 }
