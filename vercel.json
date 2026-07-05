@@ -1,4 +1,4 @@
 {
-  "installCommand": "npm ci --no-audit --no-fund --prefer-offline=false",
+  "installCommand": "rm -rf /tmp/npm-cache && npm ci --cache /tmp/npm-cache --no-audit --no-fund --prefer-online --loglevel=error",
   "buildCommand": "npm run build"
 }
