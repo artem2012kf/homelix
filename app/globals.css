@@ -41,7 +41,8 @@ a {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -769,7 +770,8 @@ input {
   gap: 10px;
 }
 
-.chat-form input {
+.chat-form input,
+.chat-form textarea {
   min-width: 0;
   min-height: 46px;
   padding: 0 16px;
@@ -777,9 +779,19 @@ input {
   border-radius: 999px;
   background: #fff;
   outline: none;
+  font-size: 16px;
 }
 
-.chat-form input:focus {
+.chat-form textarea {
+  resize: none;
+  line-height: 1.35;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-radius: 22px;
+}
+
+.chat-form input:focus,
+.chat-form textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(216, 132, 47, 0.12);
 }
@@ -853,7 +865,48 @@ input {
   }
 
   .chat-form {
+    position: sticky;
+    bottom: 0;
+    z-index: 95;
     grid-template-columns: 1fr;
+    margin: 0 -4px;
+    padding: 10px 4px calc(10px + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+    background: rgba(255, 250, 241, 0.96);
+    backdrop-filter: blur(14px);
+  }
+
+  .chat-form textarea,
+  .chat-form input {
+    width: 100%;
+    min-height: 52px;
+    font-size: 16px;
+  }
+
+  .chat-form .button {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .chat-messages {
+    max-height: min(58vh, 520px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .prompt-row {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .prompt-chip {
+    flex: 0 0 auto;
+  }
+
+  .smart-reco-shell {
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    z-index: 88;
   }
 
   .mascot-wrap {

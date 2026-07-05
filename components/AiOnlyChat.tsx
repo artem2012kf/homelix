@@ -153,10 +153,11 @@ export function AiOnlyChat() {
       </div>
 
       <form className="chat-form" onSubmit={onSubmit}>
-        <input
+        <textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
           placeholder="Например: подберите квартиру до 15 млн ₽..."
+          rows={2}
         />
         <button className="button button-primary" type="submit" disabled={isLoading}>
           Отправить

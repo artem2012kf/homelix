@@ -1028,7 +1028,7 @@ export function AiChat({
       </div>
 
       <form className="chat-form" onSubmit={onSubmit}>
-        <input value={input} onChange={(event) => setInput(event.target.value)} placeholder={placeholder} />
+        <textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={placeholder} rows={2} />
         <button className="button button-primary" type="submit" disabled={isLoading}>
           Отправить
         </button>
