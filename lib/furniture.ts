@@ -233,7 +233,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-bed-03",
     title: "Кровать Simple 140",
-    image: "/images/furniture/alba-160.png",
+    image: "/images/furniture/simple-140.png",
     category: "bed",
     room: "Спальня / студия",
     price: 42900,
@@ -247,7 +247,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-bed-04",
     title: "Кровать Kids Cloud 90",
-    image: "/images/furniture/junior-set.png",
+    image: "/images/furniture/kids-cloud-90.png",
     category: "bed",
     room: "Детская",
     price: 31900,
@@ -261,7 +261,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-table-03",
     title: "Журнальный стол Mono",
-    image: "/images/furniture/nordic-round.png",
+    image: "/images/furniture/mono-coffee.png",
     category: "table",
     room: "Гостиная",
     price: 16900,
@@ -275,7 +275,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-table-04",
     title: "Консоль Entry 100",
-    image: "/images/furniture/slim-desk.png",
+    image: "/images/furniture/entry-console.png",
     category: "table",
     room: "Прихожая / коридор",
     price: 18900,
@@ -289,7 +289,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-table-05",
     title: "Стол Transform 6",
-    image: "/images/furniture/nordic-round.png",
+    image: "/images/furniture/transform-6.png",
     category: "table",
     room: "Кухня-гостиная",
     price: 47900,
@@ -346,7 +346,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-storage-06",
     title: "Шкаф Corner Max",
-    image: "/images/furniture/modul-240.png",
+    image: "/images/furniture/corner-max.png",
     category: "storage",
     room: "Спальня / детская",
     price: 79900,
@@ -360,7 +360,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-kitchen-03",
     title: "Кухня Compact 2.4",
-    image: "/images/furniture/terra-32.png",
+    image: "/images/furniture/compact-24.png",
     category: "kitchen",
     room: "Кухня / студия",
     price: 119000,
@@ -402,7 +402,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-bath-03",
     title: "Зеркальный шкаф Mirror 70",
-    image: "/images/furniture/aqua-80.png",
+    image: "/images/furniture/mirror-70.png",
     category: "bathroom",
     room: "Санузел",
     price: 19900,
@@ -430,7 +430,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-light-03",
     title: "Бра Bedside Pair",
-    image: "/images/furniture/light-line-4m.png",
+    image: "/images/furniture/bedside-pair.png",
     category: "lighting",
     room: "Спальня",
     price: 14900,
@@ -458,7 +458,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-decor-03",
     title: "Шторы Blackout Set",
-    image: "/images/furniture/calm-textile.png",
+    image: "/images/furniture/blackout-set.png",
     category: "decor",
     room: "Спальня / детская",
     price: 18900,

@@ -384,7 +384,12 @@ function candidateScore(item: FurnitureItem, budget: BudgetRequest) {
   return Math.abs(item.price - budget.target) + inRangePenalty + overBudgetPenalty;
 }
 
-function selectFurnitureItem(category: FurnitureCategory, budget: BudgetRequest, room?: Room) {
+function selectFurnitureItem(
+  category: FurnitureCategory,
+  budget: BudgetRequest,
+  room?: Room,
+  excludedItemIds: string[] = []
+) {
   let candidates = furnitureItems.filter((item) => item.category === category);
 
   if (room?.type === "children") {
@@ -402,7 +407,10 @@ function selectFurnitureItem(category: FurnitureCategory, budget: BudgetRequest,
     candidates = furnitureItems;
   }
 
-  const sorted = [...candidates].sort((a, b) => candidateScore(a, budget) - candidateScore(b, budget));
+  const excluded = new Set(excludedItemIds);
+  const uniqueCandidates = candidates.filter((item) => !excluded.has(item.id));
+  const pool = uniqueCandidates.length > 0 ? uniqueCandidates : candidates;
+  const sorted = [...pool].sort((a, b) => candidateScore(a, budget) - candidateScore(b, budget));
   const item = sorted[0];
   const fitsBudget = item.price >= budget.min && item.price <= budget.max;
 
@@ -847,12 +855,14 @@ export function AiChat({
     }
 
     if (activeFurnitureRequest && budget && targetRoom) {
+      const usedItemIds = new Set(furniturePlacements.map((placement) => placement.itemId));
       const placedItems = activeFurnitureRequest.categories.map((category, index) => {
-        const { item, fitsBudget } = selectFurnitureItem(category, budget, targetRoom);
         const existing = furniturePlacements.find(
           (placement) => placement.roomId === activeFurnitureRequest.roomId && placement.category === category
         );
         const shouldReplace = Boolean(existing && !activeFurnitureRequest.addMore);
+        const { item, fitsBudget } = selectFurnitureItem(category, budget, targetRoom, [...usedItemIds]);
+        usedItemIds.add(item.id);
         const placement: FurniturePlacement = {
           id: `${activeFurnitureRequest.roomId}-${category}-${item.id}-${Date.now()}-${index}`,
           roomId: activeFurnitureRequest.roomId,
