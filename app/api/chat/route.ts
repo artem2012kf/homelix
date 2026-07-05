@@ -3,12 +3,12 @@ import type { Apartment, Room } from "@/types/apartment";
 export const runtime = "nodejs";
 
 const OPENROUTER_TIMEOUT_MS = 28_000;
-const MAX_USER_MESSAGE_LENGTH = 450;
+const MAX_USER_MESSAGE_LENGTH = 700;
 const HISTORY_LIMIT = 2;
 const HISTORY_MESSAGE_LENGTH = 300;
-const NORMAL_MAX_TOKENS = 190;
-const COMPLEX_MAX_TOKENS = 150;
-const RETRY_MAX_TOKENS = 120;
+const NORMAL_MAX_TOKENS = 460;
+const COMPLEX_MAX_TOKENS = 340;
+const RETRY_MAX_TOKENS = 240;
 
 type ChatMessage = {
   role: "user" | "assistant" | "system";
@@ -42,7 +42,7 @@ function isComplexRequest(message: string) {
   const lower = message.toLowerCase();
 
   return (
-    message.length > 450 ||
+    message.length > 700 ||
     lower.includes("подробно") ||
     lower.includes("детально") ||
     lower.includes("таблиц") ||
@@ -259,7 +259,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "Ты краткий ИИ-консультант сайта застройщика. Отвечай по-русски, деловым тоном, без повторных приветствий. Ответ: до 4 пунктов. Не выдумывай цены, скидки, сроки и юридические условия. Если клиент просит рекомендации по расстановке мебели, отвечай сразу без уточнения бюджета. Бюджет уточняй только когда клиент просит именно подобрать товар или поставить мебель на планировку."
+          "Ты ИИ-консультант сайта застройщика. Отвечай по-русски, деловым тоном, без повторных приветствий. Давай полезный законченный ответ: 3–5 коротких пунктов или 2–3 абзаца. Важно: никогда не обрывай предложение на середине. Если места мало, сократи количество пунктов, но заверши мысль. Не выдумывай цены, скидки, сроки и юридические условия. Если клиент просит рекомендации по расстановке мебели, отвечай сразу без уточнения бюджета. Бюджет уточняй только когда клиент просит именно подобрать товар или поставить мебель на планировку."
       },
       {
         role: "system",
@@ -280,7 +280,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "Ты краткий ИИ-консультант по квартире. Ответь по-русски максимум 3 короткими пунктами. Не используй приветствие."
+          "Ты ИИ-консультант по квартире. Ответь по-русски 3 короткими законченными пунктами. Не используй приветствие. Не обрывай предложение на середине."
       },
       {
         role: "system",

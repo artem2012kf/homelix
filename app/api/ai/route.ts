@@ -4,12 +4,12 @@ import type { Apartment } from "@/types/apartment";
 export const runtime = "nodejs";
 
 const OPENROUTER_TIMEOUT_MS = 28_000;
-const MAX_USER_MESSAGE_LENGTH = 450;
+const MAX_USER_MESSAGE_LENGTH = 700;
 const HISTORY_LIMIT = 2;
 const HISTORY_MESSAGE_LENGTH = 300;
-const SIMPLE_MAX_TOKENS = 160;
-const NORMAL_MAX_TOKENS = 200;
-const RETRY_MAX_TOKENS = 120;
+const SIMPLE_MAX_TOKENS = 340;
+const NORMAL_MAX_TOKENS = 440;
+const RETRY_MAX_TOKENS = 240;
 
 type ChatMessage = {
   role: "user" | "assistant" | "system";
@@ -42,7 +42,7 @@ function isComplexRequest(message: string) {
   const lower = message.toLowerCase();
 
   return (
-    message.length > 450 ||
+    message.length > 700 ||
     lower.includes("подробно") ||
     lower.includes("детально") ||
     lower.includes("таблиц") ||
@@ -285,7 +285,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "Ты краткий ИИ-консультант сайта застройщика. Подбери квартиру по данным ниже. Отвечай по-русски, без повторных приветствий, максимум 4 пункта. Не описывай все квартиры сразу, выбери 2–3 лучших варианта. Не выдумывай цены и условия."
+          "Ты ИИ-консультант сайта застройщика. Подбери квартиру по данным ниже. Отвечай по-русски, без повторных приветствий, 3–5 коротких законченных пунктов. Не описывай все квартиры сразу, выбери 2–3 лучших варианта. Никогда не обрывай предложение на середине: если места мало, сократи ответ, но заверши мысль. Не выдумывай цены и условия."
       },
       {
         role: "system",
@@ -301,7 +301,7 @@ export async function POST(request: Request) {
     const retryMessages: ChatMessage[] = [
       {
         role: "system",
-        content: "Ты краткий ИИ-консультант по квартирам. Ответь максимум 3 пунктами по-русски, без приветствия."
+        content: "Ты ИИ-консультант по квартирам. Ответь 3 короткими законченными пунктами по-русски, без приветствия. Не обрывай предложение на середине."
       },
       {
         role: "system",
