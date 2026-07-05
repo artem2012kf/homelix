@@ -204,6 +204,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-sofa-03",
     title: "Кресло Lounge Solo",
+    image: "/images/furniture/lounge-solo.png",
     category: "sofa",
     room: "Гостиная / лоджия",
     price: 38900,
@@ -218,6 +219,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-sofa-04",
     title: "Пуф Storage Round",
+    image: "/images/furniture/storage-round.png",
     category: "sofa",
     room: "Спальня / прихожая",
     price: 12900,
@@ -231,6 +233,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-bed-03",
     title: "Кровать Simple 140",
+    image: "/images/furniture/alba-160.png",
     category: "bed",
     room: "Спальня / студия",
     price: 42900,
@@ -244,6 +247,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-bed-04",
     title: "Кровать Kids Cloud 90",
+    image: "/images/furniture/junior-set.png",
     category: "bed",
     room: "Детская",
     price: 31900,
@@ -257,6 +261,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-table-03",
     title: "Журнальный стол Mono",
+    image: "/images/furniture/nordic-round.png",
     category: "table",
     room: "Гостиная",
     price: 16900,
@@ -270,6 +275,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-table-04",
     title: "Консоль Entry 100",
+    image: "/images/furniture/slim-desk.png",
     category: "table",
     room: "Прихожая / коридор",
     price: 18900,
@@ -283,6 +289,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-table-05",
     title: "Стол Transform 6",
+    image: "/images/furniture/nordic-round.png",
     category: "table",
     room: "Кухня-гостиная",
     price: 47900,
@@ -297,6 +304,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-storage-03",
     title: "Комод Line 160",
+    image: "/images/furniture/line-160.png",
     category: "storage",
     room: "Спальня / гостиная",
     price: 38900,
@@ -310,6 +318,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-storage-04",
     title: "Стеллаж Open Rack 90",
+    image: "/images/furniture/open-rack-90.png",
     category: "storage",
     room: "Кабинет / детская",
     price: 24900,
@@ -323,6 +332,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-storage-05",
     title: "Обувница Hall Slim",
+    image: "/images/furniture/hall-slim.png",
     category: "storage",
     room: "Прихожая",
     price: 22900,
@@ -336,6 +346,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-storage-06",
     title: "Шкаф Corner Max",
+    image: "/images/furniture/modul-240.png",
     category: "storage",
     room: "Спальня / детская",
     price: 79900,
@@ -349,6 +360,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-kitchen-03",
     title: "Кухня Compact 2.4",
+    image: "/images/furniture/terra-32.png",
     category: "kitchen",
     room: "Кухня / студия",
     price: 119000,
@@ -362,6 +374,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-kitchen-04",
     title: "Барная стойка Loft 120",
+    image: "/images/furniture/loft-120.png",
     category: "kitchen",
     room: "Кухня-гостиная",
     price: 41900,
@@ -375,6 +388,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-bath-02",
     title: "Пенал Aqua Tall",
+    image: "/images/furniture/aqua-modern.png",
     category: "bathroom",
     room: "Санузел",
     price: 31900,
@@ -388,6 +402,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-bath-03",
     title: "Зеркальный шкаф Mirror 70",
+    image: "/images/furniture/aqua-80.png",
     category: "bathroom",
     room: "Санузел",
     price: 19900,
@@ -401,6 +416,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-light-02",
     title: "Люстра Soft Ring",
+    image: "/images/furniture/soft-ring.png",
     category: "lighting",
     room: "Спальня / гостиная",
     price: 26900,
@@ -414,6 +430,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-light-03",
     title: "Бра Bedside Pair",
+    image: "/images/furniture/light-line-4m.png",
     category: "lighting",
     room: "Спальня",
     price: 14900,
@@ -427,6 +444,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-decor-02",
     title: "Ковер Calm 200",
+    image: "/images/furniture/calm-textile.png",
     category: "decor",
     room: "Гостиная / спальня",
     price: 23900,
@@ -440,6 +458,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-decor-03",
     title: "Шторы Blackout Set",
+    image: "/images/furniture/calm-textile.png",
     category: "decor",
     room: "Спальня / детская",
     price: 18900,
@@ -453,6 +472,7 @@ export const furnitureItems: FurnitureItem[] = [
   {
     id: "furn-decor-04",
     title: "Балконный набор Loggia Relax",
+    image: "/images/furniture/loggia-relax.png",
     category: "decor",
     room: "Лоджия",
     price: 27900,
