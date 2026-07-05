@@ -232,6 +232,59 @@ function isOpenRouterLimitError(status: number, errorText: string) {
   );
 }
 
+
+function stripOpenRouterReasoning(rawAnswer: string) {
+  let answer = rawAnswer
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/```(?:thinking|analysis|reasoning)?[\s\S]*?```/gi, "")
+    .trim();
+
+  const paragraphs = answer
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length > 1) {
+    const firstUsefulIndex = paragraphs.findIndex((paragraph) => /[А-Яа-яЁё]/.test(paragraph));
+    if (firstUsefulIndex > 0) {
+      answer = paragraphs.slice(firstUsefulIndex).join("\n\n").trim();
+    }
+  }
+
+  return answer;
+}
+
+function looksLikeInternalReasoning(answer: string) {
+  const trimmed = answer.trim();
+  const lower = trimmed.toLowerCase();
+  const cyrillicCount = (trimmed.match(/[А-Яа-яЁё]/g) ?? []).length;
+  const latinCount = (trimmed.match(/[A-Za-z]/g) ?? []).length;
+
+  const startsAsReasoning =
+    lower.startsWith("we need") ||
+    lower.startsWith("we should") ||
+    lower.startsWith("need to") ||
+    lower.startsWith("let's") ||
+    lower.startsWith("let me") ||
+    lower.startsWith("the user") ||
+    lower.startsWith("user asks") ||
+    lower.startsWith("must ") ||
+    lower.startsWith("so we") ||
+    lower.startsWith("i need") ||
+    lower.startsWith("analysis") ||
+    lower.startsWith("reasoning");
+
+  return startsAsReasoning || (cyrillicCount < 12 && latinCount > 40);
+}
+
+function sanitizeOpenRouterAnswer(rawAnswer: string) {
+  const answer = stripOpenRouterReasoning(rawAnswer);
+
+  if (!answer || looksLikeInternalReasoning(answer)) return "";
+
+  return answer;
+}
+
 async function getOpenRouterAnswer(response: Response) {
   const data = await response.json();
 
@@ -285,7 +338,7 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "Ты ИИ-консультант сайта застройщика. Подбери квартиру по данным ниже. Отвечай по-русски, без повторных приветствий, 3–5 коротких законченных пунктов. Не описывай все квартиры сразу, выбери 2–3 лучших варианта. Никогда не обрывай предложение на середине: если места мало, сократи ответ, но заверши мысль. Не выдумывай цены и условия."
+          "Ты ИИ-консультант сайта застройщика. Подбери квартиру по данным ниже. Отвечай только по-русски, без английского текста, без рассуждений о задаче и без повторных приветствий, 3–5 коротких законченных пунктов. Не описывай все квартиры сразу, выбери 2–3 лучших варианта. Никогда не обрывай предложение на середине: если места мало, сократи ответ, но заверши мысль. Не выдумывай цены и условия."
       },
       {
         role: "system",
@@ -301,7 +354,7 @@ export async function POST(request: Request) {
     const retryMessages: ChatMessage[] = [
       {
         role: "system",
-        content: "Ты ИИ-консультант по квартирам. Ответь 3 короткими законченными пунктами по-русски, без приветствия. Не обрывай предложение на середине."
+        content: "Ты ИИ-консультант по квартирам. Ответь только по-русски 3 короткими законченными пунктами, без приветствия. Не обрывай предложение на середине."
       },
       {
         role: "system",
@@ -338,7 +391,7 @@ export async function POST(request: Request) {
           });
 
           if (retryResponse.ok) {
-            const retryAnswer = await getOpenRouterAnswer(retryResponse);
+            const retryAnswer = sanitizeOpenRouterAnswer(await getOpenRouterAnswer(retryResponse));
             return Response.json({
               answer: retryAnswer ? replaceApartmentIdsWithTitles(retryAnswer) : limitAnswer("credits", relevantApartments, rawMessage)
             });
@@ -356,7 +409,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const answer = await getOpenRouterAnswer(openRouterResponse);
+    const answer = sanitizeOpenRouterAnswer(await getOpenRouterAnswer(openRouterResponse));
 
     return Response.json({ answer: answer ? replaceApartmentIdsWithTitles(answer) : limitAnswer("unknown", relevantApartments, rawMessage) });
   } catch (error) {

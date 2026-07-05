@@ -5,7 +5,7 @@ export type StoredChatMessage = {
 
 const MAX_STORED_MESSAGES = 40;
 const MAX_MESSAGE_LENGTH = 4000;
-const CHAT_HISTORY_VERSION = "v5";
+const CHAT_HISTORY_VERSION = "v6";
 
 const OLD_LIMIT_ERROR_MARKERS = [
   "Запрос получился слишком объемным",
@@ -30,10 +30,30 @@ export function hasOldLimitErrorText(content: string) {
   return OLD_LIMIT_ERROR_MARKERS.some((marker) => content.includes(marker));
 }
 
+function looksLikeInternalReasoning(content: string) {
+  const trimmed = content.trim();
+  const lower = trimmed.toLowerCase();
+  const cyrillicCount = (trimmed.match(/[А-Яа-яЁё]/g) ?? []).length;
+  const latinCount = (trimmed.match(/[A-Za-z]/g) ?? []).length;
+
+  return (
+    lower.startsWith("we need") ||
+    lower.startsWith("we should") ||
+    lower.startsWith("need to") ||
+    lower.startsWith("let's") ||
+    lower.startsWith("let me") ||
+    lower.startsWith("the user") ||
+    lower.startsWith("user asks") ||
+    lower.startsWith("analysis") ||
+    lower.startsWith("reasoning") ||
+    (cyrillicCount < 12 && latinCount > 40)
+  );
+}
+
 export function sanitizeAssistantContent(content: unknown, fallback: string) {
   if (typeof content !== "string" || !content.trim()) return fallback;
 
-  return hasOldLimitErrorText(content) ? fallback : content;
+  return hasOldLimitErrorText(content) || looksLikeInternalReasoning(content) ? fallback : content;
 }
 
 function isOldLimitErrorMessage(message: StoredChatMessage) {

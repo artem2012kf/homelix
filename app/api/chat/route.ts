@@ -202,6 +202,59 @@ function isOpenRouterLimitError(status: number, errorText: string) {
   );
 }
 
+
+function stripOpenRouterReasoning(rawAnswer: string) {
+  let answer = rawAnswer
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/```(?:thinking|analysis|reasoning)?[\s\S]*?```/gi, "")
+    .trim();
+
+  const paragraphs = answer
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length > 1) {
+    const firstUsefulIndex = paragraphs.findIndex((paragraph) => /[А-Яа-яЁё]/.test(paragraph));
+    if (firstUsefulIndex > 0) {
+      answer = paragraphs.slice(firstUsefulIndex).join("\n\n").trim();
+    }
+  }
+
+  return answer;
+}
+
+function looksLikeInternalReasoning(answer: string) {
+  const trimmed = answer.trim();
+  const lower = trimmed.toLowerCase();
+  const cyrillicCount = (trimmed.match(/[А-Яа-яЁё]/g) ?? []).length;
+  const latinCount = (trimmed.match(/[A-Za-z]/g) ?? []).length;
+
+  const startsAsReasoning =
+    lower.startsWith("we need") ||
+    lower.startsWith("we should") ||
+    lower.startsWith("need to") ||
+    lower.startsWith("let's") ||
+    lower.startsWith("let me") ||
+    lower.startsWith("the user") ||
+    lower.startsWith("user asks") ||
+    lower.startsWith("must ") ||
+    lower.startsWith("so we") ||
+    lower.startsWith("i need") ||
+    lower.startsWith("analysis") ||
+    lower.startsWith("reasoning");
+
+  return startsAsReasoning || (cyrillicCount < 12 && latinCount > 40);
+}
+
+function sanitizeOpenRouterAnswer(rawAnswer: string) {
+  const answer = stripOpenRouterReasoning(rawAnswer);
+
+  if (!answer || looksLikeInternalReasoning(answer)) return "";
+
+  return answer;
+}
+
 async function getOpenRouterAnswer(response: Response) {
   const data = await response.json();
 
@@ -317,7 +370,7 @@ export async function POST(request: Request) {
           });
 
           if (retryResponse.ok) {
-            const retryAnswer = await getOpenRouterAnswer(retryResponse);
+            const retryAnswer = sanitizeOpenRouterAnswer(await getOpenRouterAnswer(retryResponse));
             return Response.json({
               answer: retryAnswer
                 ? replaceTechnicalApartmentId(retryAnswer, apartment)
@@ -337,7 +390,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const answer = await getOpenRouterAnswer(openRouterResponse);
+    const answer = sanitizeOpenRouterAnswer(await getOpenRouterAnswer(openRouterResponse));
 
     return Response.json({ answer: answer ? replaceTechnicalApartmentId(answer, apartment) : limitAnswer("credits", apartment, room, rawMessage) });
   } catch (error) {
