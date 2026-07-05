@@ -49,6 +49,7 @@ const COOKIE_CONSENT = "sq_cookie_recommendations";
 const COOKIE_LAST_APARTMENT = "sq_last_apartment";
 const COOKIE_INTEREST = "sq_interest_hint";
 const MAX_VIEWED = 16;
+const MIN_NOTIFICATION_MATCH = 80;
 
 const defaultProfile: InterestProfile = {
   acceptedCookies: false,
@@ -456,8 +457,13 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
     [apartments, favorites, getApartmentStatus, profile, reservations]
   );
 
-  const recommendationSignature = signatureFor(recommendations);
-  const hasUnread = profile.acceptedCookies && Boolean(recommendationSignature) && profile.seenRecommendationSignature !== recommendationSignature;
+  const visibleRecommendations = recommendations.filter((item) => item.match >= MIN_NOTIFICATION_MATCH);
+  const recommendationSignature = signatureFor(visibleRecommendations);
+  const hasVisibleBell = profile.acceptedCookies && visibleRecommendations.length > 0;
+  const hasUnread =
+    hasVisibleBell &&
+    Boolean(recommendationSignature) &&
+    profile.seenRecommendationSignature !== recommendationSignature;
 
   function acceptCookies() {
     const next: InterestProfile = {
@@ -516,8 +522,8 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
               <p className="smart-reco-profile">{stats.profileLabel}</p>
 
               <div className="smart-reco-list">
-                {recommendations.length ? (
-                  recommendations.map(({ apartment, reason, tag, match, details }) => (
+                {visibleRecommendations.length ? (
+                  visibleRecommendations.map(({ apartment, reason, tag, match, details }) => (
                     <Link href={`/apartment/${apartment.id}`} key={apartment.id} className="smart-reco-item">
                       <div className="smart-reco-item-top">
                         <span>{tag}</span>
@@ -538,8 +544,8 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
                   ))
                 ) : (
                   <div className="smart-reco-empty">
-                    <strong>Пока нет свободных вариантов для рекомендации.</strong>
-                    <p>Можно открыть каталог и посмотреть квартиры вручную или написать ИИ-консультанту.</p>
+                    <strong>Пока нет рекомендаций выше 80% совпадения.</strong>
+                    <p>Посмотрите еще несколько квартир или добавьте понравившийся вариант в избранное — звоночек появится только при сильном совпадении.</p>
                   </div>
                 )}
               </div>
@@ -562,15 +568,17 @@ export function SmartRecommendationBell({ apartments }: { apartments: Apartment[
         </div>
       ) : null}
 
-      <button
-        type="button"
-        className={`smart-reco-button ${hasUnread ? "has-unread" : ""}`}
-        onClick={openPanel}
-        aria-label="Открыть персональные рекомендации"
-      >
-        <span aria-hidden="true">🔔</span>
-        {hasUnread ? <i aria-hidden="true" /> : null}
-      </button>
+      {hasVisibleBell ? (
+        <button
+          type="button"
+          className={`smart-reco-button ${hasUnread ? "has-unread" : ""}`}
+          onClick={openPanel}
+          aria-label="Открыть персональные рекомендации"
+        >
+          <span aria-hidden="true">🔔</span>
+          {hasUnread ? <i aria-hidden="true" /> : null}
+        </button>
+      ) : null}
     </div>
   );
 }
