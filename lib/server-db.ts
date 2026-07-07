@@ -39,7 +39,8 @@ export type AppDatabase = {
   sessions: DbSession[];
 };
 
-const DB_PATH = join(process.cwd(), "data", "database.json");
+const SOURCE_DB_PATH = join(process.cwd(), "data", "database.json");
+const DB_PATH = process.env.VERCEL ? join("/tmp", "sq-demo-database.json") : SOURCE_DB_PATH;
 
 const EMPTY_DB: AppDatabase = {
   users: [],
@@ -48,11 +49,18 @@ const EMPTY_DB: AppDatabase = {
   sessions: []
 };
 
-function ensureDatabaseFile() {
-  if (!existsSync(DB_PATH)) {
-    mkdirSync(dirname(DB_PATH), { recursive: true });
-    writeFileSync(DB_PATH, JSON.stringify(EMPTY_DB, null, 2), "utf8");
-  }
+declare global {
+  // eslint-disable-next-line no-var
+  var __sqDemoDatabase: AppDatabase | undefined;
+}
+
+function cloneDatabase(database: AppDatabase): AppDatabase {
+  return {
+    users: [...database.users],
+    favorites: [...database.favorites],
+    reservations: [...database.reservations],
+    sessions: [...database.sessions]
+  };
 }
 
 function safeParseDatabase(raw: string): AppDatabase {
@@ -66,18 +74,69 @@ function safeParseDatabase(raw: string): AppDatabase {
       sessions: Array.isArray(parsed.sessions) ? parsed.sessions : []
     };
   } catch {
-    return EMPTY_DB;
+    return cloneDatabase(EMPTY_DB);
+  }
+}
+
+function getMemoryDatabase() {
+  if (!globalThis.__sqDemoDatabase) {
+    globalThis.__sqDemoDatabase = cloneDatabase(EMPTY_DB);
+  }
+
+  return globalThis.__sqDemoDatabase;
+}
+
+function setMemoryDatabase(database: AppDatabase) {
+  globalThis.__sqDemoDatabase = cloneDatabase(database);
+}
+
+function getInitialDatabase() {
+  try {
+    if (existsSync(SOURCE_DB_PATH)) {
+      return safeParseDatabase(readFileSync(SOURCE_DB_PATH, "utf8"));
+    }
+  } catch {
+    // В serverless-среде исходная JSON-база может быть недоступна.
+  }
+
+  return cloneDatabase(EMPTY_DB);
+}
+
+function ensureDatabaseFile() {
+  if (existsSync(DB_PATH)) return;
+
+  const initialDatabase = getInitialDatabase();
+  setMemoryDatabase(initialDatabase);
+
+  try {
+    mkdirSync(dirname(DB_PATH), { recursive: true });
+    writeFileSync(DB_PATH, JSON.stringify(initialDatabase, null, 2), "utf8");
+  } catch {
+    // На Vercel запись в файл может быть недоступна. Используем in-memory demo-хранилище.
   }
 }
 
 export function readDatabase(): AppDatabase {
   ensureDatabaseFile();
-  return safeParseDatabase(readFileSync(DB_PATH, "utf8"));
+
+  try {
+    const database = safeParseDatabase(readFileSync(DB_PATH, "utf8"));
+    setMemoryDatabase(database);
+    return database;
+  } catch {
+    return cloneDatabase(getMemoryDatabase());
+  }
 }
 
 export function writeDatabase(database: AppDatabase) {
-  ensureDatabaseFile();
-  writeFileSync(DB_PATH, JSON.stringify(database, null, 2), "utf8");
+  setMemoryDatabase(database);
+
+  try {
+    ensureDatabaseFile();
+    writeFileSync(DB_PATH, JSON.stringify(database, null, 2), "utf8");
+  } catch {
+    // Не бросаем ошибку наружу, чтобы регистрация/бронь не падали 500 на Vercel.
+  }
 }
 
 export function makeId(prefix: string) {
