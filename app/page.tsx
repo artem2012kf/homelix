@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { ApartmentBuildingMap } from "@/components/ApartmentBuildingMap";
-import { TyumenCityMap } from "@/components/TyumenCityMap";
+import { HeroDistrictMap } from "@/components/HeroDistrictMap";
 import { ApartmentCatalog } from "@/components/ApartmentCatalog";
 import { apartments } from "@/lib/apartments";
 import { formatPrice } from "@/lib/format";
@@ -48,32 +46,8 @@ export default function HomePage() {
             <strong>{availableCount}</strong>
             <span>квартиры доступны сейчас</span>
           </div>
-          <div className="mini-plan">
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
+          <HeroDistrictMap apartments={apartments} />
         </div>
-      </section>
-
-
-      <section className="section map-preview-section" id="map">
-        <div className="section-heading">
-          <span className="eyebrow">Карта Тюмени</span>
-          <h2>Где ЖК расположен в Тюмени</h2>
-          <p>
-            Сначала клиент видит расположение проекта на схематической карте Тюмени, а затем может перейти
-            к корпусам, свободным квартирам и подбору с ИИ-консультантом.
-          </p>
-          <div className="hero-actions">
-            <Link className="button button-primary" href="/map">
-              Открыть большую карту
-            </Link>
-          </div>
-        </div>
-        <TyumenCityMap compact />
-        <ApartmentBuildingMap apartments={apartments} compact />
       </section>
 
       <section className="section" id="apartments">
