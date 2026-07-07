@@ -1,10 +1,71 @@
 import { ApartmentCatalog } from "@/components/ApartmentCatalog";
+import { MascotLogo } from "@/components/MascotLogo";
 import { apartments } from "@/lib/apartments";
 import { formatPrice } from "@/lib/format";
 
 const availableCount = apartments.filter((item) => item.status === "available").length;
 const totalCount = apartments.length;
 const minPrice = Math.min(...apartments.map((item) => item.price));
+
+const districts = [
+  {
+    name: "Тюменская слобода",
+    note: "новая застройка",
+    buildings: ["Корпус 1"]
+  },
+  {
+    name: "Московский тракт",
+    note: "западное направление",
+    buildings: ["Корпус 2"]
+  },
+  {
+    name: "Заречный",
+    note: "рядом с Турой",
+    buildings: ["Корпус 3"]
+  },
+  {
+    name: "Восточный",
+    note: "семейные кварталы",
+    buildings: ["Корпус 4"]
+  },
+  {
+    name: "Центр",
+    note: "городская инфраструктура",
+    buildings: ["Корпус 5"]
+  }
+];
+
+function DistrictPreview() {
+  return (
+    <div className="district-preview" aria-label="Районы Тюмени, где есть квартиры">
+      <div className="district-mascot-corner">
+        <MascotLogo />
+      </div>
+
+      <div className="district-preview-title">
+        <strong>Районы Тюмени</strong>
+        <span>Где есть квартиры ЖК «Солнечный квартал»</span>
+      </div>
+
+      <div className="district-list">
+        {districts.map((district) => {
+          const districtApartments = apartments.filter((apartment) => district.buildings.includes(apartment.building));
+          const available = districtApartments.filter((apartment) => apartment.status === "available").length;
+
+          return (
+            <article className="district-card" key={district.name}>
+              <span>{district.note}</span>
+              <strong>{district.name}</strong>
+              <small>
+                {available} свободно · {districtApartments.length} всего
+              </small>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -40,17 +101,13 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className="hero-widget" aria-hidden="true">
+
+        <div className="hero-widget">
           <div className="floating-card">
             <strong>{availableCount}</strong>
             <span>квартиры доступны сейчас</span>
           </div>
-          <div className="mini-plan">
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
+          <DistrictPreview />
         </div>
       </section>
 
