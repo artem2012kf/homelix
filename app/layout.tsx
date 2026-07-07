@@ -7,7 +7,12 @@ import { apartments } from "@/lib/apartments";
 
 export const metadata: Metadata = {
   title: "ЖК Солнечный квартал — выбор квартиры с ИИ",
-  description: "Интерактивный сайт застройщика с планировками квартир и ИИ-консультантом."
+  description: "Интерактивный сайт застройщика с планировками квартир и ИИ-консультантом.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg"
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
