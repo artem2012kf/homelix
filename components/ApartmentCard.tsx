@@ -24,8 +24,11 @@ export function ApartmentCard({ apartment }: { apartment: Apartment }) {
 
       <h3>{apartment.title}</h3>
       <p className="muted">
+        <strong style={{ color: "var(--text)" }}>ЖК: {apartment.project}</strong>
+        <br />
         {apartment.building}, {apartment.section}. Вид: {apartment.windowView}.
       </p>
+
       <div className="card-metrics">
         <div>
           <small>Площадь</small>
@@ -36,6 +39,7 @@ export function ApartmentCard({ apartment }: { apartment: Apartment }) {
           <strong>{formatPrice(apartment.price)}</strong>
         </div>
       </div>
+
       <ApartmentCardActions apartment={apartment} effectiveStatus={effectiveStatus} />
     </article>
   );

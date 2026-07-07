@@ -6,234 +6,200 @@ import { formatPrice } from "@/lib/format";
 const availableCount = apartments.filter((item) => item.status === "available").length;
 const totalCount = apartments.length;
 const minPrice = Math.min(...apartments.map((item) => item.price));
+const projectNames = Array.from(new Set(apartments.map((item) => item.project)));
+const buildingNames = Array.from(new Set(apartments.map((item) => item.building)));
 
-const districts = [
-  { name: "Тюменская слобода", note: "новая застройка", buildings: ["Корпус 1"] },
-  { name: "Московский тракт", note: "западное направление", buildings: ["Корпус 2"] },
-  { name: "Заречный", note: "рядом с Турой", buildings: ["Корпус 3"] },
-  { name: "Восточный", note: "семейные кварталы", buildings: ["Корпус 4"] },
-  { name: "Центр", note: "городская инфраструктура", buildings: ["Корпус 5"] }
-];
-
-function DistrictPreview() {
+function MascotHeroCard() {
   return (
-    <div className="clean-district-preview" aria-label="Районы Тюмени, где есть квартиры">
+    <div className="mascot-hero-card" aria-label="ИИ-маскот сайта">
       <style>{`
-        .clean-district-preview {
+        .mascot-hero-card {
           position: relative;
-          isolation: isolate;
           overflow: hidden;
           min-height: 520px;
-          padding: 28px;
+          padding: clamp(22px, 3vw, 34px);
           border: 1px solid var(--line);
-          border-radius: 38px;
+          border-radius: 42px;
           background:
-            radial-gradient(circle at 18% 20%, rgba(249, 62, 62, 0.12), transparent 170px),
-            radial-gradient(circle at 84% 18%, rgba(0, 59, 166, 0.10), transparent 190px),
+            radial-gradient(circle at 22% 18%, rgba(249, 62, 62, 0.14), transparent 180px),
+            radial-gradient(circle at 88% 8%, rgba(0, 59, 166, 0.10), transparent 190px),
             linear-gradient(135deg, #ffffff 0%, #f8fbff 54%, #fff4f4 100%);
           box-shadow: var(--shadow);
         }
 
-        .clean-district-preview::before {
+        .mascot-hero-card::before {
           position: absolute;
-          inset: auto -70px 108px -70px;
-          height: 108px;
-          border: 2px solid rgba(0, 59, 166, 0.12);
+          right: -60px;
+          top: 38px;
+          width: 240px;
+          height: 240px;
+          border: 1px solid rgba(0, 59, 166, 0.13);
+          border-radius: 50%;
+          content: "";
+        }
+
+        .mascot-hero-card::after {
+          position: absolute;
+          left: -70px;
+          bottom: 80px;
+          width: 130%;
+          height: 96px;
+          border: 2px solid rgba(0, 59, 166, 0.10);
           border-radius: 999px;
           transform: rotate(-10deg);
           content: "";
-          z-index: -1;
         }
 
-        .clean-district-preview::after {
-          position: absolute;
-          right: 28px;
-          bottom: 30px;
-          width: 190px;
-          height: 190px;
-          border: 1px solid rgba(249, 62, 62, 0.16);
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.58);
-          content: "";
-          z-index: -1;
-        }
-
-        .clean-district-top {
+        .mascot-hero-inner {
+          position: relative;
+          z-index: 1;
           display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 18px;
-          align-items: start;
-          margin-bottom: 20px;
+          min-height: 452px;
+          align-content: center;
+          justify-items: center;
+          text-align: center;
         }
 
-        .clean-district-title {
+        .mascot-hero-image {
           display: grid;
-          gap: 8px;
+          width: min(260px, 72vw);
+          height: min(260px, 72vw);
+          place-items: center;
+          overflow: hidden;
+          border-radius: 42px;
+          background: transparent;
         }
 
-        .clean-district-title span {
-          width: fit-content;
-          padding: 7px 10px;
-          border-radius: 999px;
-          color: var(--primary-dark);
-          background: rgba(249, 62, 62, 0.08);
-          font-size: 12px;
-          font-weight: 900;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-        }
-
-        .clean-district-title strong {
+        .mascot-hero-title {
+          margin-top: 18px;
           color: var(--text);
-          font-size: clamp(24px, 3vw, 36px);
-          line-height: 0.96;
+          font-size: clamp(26px, 3vw, 38px);
+          line-height: 0.95;
+          font-weight: 950;
           letter-spacing: -0.05em;
         }
 
-        .clean-district-title small {
-          max-width: 300px;
+        .mascot-hero-text {
+          max-width: 390px;
+          margin: 12px auto 0;
           color: var(--muted);
-          font-size: 14px;
-          line-height: 1.45;
+          font-size: 16px;
+          line-height: 1.5;
         }
 
-        .clean-district-mascot {
-          display: grid;
-          width: 84px;
-          height: 84px;
-          place-items: center;
-          overflow: hidden;
-          border: 1px solid rgba(0, 59, 166, 0.12);
-          border-radius: 28px;
-          background: #ffffff;
-          box-shadow: 0 18px 34px rgba(249, 62, 62, 0.18);
-        }
-
-        .clean-district-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 12px;
+        .mascot-hero-badges {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
           margin-top: 18px;
         }
 
-        .clean-district-card {
-          min-height: 104px;
-          padding: 16px;
+        .mascot-hero-badges span {
+          display: inline-flex;
+          min-height: 34px;
+          align-items: center;
+          padding: 0 12px;
           border: 1px solid rgba(0, 59, 166, 0.14);
-          border-radius: 22px;
-          background: rgba(255, 255, 255, 0.9);
-          box-shadow: 0 14px 32px rgba(0, 59, 166, 0.07);
+          border-radius: 999px;
+          color: var(--text);
+          background: rgba(255, 255, 255, 0.82);
+          font-size: 13px;
+          font-weight: 900;
         }
 
-        .clean-district-card span,
-        .clean-district-card strong,
-        .clean-district-card small {
+        .mascot-hero-stat {
+          position: absolute;
+          right: 22px;
+          top: 22px;
+          z-index: 2;
+          width: 154px;
+          padding: 18px;
+          border: 1px solid var(--line);
+          border-radius: 26px;
+          background: rgba(255, 255, 255, 0.92);
+          box-shadow: 0 18px 42px rgba(0, 59, 166, 0.10);
+          text-align: left;
+        }
+
+        .mascot-hero-stat strong,
+        .mascot-hero-stat span {
           display: block;
         }
 
-        .clean-district-card span {
-          color: var(--primary-dark);
-          font-size: 12px;
-          font-weight: 900;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-        }
-
-        .clean-district-card strong {
-          margin-top: 8px;
+        .mascot-hero-stat strong {
           color: var(--text);
-          font-size: 18px;
-          line-height: 1.08;
+          font-size: 44px;
+          line-height: 1;
+          letter-spacing: -0.06em;
         }
 
-        .clean-district-card small {
-          margin-top: 8px;
+        .mascot-hero-stat span {
+          margin-top: 6px;
           color: var(--muted);
           font-size: 13px;
-          line-height: 1.35;
-        }
-
-        .clean-district-summary {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 10px;
-          margin-top: 16px;
-        }
-
-        .clean-district-summary div {
-          padding: 14px;
-          border: 1px solid rgba(0, 59, 166, 0.14);
-          border-radius: 20px;
-          background: rgba(255, 255, 255, 0.82);
-        }
-
-        .clean-district-summary strong,
-        .clean-district-summary span {
-          display: block;
-        }
-
-        .clean-district-summary strong {
-          color: var(--text);
-          font-size: 30px;
-          line-height: 1;
-        }
-
-        .clean-district-summary span {
-          margin-top: 5px;
-          color: var(--muted);
-          font-size: 12px;
           font-weight: 800;
+          line-height: 1.25;
+        }
+
+        .brand-mark {
+          overflow: hidden;
+        }
+
+        .brand-mark img {
+          display: block !important;
+          width: 100% !important;
+          height: 100% !important;
+          max-width: 100% !important;
+          max-height: 100% !important;
+          object-fit: contain !important;
+        }
+
+        @media (max-width: 1050px) {
+          .mascot-hero-card {
+            min-height: auto;
+          }
+
+          .mascot-hero-inner {
+            min-height: 390px;
+          }
         }
 
         @media (max-width: 720px) {
-          .clean-district-preview {
-            min-height: auto;
-            padding: 20px;
+          .mascot-hero-stat {
+            position: static;
+            width: 100%;
+            margin-bottom: 16px;
           }
 
-          .clean-district-grid,
-          .clean-district-summary {
-            grid-template-columns: 1fr;
+          .mascot-hero-inner {
+            min-height: auto;
+          }
+
+          .mascot-hero-image {
+            width: 190px;
+            height: 190px;
           }
         }
       `}</style>
 
-      <div className="clean-district-top">
-        <div className="clean-district-title">
-          <span>Без карты</span>
-          <strong>Районы Тюмени</strong>
-          <small>Временно показываем аккуратную карточку без Яндекс.Карт, чтобы Vercel стабильно собирал сайт.</small>
-        </div>
-        <div className="clean-district-mascot">
+      <div className="mascot-hero-stat">
+        <strong>{availableCount}</strong>
+        <span>квартиры доступны сейчас</span>
+      </div>
+
+      <div className="mascot-hero-inner">
+        <div className="mascot-hero-image">
           <MascotLogo />
         </div>
-      </div>
-
-      <div className="clean-district-grid">
-        {districts.map((district) => {
-          const districtApartments = apartments.filter((apartment) => district.buildings.includes(apartment.building));
-          const available = districtApartments.filter((apartment) => apartment.status === "available").length;
-
-          return (
-            <article className="clean-district-card" key={district.name}>
-              <span>{district.note}</span>
-              <strong>{district.name}</strong>
-              <small>
-                {available} свободно · {districtApartments.length} всего
-              </small>
-            </article>
-          );
-        })}
-      </div>
-
-      <div className="clean-district-summary" aria-label="Сводка по объектам">
-        <div>
-          <strong>{availableCount}</strong>
-          <span>квартир доступно сейчас</span>
-        </div>
-        <div>
-          <strong>{districts.length}</strong>
-          <span>районов в презентации</span>
+        <div className="mascot-hero-title">ИИ-помощник по квартирам</div>
+        <p className="mascot-hero-text">
+          Маскот помогает выбрать квартиру, сравнить параметры, сохранить вариант в избранное и перейти к бронированию.
+        </p>
+        <div className="mascot-hero-badges" aria-label="Краткая информация о проекте">
+          <span>{projectNames[0] ?? "ЖК Солнечный квартал"}</span>
+          <span>{buildingNames.length} корпусов</span>
+          <span>{totalCount} квартир в базе</span>
         </div>
       </div>
     </div>
@@ -276,7 +242,7 @@ export default function HomePage() {
         </div>
 
         <div className="hero-widget">
-          <DistrictPreview />
+          <MascotHeroCard />
         </div>
       </section>
 
@@ -285,8 +251,7 @@ export default function HomePage() {
           <span className="eyebrow">Каталог</span>
           <h2>Квартиры в продаже</h2>
           <p>
-            Каталог показывает актуальные статусы, мини-планы, цены, этажи и площадь. Сортировка сохраняет порядок:
-            свободные варианты идут первыми, затем бронь и проданные квартиры.
+            Каталог показывает актуальные статусы, мини-планы, цены, этажи, площадь и название жилого комплекса для каждой квартиры.
           </p>
         </div>
         <ApartmentCatalog apartments={apartments} />
