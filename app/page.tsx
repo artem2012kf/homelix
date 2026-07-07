@@ -1,4 +1,3 @@
-import { HeroDistrictMap } from "@/components/HeroDistrictMap";
 import { ApartmentCatalog } from "@/components/ApartmentCatalog";
 import { apartments } from "@/lib/apartments";
 import { formatPrice } from "@/lib/format";
@@ -41,12 +40,17 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className="hero-widget">
+        <div className="hero-widget" aria-hidden="true">
           <div className="floating-card">
             <strong>{availableCount}</strong>
             <span>квартиры доступны сейчас</span>
           </div>
-          <HeroDistrictMap apartments={apartments} />
+          <div className="mini-plan">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
         </div>
       </section>
 
