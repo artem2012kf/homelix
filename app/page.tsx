@@ -1,210 +1,11 @@
+import Image from "next/image";
 import { ApartmentCatalog } from "@/components/ApartmentCatalog";
-import { MascotLogo } from "@/components/MascotLogo";
 import { apartments } from "@/lib/apartments";
 import { formatPrice } from "@/lib/format";
 
 const availableCount = apartments.filter((item) => item.status === "available").length;
 const totalCount = apartments.length;
 const minPrice = Math.min(...apartments.map((item) => item.price));
-const projectNames = Array.from(new Set(apartments.map((item) => item.project)));
-const buildingNames = Array.from(new Set(apartments.map((item) => item.building)));
-
-function MascotHeroCard() {
-  return (
-    <div className="mascot-hero-card" aria-label="ИИ-маскот сайта">
-      <style>{`
-        .mascot-hero-card {
-          position: relative;
-          overflow: hidden;
-          min-height: 520px;
-          padding: clamp(22px, 3vw, 34px);
-          border: 1px solid var(--line);
-          border-radius: 42px;
-          background:
-            radial-gradient(circle at 22% 18%, rgba(249, 62, 62, 0.14), transparent 180px),
-            radial-gradient(circle at 88% 8%, rgba(0, 59, 166, 0.10), transparent 190px),
-            linear-gradient(135deg, #ffffff 0%, #f8fbff 54%, #fff4f4 100%);
-          box-shadow: var(--shadow);
-        }
-
-        .mascot-hero-card::before {
-          position: absolute;
-          right: -60px;
-          top: 38px;
-          width: 240px;
-          height: 240px;
-          border: 1px solid rgba(0, 59, 166, 0.13);
-          border-radius: 50%;
-          content: "";
-        }
-
-        .mascot-hero-card::after {
-          position: absolute;
-          left: -70px;
-          bottom: 80px;
-          width: 130%;
-          height: 96px;
-          border: 2px solid rgba(0, 59, 166, 0.10);
-          border-radius: 999px;
-          transform: rotate(-10deg);
-          content: "";
-        }
-
-        .mascot-hero-inner {
-          position: relative;
-          z-index: 1;
-          display: grid;
-          min-height: 452px;
-          align-content: center;
-          justify-items: center;
-          text-align: center;
-        }
-
-        .mascot-hero-image {
-          display: grid;
-          width: min(260px, 72vw);
-          height: min(260px, 72vw);
-          place-items: center;
-          overflow: hidden;
-          border-radius: 42px;
-          background: transparent;
-        }
-
-        .mascot-hero-title {
-          margin-top: 18px;
-          color: var(--text);
-          font-size: clamp(26px, 3vw, 38px);
-          line-height: 0.95;
-          font-weight: 950;
-          letter-spacing: -0.05em;
-        }
-
-        .mascot-hero-text {
-          max-width: 390px;
-          margin: 12px auto 0;
-          color: var(--muted);
-          font-size: 16px;
-          line-height: 1.5;
-        }
-
-        .mascot-hero-badges {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 8px;
-          margin-top: 18px;
-        }
-
-        .mascot-hero-badges span {
-          display: inline-flex;
-          min-height: 34px;
-          align-items: center;
-          padding: 0 12px;
-          border: 1px solid rgba(0, 59, 166, 0.14);
-          border-radius: 999px;
-          color: var(--text);
-          background: rgba(255, 255, 255, 0.82);
-          font-size: 13px;
-          font-weight: 900;
-        }
-
-        .mascot-hero-stat {
-          position: absolute;
-          right: 22px;
-          top: 22px;
-          z-index: 2;
-          width: 154px;
-          padding: 18px;
-          border: 1px solid var(--line);
-          border-radius: 26px;
-          background: rgba(255, 255, 255, 0.92);
-          box-shadow: 0 18px 42px rgba(0, 59, 166, 0.10);
-          text-align: left;
-        }
-
-        .mascot-hero-stat strong,
-        .mascot-hero-stat span {
-          display: block;
-        }
-
-        .mascot-hero-stat strong {
-          color: var(--text);
-          font-size: 44px;
-          line-height: 1;
-          letter-spacing: -0.06em;
-        }
-
-        .mascot-hero-stat span {
-          margin-top: 6px;
-          color: var(--muted);
-          font-size: 13px;
-          font-weight: 800;
-          line-height: 1.25;
-        }
-
-        .brand-mark {
-          overflow: hidden;
-        }
-
-        .brand-mark img {
-          display: block !important;
-          width: 100% !important;
-          height: 100% !important;
-          max-width: 100% !important;
-          max-height: 100% !important;
-          object-fit: contain !important;
-        }
-
-        @media (max-width: 1050px) {
-          .mascot-hero-card {
-            min-height: auto;
-          }
-
-          .mascot-hero-inner {
-            min-height: 390px;
-          }
-        }
-
-        @media (max-width: 720px) {
-          .mascot-hero-stat {
-            position: static;
-            width: 100%;
-            margin-bottom: 16px;
-          }
-
-          .mascot-hero-inner {
-            min-height: auto;
-          }
-
-          .mascot-hero-image {
-            width: 190px;
-            height: 190px;
-          }
-        }
-      `}</style>
-
-      <div className="mascot-hero-stat">
-        <strong>{availableCount}</strong>
-        <span>квартиры доступны сейчас</span>
-      </div>
-
-      <div className="mascot-hero-inner">
-        <div className="mascot-hero-image">
-          <MascotLogo />
-        </div>
-        <div className="mascot-hero-title">ИИ-помощник по квартирам</div>
-        <p className="mascot-hero-text">
-          Маскот помогает выбрать квартиру, сравнить параметры, сохранить вариант в избранное и перейти к бронированию.
-        </p>
-        <div className="mascot-hero-badges" aria-label="Краткая информация о проекте">
-          <span>{projectNames[0] ?? "ЖК Солнечный квартал"}</span>
-          <span>{buildingNames.length} корпусов</span>
-          <span>{totalCount} квартир в базе</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function HomePage() {
   return (
@@ -241,8 +42,46 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="hero-widget">
-          <MascotHeroCard />
+        <div
+          className="hero-widget"
+          style={{
+            position: "relative",
+            minHeight: 520,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
+          <div
+            style={{
+              width: "min(100%, 430px)",
+              minHeight: 430,
+              display: "grid",
+              placeItems: "center",
+              padding: 34,
+              border: "1px solid var(--line)",
+              borderRadius: 42,
+              background:
+                "radial-gradient(circle at 50% 28%, rgba(249, 62, 62, 0.12), transparent 13rem), #ffffff",
+              boxShadow: "var(--shadow)",
+              textAlign: "center"
+            }}
+          >
+            <Image
+              src="/images/mascot.png"
+              alt="Маскот ЖК Солнечный квартал"
+              width={270}
+              height={270}
+              priority
+              style={{ width: "min(78%, 270px)", height: "auto", objectFit: "contain" }}
+            />
+            <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+              <strong style={{ fontSize: 30, lineHeight: 1, color: "var(--text)" }}>ЖК Солнечный квартал</strong>
+              <span style={{ color: "var(--muted)", lineHeight: 1.45 }}>
+                Маскот помогает выбрать квартиру, сравнить планировки и задать вопрос ИИ-консультанту.
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -251,7 +90,8 @@ export default function HomePage() {
           <span className="eyebrow">Каталог</span>
           <h2>Квартиры в продаже</h2>
           <p>
-            Каталог показывает актуальные статусы, мини-планы, цены, этажи, площадь и название жилого комплекса для каждой квартиры.
+            В каждой карточке указано, в каком ЖК находится квартира, а также корпус, секция, этаж, площадь и цена.
+            Свободные варианты идут первыми, затем бронь и проданные квартиры.
           </p>
         </div>
         <ApartmentCatalog apartments={apartments} />

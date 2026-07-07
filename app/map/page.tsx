@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function MapPage() {
+export default function RemovedMapPage() {
   redirect("/");
 }

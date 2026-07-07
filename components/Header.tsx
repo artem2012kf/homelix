@@ -6,9 +6,11 @@ export function Header() {
   return (
     <header className="site-header">
       <Link href="/" className="brand" aria-label="На главную">
-        <span className="brand-mark"><MascotLogo /></span>
+        <span className="brand-mark">
+          <MascotLogo />
+        </span>
         <span>
-          <strong>Солнечный квартал</strong>
+          <strong>ЖК Солнечный квартал</strong>
           <small>Интерактивный выбор квартир</small>
         </span>
       </Link>

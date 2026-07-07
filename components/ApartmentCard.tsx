@@ -22,11 +22,26 @@ export function ApartmentCard({ apartment }: { apartment: Apartment }) {
         <ApartmentMiniPlan apartment={apartment} />
       </Link>
 
-      <h3>{apartment.title}</h3>
+      <div>
+        <span
+          style={{
+            display: "inline-flex",
+            marginBottom: 10,
+            padding: "7px 10px",
+            borderRadius: 999,
+            color: "var(--primary-dark)",
+            background: "rgba(249, 62, 62, 0.08)",
+            fontSize: 13,
+            fontWeight: 900
+          }}
+        >
+          ЖК: {apartment.project}
+        </span>
+        <h3>{apartment.title}</h3>
+      </div>
+
       <p className="muted">
-        <strong style={{ color: "var(--text)" }}>ЖК: {apartment.project}</strong>
-        <br />
-        {apartment.building}, {apartment.section}. Вид: {apartment.windowView}.
+        {apartment.project}, {apartment.building}, {apartment.section}. Вид: {apartment.windowView}.
       </p>
 
       <div className="card-metrics">

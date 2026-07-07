@@ -1,7 +1,24 @@
-/* БЫСТРОЕ ИСПРАВЛЕНИЕ ПРЕДЫДУЩЕЙ ВЕРСИИ: больше не нужно вставлять большой блок CSS.
-   Новая карточка районов содержит стили прямо в app/page.tsx.
-   Можно оставить этот файл пустым или не копировать его. */
+/* 
+Вставь этот блок В САМЫЙ КОНЕЦ app/globals.css.
+Он гасит старые неудачные блоки со "скрином/картой", если они остались после прошлых правок.
+*/
 
-.brand-mark {
-  overflow: hidden;
+.district-preview,
+.clean-district-preview,
+.map-preview-section,
+.tyumen-city-map-section,
+.yandex-map-section,
+.map-page-section,
+.map-page-hero {
+  display: none !important;
+}
+
+.brand-mark img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+.hero-widget img {
+  max-width: 100% !important;
 }
