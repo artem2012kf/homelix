@@ -31,13 +31,6 @@ function replaceTechnicalApartmentId(answer: string, apartment: Apartment) {
   return answer.replace(new RegExp(`\\b${escapeRegExp(apartment.id)}\\b`, "g"), apartment.title);
 }
 
-function statusLabel(status: Apartment["status"]) {
-  if (status === "available") return "Свободна";
-  if (status === "reserved") return "Бронь";
-  if (status === "sold") return "Продана";
-  return status;
-}
-
 function isComplexRequest(message: string) {
   const lower = message.toLowerCase();
 
@@ -49,6 +42,40 @@ function isComplexRequest(message: string) {
     lower.includes("полный анализ") ||
     lower.includes("сравни со всеми") ||
     lower.includes("расскажи все")
+  );
+}
+
+function isPlacementRequest(message: string) {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("поставь") ||
+    lower.includes("поставить") ||
+    lower.includes("поставим") ||
+    lower.includes("размести") ||
+    lower.includes("разместить") ||
+    lower.includes("расположи") ||
+    lower.includes("расположить") ||
+    lower.includes("помести") ||
+    lower.includes("поместить") ||
+    lower.includes("установи") ||
+    lower.includes("установить")
+  );
+}
+
+function isProductBudgetRequest(message: string) {
+  const lower = message.toLowerCase();
+
+  return (
+    lower.includes("подбери") ||
+    lower.includes("подобрать") ||
+    lower.includes("товар") ||
+    lower.includes("магазин") ||
+    lower.includes("купить") ||
+    lower.includes("до ") ||
+    lower.includes("бюджет") ||
+    lower.includes("тыс") ||
+    lower.includes("руб")
   );
 }
 
@@ -103,55 +130,112 @@ function compactApartment(apartment: Apartment, room?: Room | null, ultraCompact
 }
 
 function demoAnswer(message: string, apartment: Apartment, room?: Room | null) {
-  const roomText = room ? `По выбранной комнате «${room.name}» (${room.area} м²): ${room.description}` : "Комната пока не выбрана.";
+  const lower = message.toLowerCase();
+  const placement = isPlacementRequest(message);
+  const productBudget = isProductBudgetRequest(message);
+  const roomName = room?.name ?? "выбранная зона";
+  const roomDescription = room?.description ? shortText(room.description, 170) : "Можно выбрать комнату на планировке и задать вопрос по ней.";
+
+  if (lower.includes("вход") || lower.includes("прихож")) {
+    return [
+      `**Для прихожей** лучше сделать хранение максимально компактным и понятным.`,
+      "- Используйте неглубокий шкаф или закрытую секцию для верхней одежды.",
+      "- Добавьте обувницу, крючки для ежедневной одежды и зеркало у выхода.",
+      "- Оставьте свободный проход от двери, чтобы входная зона не казалась тесной."
+    ].join("\n");
+  }
+
+  if (placement || productBudget) {
+    return [
+      `**По зоне «${roomName}»:** ${roomDescription}`,
+      "- Для точной расстановки напишите предмет одной фразой: например, **поставь шкаф** или **поставь кровать**.",
+      "- Если нужен подбор из магазина, укажите бюджет — тогда можно сравнить варианты по цене."
+    ].join("\n");
+  }
 
   return [
-    "Демо-ответ без OpenRouter API-ключа.",
-    roomText,
-    `Квартира: ${apartment.title}, ${apartment.totalArea} м², ${apartment.floor} этаж, стоимость ${apartment.price.toLocaleString("ru-RU")} ₽.`,
-    `Ваш вопрос: «${message}».`,
-    "Чтобы получить настоящий ИИ-ответ, добавьте OPENROUTER_API_KEY в .env.local."
-  ].join("\n\n");
+    `**По зоне «${roomName}»:** ${roomDescription}`,
+    "- Я могу подсказать удобную организацию пространства без привязки к стоимости квартиры.",
+    "- Для точной расстановки предмета напишите отдельно: **поставь шкаф**, **поставь кровать** или **поставь диван**."
+  ].join("\n");
 }
 
 function limitAnswer(reason: "timeout" | "credits", apartment: Apartment, room?: Room | null, message = "") {
   const lower = message.toLowerCase();
+  const placement = isPlacementRequest(message);
+  const productBudget = isProductBudgetRequest(message);
   const roomName = room?.name ?? "квартира";
   const roomArea = room ? `${room.area} м²` : `${apartment.totalArea} м²`;
+  const roomDescription = room?.description ? shortText(room.description, 160) : "ориентируйтесь на свободные стены и проходы.";
+
+  if (lower.includes("вход") || lower.includes("прихож")) {
+    return [
+      `**Входную зону** лучше сделать простой и не перегруженной.`,
+      "- Поставьте закрытый шкаф или узкую гардеробную секцию вдоль стены, чтобы спрятать верхнюю одежду.",
+      "- Добавьте обувницу с сиденьем: так будет удобнее обуваться и меньше вещей останется на полу.",
+      "- Повесьте зеркало и 2–3 крючка для ежедневной одежды, но не занимайте ими основной проход.",
+      "- Для визуального порядка используйте закрытые фасады и один светлый цвет хранения."
+    ].join("\n");
+  }
 
   if (lower.includes("кроват")) {
+    if (placement) {
+      return [
+        `**Кровать лучше поставить** в зоне **${roomName}** (${roomArea}) у самой длинной свободной стены.`,
+        "- Оставьте проходы по бокам и не перекрывайте дверь или окно.",
+        "- Если кровать не помещается комфортно, лучше заменить ее на компактный диван-кровать или кровать с хранением.",
+        productBudget ? "- По бюджету можно подобрать модель из магазина и сравнить варианты." : ""
+      ].filter(Boolean).join("\n");
+    }
+
     return [
-      `**По кровати:** лучше ориентироваться на выбранную зону **${roomName}** (${roomArea}).`,
-      "- Поставьте кровать у самой длинной свободной стены, чтобы оставить проходы по бокам.",
-      "- Не перекрывайте дверь, окно и место под шкаф.",
-      "- Если нужно именно поставить кровать на планировку, напишите: **поставь кровать** и укажите бюджет."
+      `**По кровати:** сначала проверьте свободную стену и проходы в зоне **${roomName}**.`,
+      "- Не ставьте кровать так, чтобы она перекрывала дверь, окно или шкаф.",
+      "- Для маленькой зоны лучше выбирать кровать с ящиками или подъемным механизмом."
     ].join("\n");
   }
 
   if (lower.includes("шкаф") || lower.includes("хранен") || lower.includes("гардероб")) {
+    if (placement) {
+      return [
+        `**Шкаф лучше поставить** вдоль свободной стены в зоне **${roomName}** (${roomArea}).`,
+        "- Для прихожей выбирайте глубину 45–60 см, чтобы не съесть проход.",
+        "- Закрытые фасады сделают входную зону аккуратнее.",
+        productBudget ? "- Если нужен подбор по цене, укажите бюджет и ширину стены." : ""
+      ].filter(Boolean).join("\n");
+    }
+
     return [
-      `**По хранению:** для зоны **${roomName}** лучше использовать стену рядом со входом или глухую стену без окна.`,
-      "- Шкаф лучше ставить вдоль стены, а не в центре комнаты.",
-      "- Глубина 55–60 см обычно удобна для одежды.",
-      "- Бюджет понадобится только если нужно подобрать конкретный шкаф из магазина и поставить его на план."
+      `**По хранению в зоне «${roomName}»:** ${roomDescription}`,
+      "- Используйте закрытый шкаф или узкую систему хранения до потолка.",
+      "- Самые частые вещи храните на уровне рук, сезонные — выше.",
+      "- Открытые крючки оставьте только для повседневной одежды, иначе зона будет выглядеть перегруженной."
     ].join("\n");
   }
 
   if (lower.includes("диван")) {
+    if (placement) {
+      return [
+        `**Диван лучше поставить** так, чтобы он не перекрывал проход к окну и двери.`,
+        "- В кухне-гостиной диван может отделять зону отдыха от кухни.",
+        "- Оставьте перед диваном место для прохода и небольшого столика.",
+        productBudget ? "- Если нужен подбор по цене, укажите бюджет и желаемую ширину дивана." : ""
+      ].filter(Boolean).join("\n");
+    }
+
     return [
-      `**По дивану:** в зоне **${roomName}** его лучше ставить так, чтобы он не перекрывал проход к окну и двери.`,
-      "- Для кухни-гостиной диван можно использовать как мягкое зонирование.",
-      "- Оставьте проход к окну и двери, а ТВ-зону лучше держать напротив посадочного места.",
-      "- Если нужно именно поставить диван на планировку, напишите: **поставь диван** и укажите бюджет."
+      `**По дивану:** сначала определите, будет ли он спальным местом или только зоной отдыха.`,
+      "- Для студии лучше выбирать компактный диван с ящиком для хранения.",
+      "- Не ставьте его на основной проход между входом, кухней и окном."
     ].join("\n");
   }
 
   return [
-    `**Краткая консультация по объекту:** **${apartment.title}**, ${apartment.totalArea} м², ${apartment.floor} этаж.`,
-    room ? `Сейчас выбранная зона: **${room.name}**, ${room.area} м². ${shortText(room.description, 160)}` : "Можно выбрать комнату на планировке и задать вопрос именно по ней.",
-    `Стоимость: **${apartment.price.toLocaleString("ru-RU")} ₽**. Статус: **${statusLabel(apartment.status)}**.`,
-    "Для более точного ответа задайте короткий вопрос: например, **где поставить кровать**, **куда шкаф**, **подбери диван до 80 тыс.**"
-  ].join("\n\n");
+    `**По зоне «${roomName}»:** ${roomDescription}`,
+    "- Оставьте основной проход свободным и не перегружайте зону открытым хранением.",
+    "- Используйте мебель по одной стене, чтобы пространство выглядело спокойнее.",
+    "- Для точной расстановки предмета напишите: **поставь шкаф**, **поставь кровать** или **поставь диван**."
+  ].join("\n");
 }
 
 async function askOpenRouter(args: {
@@ -202,26 +286,36 @@ function isOpenRouterLimitError(status: number, errorText: string) {
   );
 }
 
-
 function stripOpenRouterReasoning(rawAnswer: string) {
   let answer = rawAnswer
     .replace(/<think>[\s\S]*?<\/think>/gi, "")
     .replace(/```(?:thinking|analysis|reasoning)?[\s\S]*?```/gi, "")
+    .replace(/^(analysis|reasoning|thinking|мысли|рассуждение|ход рассуждений)\s*[:：][\s\S]*?(?=(ответ|итог|рекомендация)\s*[:：]|$)/gim, "")
     .trim();
 
-  const paragraphs = answer
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (paragraphs.length > 1) {
-    const firstUsefulIndex = paragraphs.findIndex((paragraph) => /[А-Яа-яЁё]/.test(paragraph));
-    if (firstUsefulIndex > 0) {
-      answer = paragraphs.slice(firstUsefulIndex).join("\n\n").trim();
-    }
+  const answerMarker = answer.match(/(?:ответ|итог|рекомендация)\s*[:：]\s*([\s\S]+)/i);
+  if (answerMarker?.[1]) {
+    answer = answerMarker[1].trim();
   }
 
-  return answer;
+  const lines = answer
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => {
+      const lower = line.toLowerCase();
+
+      return (
+        line &&
+        !lower.startsWith("analysis") &&
+        !lower.startsWith("reasoning") &&
+        !lower.startsWith("thinking") &&
+        !lower.startsWith("мысли") &&
+        !lower.startsWith("рассуждение") &&
+        !lower.startsWith("я думаю шаг за шагом")
+      );
+    });
+
+  return lines.join("\n").trim();
 }
 
 function looksLikeInternalReasoning(answer: string) {
@@ -307,12 +401,22 @@ export async function POST(request: Request) {
     }
 
     const safeRoomContext = shortText(roomContext, 420);
+    const placement = isPlacementRequest(rawMessage);
+    const productBudget = isProductBudgetRequest(rawMessage);
+
+    const behaviorRule = placement || productBudget
+      ? "Пользователь просит поставить, разместить или подобрать предмет. Можно говорить, куда поставить предмет. Цену или бюджет упоминай только если пользователь сам спросил про подбор товара, цену или бюджет."
+      : "Пользователь НЕ просит поставить предмет и НЕ просит подбор товара. Не упоминай стоимость квартиры, статус квартиры, ипотеку, бюджет, цену, магазин и фразы вроде «куда поставить». Дай только полезные советы по удобству выбранной зоны.";
 
     const messages: ChatMessage[] = [
       {
         role: "system",
         content:
-          "Ты ИИ-консультант сайта застройщика. Отвечай по-русски, деловым тоном, без повторных приветствий. Давай полезный законченный ответ: 3–5 коротких пунктов или 2–3 абзаца. Важно: никогда не обрывай предложение на середине. Если места мало, сократи количество пунктов, но заверши мысль. Не выдумывай цены, скидки, сроки и юридические условия. Если клиент просит рекомендации по расстановке мебели, отвечай сразу без уточнения бюджета. Бюджет уточняй только когда клиент просит именно подобрать товар или поставить мебель на планировку."
+          "Ты ИИ-консультант сайта застройщика. Отвечай по-русски, деловым тоном, без повторных приветствий. Давай готовый ответ: 3–5 коротких пунктов или 2–3 абзаца. Не показывай ход рассуждений, thinking, reasoning или внутренний анализ. Не выдумывай цены, скидки, сроки и юридические условия. На обычные вопросы про удобство зоны отвечай практично, без стоимости квартиры и статуса. Про цену, бюджет и конкретное место установки говори только когда пользователь просит: «поставь ...», «размести ...», «расположи ...» или просит подобрать товар по бюджету."
+      },
+      {
+        role: "system",
+        content: behaviorRule
       },
       {
         role: "system",
@@ -333,7 +437,11 @@ export async function POST(request: Request) {
       {
         role: "system",
         content:
-          "Ты ИИ-консультант по квартире. Ответь по-русски 3 короткими законченными пунктами. Не используй приветствие. Не обрывай предложение на середине."
+          "Ты ИИ-консультант по квартире. Ответь по-русски 3 короткими законченными пунктами. Не используй приветствие. Не показывай рассуждения. Не упоминай цену, бюджет и статус, если пользователь не просит поставить/разместить предмет или подобрать товар."
+      },
+      {
+        role: "system",
+        content: behaviorRule
       },
       {
         role: "system",
