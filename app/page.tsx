@@ -8,52 +8,214 @@ const totalCount = apartments.length;
 const minPrice = Math.min(...apartments.map((item) => item.price));
 
 const districts = [
-  {
-    name: "Тюменская слобода",
-    note: "новая застройка",
-    buildings: ["Корпус 1"]
-  },
-  {
-    name: "Московский тракт",
-    note: "западное направление",
-    buildings: ["Корпус 2"]
-  },
-  {
-    name: "Заречный",
-    note: "рядом с Турой",
-    buildings: ["Корпус 3"]
-  },
-  {
-    name: "Восточный",
-    note: "семейные кварталы",
-    buildings: ["Корпус 4"]
-  },
-  {
-    name: "Центр",
-    note: "городская инфраструктура",
-    buildings: ["Корпус 5"]
-  }
+  { name: "Тюменская слобода", note: "новая застройка", buildings: ["Корпус 1"] },
+  { name: "Московский тракт", note: "западное направление", buildings: ["Корпус 2"] },
+  { name: "Заречный", note: "рядом с Турой", buildings: ["Корпус 3"] },
+  { name: "Восточный", note: "семейные кварталы", buildings: ["Корпус 4"] },
+  { name: "Центр", note: "городская инфраструктура", buildings: ["Корпус 5"] }
 ];
 
 function DistrictPreview() {
   return (
-    <div className="district-preview" aria-label="Районы Тюмени, где есть квартиры">
-      <div className="district-mascot-corner">
-        <MascotLogo />
+    <div className="clean-district-preview" aria-label="Районы Тюмени, где есть квартиры">
+      <style>{`
+        .clean-district-preview {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
+          min-height: 520px;
+          padding: 28px;
+          border: 1px solid var(--line);
+          border-radius: 38px;
+          background:
+            radial-gradient(circle at 18% 20%, rgba(249, 62, 62, 0.12), transparent 170px),
+            radial-gradient(circle at 84% 18%, rgba(0, 59, 166, 0.10), transparent 190px),
+            linear-gradient(135deg, #ffffff 0%, #f8fbff 54%, #fff4f4 100%);
+          box-shadow: var(--shadow);
+        }
+
+        .clean-district-preview::before {
+          position: absolute;
+          inset: auto -70px 108px -70px;
+          height: 108px;
+          border: 2px solid rgba(0, 59, 166, 0.12);
+          border-radius: 999px;
+          transform: rotate(-10deg);
+          content: "";
+          z-index: -1;
+        }
+
+        .clean-district-preview::after {
+          position: absolute;
+          right: 28px;
+          bottom: 30px;
+          width: 190px;
+          height: 190px;
+          border: 1px solid rgba(249, 62, 62, 0.16);
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.58);
+          content: "";
+          z-index: -1;
+        }
+
+        .clean-district-top {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 18px;
+          align-items: start;
+          margin-bottom: 20px;
+        }
+
+        .clean-district-title {
+          display: grid;
+          gap: 8px;
+        }
+
+        .clean-district-title span {
+          width: fit-content;
+          padding: 7px 10px;
+          border-radius: 999px;
+          color: var(--primary-dark);
+          background: rgba(249, 62, 62, 0.08);
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+        }
+
+        .clean-district-title strong {
+          color: var(--text);
+          font-size: clamp(24px, 3vw, 36px);
+          line-height: 0.96;
+          letter-spacing: -0.05em;
+        }
+
+        .clean-district-title small {
+          max-width: 300px;
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.45;
+        }
+
+        .clean-district-mascot {
+          display: grid;
+          width: 84px;
+          height: 84px;
+          place-items: center;
+          overflow: hidden;
+          border: 1px solid rgba(0, 59, 166, 0.12);
+          border-radius: 28px;
+          background: #ffffff;
+          box-shadow: 0 18px 34px rgba(249, 62, 62, 0.18);
+        }
+
+        .clean-district-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+          margin-top: 18px;
+        }
+
+        .clean-district-card {
+          min-height: 104px;
+          padding: 16px;
+          border: 1px solid rgba(0, 59, 166, 0.14);
+          border-radius: 22px;
+          background: rgba(255, 255, 255, 0.9);
+          box-shadow: 0 14px 32px rgba(0, 59, 166, 0.07);
+        }
+
+        .clean-district-card span,
+        .clean-district-card strong,
+        .clean-district-card small {
+          display: block;
+        }
+
+        .clean-district-card span {
+          color: var(--primary-dark);
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .clean-district-card strong {
+          margin-top: 8px;
+          color: var(--text);
+          font-size: 18px;
+          line-height: 1.08;
+        }
+
+        .clean-district-card small {
+          margin-top: 8px;
+          color: var(--muted);
+          font-size: 13px;
+          line-height: 1.35;
+        }
+
+        .clean-district-summary {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 16px;
+        }
+
+        .clean-district-summary div {
+          padding: 14px;
+          border: 1px solid rgba(0, 59, 166, 0.14);
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.82);
+        }
+
+        .clean-district-summary strong,
+        .clean-district-summary span {
+          display: block;
+        }
+
+        .clean-district-summary strong {
+          color: var(--text);
+          font-size: 30px;
+          line-height: 1;
+        }
+
+        .clean-district-summary span {
+          margin-top: 5px;
+          color: var(--muted);
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        @media (max-width: 720px) {
+          .clean-district-preview {
+            min-height: auto;
+            padding: 20px;
+          }
+
+          .clean-district-grid,
+          .clean-district-summary {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      <div className="clean-district-top">
+        <div className="clean-district-title">
+          <span>Без карты</span>
+          <strong>Районы Тюмени</strong>
+          <small>Временно показываем аккуратную карточку без Яндекс.Карт, чтобы Vercel стабильно собирал сайт.</small>
+        </div>
+        <div className="clean-district-mascot">
+          <MascotLogo />
+        </div>
       </div>
 
-      <div className="district-preview-title">
-        <strong>Районы Тюмени</strong>
-        <span>Где есть квартиры ЖК «Солнечный квартал»</span>
-      </div>
-
-      <div className="district-list">
+      <div className="clean-district-grid">
         {districts.map((district) => {
           const districtApartments = apartments.filter((apartment) => district.buildings.includes(apartment.building));
           const available = districtApartments.filter((apartment) => apartment.status === "available").length;
 
           return (
-            <article className="district-card" key={district.name}>
+            <article className="clean-district-card" key={district.name}>
               <span>{district.note}</span>
               <strong>{district.name}</strong>
               <small>
@@ -62,6 +224,17 @@ function DistrictPreview() {
             </article>
           );
         })}
+      </div>
+
+      <div className="clean-district-summary" aria-label="Сводка по объектам">
+        <div>
+          <strong>{availableCount}</strong>
+          <span>квартир доступно сейчас</span>
+        </div>
+        <div>
+          <strong>{districts.length}</strong>
+          <span>районов в презентации</span>
+        </div>
       </div>
     </div>
   );
@@ -103,10 +276,6 @@ export default function HomePage() {
         </div>
 
         <div className="hero-widget">
-          <div className="floating-card">
-            <strong>{availableCount}</strong>
-            <span>квартиры доступны сейчас</span>
-          </div>
           <DistrictPreview />
         </div>
       </section>

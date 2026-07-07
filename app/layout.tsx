@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   title: "ЖК Солнечный квартал — выбор квартиры с ИИ",
   description: "Интерактивный сайт застройщика с планировками квартир и ИИ-консультантом.",
   icons: {
-    icon: "/images/mascot.png",
-    shortcut: "/images/mascot.png",
-    apple: "/images/mascot.png"
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg"
   }
 };
 

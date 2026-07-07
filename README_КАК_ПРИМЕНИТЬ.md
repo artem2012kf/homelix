@@ -1,34 +1,40 @@
-# Что заменить в проекте Homelix
+# Как применить исправление внешнего вида
 
-1. Скопируй файлы из этого архива в проект с заменой:
-   - `app/page.tsx`
-   - `app/layout.tsx`
-   - `app/api/auth/register/route.ts`
-   - `app/map/page.tsx`
-   - `app/yandex-map/page.tsx`
-   - `components/MascotLogo.tsx`
-   - `public/images/mascot.png`
+1. Скопируйте файлы из архива в проект с заменой:
 
-2. Открой `app/globals.css` и в самый конец вставь содержимое файла:
-   - `ADD_TO_END_OF_app_globals.css`
+- `app/page.tsx`
+- `app/layout.tsx`
+- `components/MascotLogo.tsx`
+- `public/favicon.svg`
+- `public/images/mascot.png`
+- `app/api/auth/register/route.ts`
+- `app/map/page.tsx`
+- `app/yandex-map/page.tsx`
 
-3. Для ИИ открой:
-   - `app/api/ai/route.ts`
-   - `app/api/chat/route.ts`
+2. Если в `app/layout.tsx` у вас есть строка:
 
-   И сделай замену из файла:
-   - `AI_REPLACE_IN_app_api_ai_and_chat_route.md`
+```ts
+import "./visual-fixes.css";
+```
 
-4. Проверь сборку:
+удалите её. В новом исправлении она не нужна.
+
+3. Если в конец `app/globals.css` уже был вставлен старый большой блок с `.district-preview`, можно оставить — новая страница больше не использует эти классы. Но лучше удалить старый блок, который начинался с:
+
+```css
+/* Маскот в шапке и карточке районов */
+```
+
+4. Проверьте сборку:
 
 ```powershell
 cmd /c npm run build
 ```
 
-5. Отправь на GitHub:
+5. Отправьте на GitHub:
 
 ```powershell
 git add .
-git commit -m "исправления перед предзащитой"
+git commit -m "исправить внешний вид главной"
 git push
 ```
