@@ -1,10 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { MarkdownText } from "@/components/MarkdownText";
 import { postJson } from "@/lib/client-api";
 import {
-  clearAllChatHistory,
   clearChatHistory,
   generalChatHistoryKey,
   hasOldLimitErrorText,
@@ -27,40 +26,45 @@ const initialMessages: Message[] = [
   {
     role: "assistant",
     content:
-      "Здравствуйте. Я ИИ-консультант жилого комплекса. Помогу подобрать квартиру, сравнить варианты и ответить на вопросы по планировкам."
+      "Здравствуйте. Я ИИ-консультант жилого комплекса. Помогу подобрать квартиру, сравнить варианты и обязательно покажу цену подходящего варианта."
   }
 ];
 
 export function AiOnlyChat() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const messagesRef = useRef<Message[]>(initialMessages);
 
   useEffect(() => {
-    clearAllChatHistory();
-    setMessages(initialMessages);
+    const next = loadChatHistory(generalChatHistoryKey, initialMessages);
+    setMessages(next);
+    messagesRef.current = next;
     setHistoryLoaded(true);
   }, []);
 
   useEffect(() => {
+    messagesRef.current = messages;
     if (!historyLoaded) return;
     saveChatHistory(generalChatHistoryKey, messages);
   }, [historyLoaded, messages]);
 
   async function sendMessage(text: string) {
     const cleaned = text.trim();
-    if (!cleaned || isLoading) return;
+    if (!cleaned) return;
 
     const userMessage: Message = { role: "user", content: cleaned };
+    const historySnapshot = messagesRef.current.slice(-6);
+
     setMessages((current) => [...current, userMessage]);
     setInput("");
-    setIsLoading(true);
+    setPendingCount((count) => count + 1);
 
     try {
       const data = await postJson("/api/ai", {
         message: cleaned,
-        history: messages.slice(-6)
+        history: historySnapshot
       });
 
       setMessages((current) => [
@@ -69,7 +73,7 @@ export function AiOnlyChat() {
           role: "assistant",
           content: sanitizeAssistantContent(
             data.answer ?? data.error,
-            "**Краткая консультация:** старый ответ про лимит OpenRouter скрыт. Напишите вопрос еще раз коротко: например, **какие квартиры доступны?**, **до 12 млн**, **для аренды** или **для семьи**."
+            "**Краткая консультация:** напишите вопрос еще раз коротко: например, **лучшая квартира для семьи**, **до 12 млн**, **для аренды** или **какие квартиры доступны**."
           )
         }
       ]);
@@ -85,14 +89,14 @@ export function AiOnlyChat() {
         }
       ]);
     } finally {
-      setIsLoading(false);
+      setPendingCount((count) => Math.max(0, count - 1));
     }
   }
 
   function clearCurrentChat() {
     clearChatHistory(generalChatHistoryKey);
-    clearAllChatHistory();
     setMessages(initialMessages);
+    messagesRef.current = initialMessages;
     setInput("");
   }
 
@@ -115,7 +119,7 @@ export function AiOnlyChat() {
         <div>
           <span className="eyebrow">ИИ-консультант</span>
           <h2>Консультация без выбора комнат</h2>
-          <p>Задайте общий вопрос по жилому комплексу, подбору квартиры или сравнению доступных вариантов.</p>
+          <p>Можно отправлять несколько запросов подряд: ответы будут приходить независимо.</p>
         </div>
       </div>
 
@@ -125,7 +129,7 @@ export function AiOnlyChat() {
       </div>
 
       <div className="chat-history-actions">
-        <span>История сохраняется в этом браузере.</span>
+        <span>{pendingCount > 0 ? `Обрабатывается запросов: ${pendingCount}` : "История сохраняется в этом браузере."}</span>
         <button type="button" onClick={clearCurrentChat}>
           Очистить историю
         </button>
@@ -137,9 +141,9 @@ export function AiOnlyChat() {
             <MarkdownText content={message.content} />
           </div>
         ))}
-        {isLoading && (
+        {pendingCount > 0 && (
           <div className="chat-message chat-assistant">
-            <MarkdownText content="*Подготавливаю ответ...*" />
+            <MarkdownText content={`*Подготавливаю ответ... (${pendingCount})*`} />
           </div>
         )}
       </div>
@@ -156,10 +160,10 @@ export function AiOnlyChat() {
         <textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Например: подберите квартиру до 15 млн ₽..."
+          placeholder="Например: лучшая квартира для семьи до 15 млн ₽..."
           rows={2}
         />
-        <button className="button button-primary" type="submit" disabled={isLoading}>
+        <button className="button button-primary" type="submit">
           Отправить
         </button>
       </form>

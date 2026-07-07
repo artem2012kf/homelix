@@ -11,7 +11,6 @@ import { furnitureItems } from "@/lib/furniture";
 import { formatPrice } from "@/lib/format";
 import {
   apartmentChatHistoryKey,
-  clearAllChatHistory,
   clearChatHistory,
   hasOldLimitErrorText,
   loadChatHistory,
@@ -28,7 +27,6 @@ type FurniturePlacementRequest = {
   roomId: string;
   roomName: string;
   addMore?: boolean;
-  replaceExisting?: boolean;
   needsItemClarification?: boolean;
 };
 
@@ -65,90 +63,9 @@ function getInitialMessages(apartment: Apartment): Message[] {
   return [
     {
       role: "assistant",
-      content: `Здравствуйте. Я ИИ-консультант по квартире **${apartment.title}**. Помогу оценить планировку, выбрать комнату и дать рекомендации по расстановке мебели.`
+      content: `Здравствуйте. Я ИИ-консультант по квартире **${apartment.title}**. Можно задавать вопросы по планировке, комнатам и мебели.`
     }
   ];
-}
-
-function getRoomContextText(room?: Room) {
-  if (!room) return "Комната не выбрана. Ответ должен относиться к квартире в целом.";
-
-  return [
-    `Текущая выбранная комната: ${room.name}, площадь ${room.area} м².`,
-    `Описание: ${room.description}.`,
-    `Советы по мебели: ${room.furnitureTips.join("; ")}.`,
-    `Внутренние подсказки для ИИ: ${room.aiHints.join(" ")}`
-  ].join(" ");
-}
-
-function getRoomStarterPrompts(room?: Room) {
-  if (!room) return apartmentStarterPrompts;
-
-  const roomName = room.name.toLowerCase();
-
-  if (room.chatPrompts?.length) return room.chatPrompts;
-
-  const common = [`Как лучше использовать ${roomName} ${room.area} м²?`];
-
-  switch (room.type) {
-    case "kitchen":
-    case "living":
-      return [
-        ...common,
-        "Подбери диван и стол по бюджету",
-        "Как разделить зону кухни и отдыха?",
-        "Передвинь диван, если он стоит неудобно"
-      ];
-    case "bedroom":
-      return [
-        ...common,
-        "Подбери кровать и шкаф по бюджету",
-        "Поставь еще рабочий стол",
-        "Передвинь кровать, если расположение не понравилось"
-      ];
-    case "children":
-      return [
-        ...common,
-        "Подбери мебель для детской по бюджету",
-        "Поставь кровать, шкаф и стол",
-        "Передвинь стол к другой стене"
-      ];
-    case "bathroom":
-      return [
-        ...common,
-        "Подбери тумбу под раковину по бюджету",
-        "Где разместить стиральную машину?",
-        "Как добавить больше хранения?"
-      ];
-    case "hall":
-      return [
-        ...common,
-        "Какой шкаф поставить и в какой бюджет?",
-        "Передвинь шкаф в другое место",
-        "Как сделать входную зону удобной?"
-      ];
-    case "balcony":
-      return [
-        ...common,
-        "Поставь столик на лоджию",
-        "Можно ли сделать мини-кабинет?",
-        "Как организовать лаунж-зону?"
-      ];
-    case "wardrobe":
-      return [
-        ...common,
-        "Поставь гардеробную систему",
-        "Подойдет ли гардеробная для сезонных вещей?",
-        "Передвинь систему хранения"
-      ];
-    default:
-      return [
-        ...common,
-        "Какая мебель сюда подойдет?",
-        "Как не перегрузить пространство?",
-        "Какие преимущества у этого помещения?"
-      ];
-  }
 }
 
 function hasAny(value: string, words: string[]) {
@@ -168,15 +85,15 @@ function categoryLabel(category: FurnitureCategory) {
     case "table":
       return "стол";
     case "storage":
-      return "систему хранения";
+      return "шкаф";
     case "kitchen":
-      return "кухонную мебель";
+      return "кухню";
     case "bathroom":
-      return "мебель для санузла";
+      return "тумбу";
     case "lighting":
-      return "освещение";
+      return "свет";
     case "decor":
-      return "текстиль и декор";
+      return "декор";
     default:
       return "мебель";
   }
@@ -191,7 +108,6 @@ function defaultCategoriesForRoom(room?: Room): FurnitureCategory[] {
 
   switch (room.type) {
     case "bedroom":
-      return ["bed", "storage", "table"];
     case "children":
       return ["bed", "storage", "table"];
     case "kitchen":
@@ -205,7 +121,7 @@ function defaultCategoriesForRoom(room?: Room): FurnitureCategory[] {
     case "balcony":
       return ["table", "decor"];
     default:
-      return ["sofa", "table"];
+      return ["storage"];
   }
 }
 
@@ -229,7 +145,17 @@ function inferFurnitureCategories(message: string, room?: Room): FurnitureCatego
   const lower = message.toLowerCase();
   const categories = inferSpecificFurnitureCategories(lower);
 
-  if (hasAny(lower, ["всю мебель", "вся мебель", "несколько мебели", "несколько предмет", "полностью обстав", "обставь комнат", "расставь мебель", "мебель для комнаты"])) {
+  if (
+    hasAny(lower, [
+      "всю мебель",
+      "вся мебель",
+      "несколько предмет",
+      "полностью обстав",
+      "обставь комнат",
+      "расставь мебель",
+      "мебель для комнаты"
+    ])
+  ) {
     categories.push(...defaultCategoriesForRoom(room));
   }
 
@@ -243,6 +169,24 @@ function inferFurnitureCategories(message: string, room?: Room): FurnitureCatego
 function detectFurniturePlacementRequest(message: string, room?: Room): FurniturePlacementRequest | null {
   const lower = message.toLowerCase();
 
+  const explicitPlacementWords = [
+    "поставь",
+    "поставить",
+    "размести",
+    "разместить",
+    "расположи",
+    "расположить",
+    "расставь",
+    "добавь",
+    "добавить",
+    "обставь",
+    "обставить",
+    "подбери",
+    "подобрать",
+    "выбери",
+    "выбрать"
+  ];
+
   const furnitureWords = [
     "мебел",
     "кроват",
@@ -252,60 +196,22 @@ function detectFurniturePlacementRequest(message: string, room?: Room): Furnitur
     "гардероб",
     "кухон",
     "гарнитур",
-    "остров",
     "тумб",
-    "раковин",
     "свет",
-    "освещ",
-    "текстил",
-    "штор",
     "декор",
     "обстав"
   ];
 
-  const explicitPlacementWords = [
-    "поставь",
-    "поставить",
-    "размести",
-    "разместить",
-    "расставь",
-    "добавь",
-    "добавить",
-    "обставь",
-    "обставить",
-    "подбери",
-    "подобрать",
-    "выбери",
-    "выбрать",
-    "замени",
-    "поменяй"
-  ];
+  const hasImperative = hasAny(lower, explicitPlacementWords);
+  const hasFurniture = hasAny(lower, furnitureWords);
 
-  const adviceQuestion = hasAny(lower, [
-    "как лучше",
-    "куда",
-    "где",
-    "как рационально",
-    "как расставить",
-    "как поставить",
-    "как разместить",
-    "можно ли",
-    "посовет",
-    "рекоменд"
-  ]);
-
-  const hasImperativePlacement = hasAny(lower, ["поставь", "размести", "расставь", "добавь", "обставь", "подбери", "выбери", "замени", "поменяй"]);
-
-  if (!hasAny(lower, furnitureWords) || !hasAny(lower, explicitPlacementWords) || (adviceQuestion && !hasImperativePlacement)) {
-    return null;
-  }
+  if (!hasImperative || !hasFurniture) return null;
 
   const specificCategories = inferSpecificFurnitureCategories(lower);
   const needsItemClarification = specificCategories.length === 0;
   const categories = needsItemClarification ? defaultCategoriesForRoom(room) : specificCategories;
   const targetRoom = room ?? { id: "apartment", name: "квартира" };
   const addMore = hasAny(lower, ["добавь", "еще", "ещё", "дополнительно", "плюс"]);
-  const replaceExisting = hasAny(lower, ["замени", "поменяй", "вместо", "другой вариант", "другую"]);
 
   return {
     categories,
@@ -313,7 +219,6 @@ function detectFurniturePlacementRequest(message: string, room?: Room): Furnitur
     roomId: targetRoom.id,
     roomName: targetRoom.name,
     addMore,
-    replaceExisting,
     needsItemClarification
   };
 }
@@ -331,7 +236,6 @@ function normalizeBudgetNumber(rawValue: string, rawUnit?: string) {
   }
 
   if (numeric < 1000) return Math.round(numeric * 1_000);
-
   return Math.round(numeric);
 }
 
@@ -359,23 +263,12 @@ function parseBudget(message: string): BudgetRequest | null {
 
   if (values.length === 1) {
     const max = values[0];
-    return {
-      min: 0,
-      max,
-      target: Math.round(max * 0.72),
-      label: `до ${formatPrice(max)}`
-    };
+    return { min: 0, max, target: Math.round(max * 0.72), label: `до ${formatPrice(max)}` };
   }
 
   const min = Math.min(values[0], values[1]);
   const max = Math.max(values[0], values[1]);
-
-  return {
-    min,
-    max,
-    target: Math.round((min + max) / 2),
-    label: `${formatPrice(min)} — ${formatPrice(max)}`
-  };
+  return { min, max, target: Math.round((min + max) / 2), label: `${formatPrice(min)} — ${formatPrice(max)}` };
 }
 
 function candidateScore(item: FurnitureItem, budget: BudgetRequest) {
@@ -384,33 +277,18 @@ function candidateScore(item: FurnitureItem, budget: BudgetRequest) {
   return Math.abs(item.price - budget.target) + inRangePenalty + overBudgetPenalty;
 }
 
-function selectFurnitureItem(
-  category: FurnitureCategory,
-  budget: BudgetRequest,
-  room?: Room,
-  excludedItemIds: string[] = []
-) {
+function selectFurnitureItem(category: FurnitureCategory, budget: BudgetRequest, room?: Room, excludedItemIds: string[] = []) {
   let candidates = furnitureItems.filter((item) => item.category === category);
-
-  if (room?.type === "children") {
-    const childrenSet = furnitureItems.find((item) => item.title.toLowerCase().includes("junior"));
-    if (childrenSet && !candidates.some((item) => item.id === childrenSet.id) && category === "storage") {
-      candidates = [childrenSet, ...candidates];
-    }
-  }
 
   if (room?.type === "bathroom") {
     candidates = furnitureItems.filter((item) => item.category === "bathroom");
   }
 
-  if (candidates.length === 0) {
-    candidates = furnitureItems;
-  }
+  if (candidates.length === 0) candidates = furnitureItems;
 
   const excluded = new Set(excludedItemIds);
-  const uniqueCandidates = candidates.filter((item) => !excluded.has(item.id));
-  const pool = uniqueCandidates.length > 0 ? uniqueCandidates : candidates;
-  const sorted = [...pool].sort((a, b) => candidateScore(a, budget) - candidateScore(b, budget));
+  const pool = candidates.filter((item) => !excluded.has(item.id));
+  const sorted = [...(pool.length ? pool : candidates)].sort((a, b) => candidateScore(a, budget) - candidateScore(b, budget));
   const item = sorted[0];
   const fitsBudget = item.price >= budget.min && item.price <= budget.max;
 
@@ -418,25 +296,25 @@ function selectFurnitureItem(
 }
 
 function furniturePlacementAdvice(category: FurnitureCategory, room?: Room) {
-  const roomName = room ? `в комнате **${room.name}**` : "на плане";
+  const roomName = room ? `в зоне **${room.name}**` : "на плане";
 
   switch (category) {
     case "bed":
       return `кровать поставлена ${roomName} у стены, чтобы остались проходы и не перекрывалась дверь`;
     case "sofa":
-      return `диван поставлен ${roomName} как мягкая зона отдыха с сохранением свободного прохода`;
+      return `диван поставлен ${roomName} как зона отдыха с сохранением свободного прохода`;
     case "table":
-      return `стол поставлен ${roomName} в свободной рабочей зоне, чтобы его было удобно обходить`;
+      return `стол поставлен ${roomName} ближе к свету и не на основной проход`;
     case "storage":
-      return `система хранения поставлена ${roomName} вдоль стены, чтобы не съедать центр комнаты`;
+      return `шкаф поставлен ${roomName} вдоль стены, чтобы не перекрывать дверь и центр помещения`;
     case "kitchen":
       return `кухонная мебель поставлена ${roomName} вдоль рабочей стены`;
     case "bathroom":
       return `мебель для санузла поставлена ${roomName} ближе к мокрой зоне`;
     case "lighting":
-      return `освещение размещено ${roomName} по центральной оси зоны`;
+      return `освещение размещено ${roomName} по центральной оси`;
     case "decor":
-      return `текстиль и декор добавлены ${roomName} как мягкий акцент`;
+      return `декор добавлен ${roomName} без перегруза проходов`;
     default:
       return `мебель поставлена ${roomName} с учетом проходов`;
   }
@@ -444,7 +322,7 @@ function furniturePlacementAdvice(category: FurnitureCategory, room?: Room) {
 
 function isFurnitureAdviceRequest(message: string) {
   const lower = message.toLowerCase();
-  const furnitureWords = ["мебел", "кроват", "диван", "стол", "шкаф", "гардероб", "хранен", "кухон", "тумб", "расстанов"];
+  const furnitureWords = ["мебел", "кроват", "диван", "стол", "шкаф", "гардероб", "хранен", "кухон", "тумб", "расстанов", "входн", "прихож"];
   const adviceWords = ["как", "куда", "где", "можно ли", "посовет", "рекоменд", "лучше", "удобн", "рациональн", "подойдет", "подойдёт"];
 
   return hasAny(lower, furnitureWords) && hasAny(lower, adviceWords);
@@ -453,51 +331,52 @@ function isFurnitureAdviceRequest(message: string) {
 function buildFurnitureAdviceAnswer(message: string, room?: Room) {
   const lower = message.toLowerCase();
   const roomName = room ? `**${room.name}** (${room.area} м²)` : "**квартире в целом**";
-  const categories = inferSpecificFurnitureCategories(lower);
-  const roomTips = room?.furnitureTips?.slice(0, 3) ?? [];
 
+  if (lower.includes("вход") || lower.includes("прихож")) {
+    return [
+      `**Как сделать входную зону удобнее:**`,
+      "",
+      "- Поставьте закрытый шкаф или узкую систему хранения вдоль свободной стены.",
+      "- Добавьте обувницу с сиденьем, чтобы вещи не скапливались на полу.",
+      "- Повесьте зеркало и 2–3 крючка для ежедневной одежды.",
+      "- Оставьте проход от двери свободным: мебель не должна попадать в зону открывания.",
+      "",
+      "Если нужно именно поставить предмет на планировку, напишите: **поставь шкаф до 70 000 ₽**."
+    ].join("\n");
+  }
+
+  const categories = inferSpecificFurnitureCategories(lower);
   const baseTips =
     categories.length > 0
-      ? categories.map((category) => `- ${furniturePlacementAdvice(category, room).replace("поставлена", "лучше поставить").replace("поставлен", "лучше поставить").replace("размещено", "лучше разместить").replace("добавлены", "лучше добавить")}.`)
+      ? categories.map((category) => `- ${furniturePlacementAdvice(category, room).replace("поставлена", "лучше поставить").replace("поставлен", "лучше поставить").replace("размещено", "лучше разместить")}.`)
       : [
           "- Сначала оставьте свободный проход от двери к окну и основным зонам.",
           "- Крупную мебель лучше ставить вдоль стен, а центр комнаты не перегружать.",
           "- Рабочее место удобнее располагать ближе к естественному свету."
         ];
 
-  return [
-    `**Рекомендации по расстановке мебели для ${roomName}:**`,
-    "",
-    ...baseTips,
-    ...roomTips.map((tip) => `- ${tip}.`),
-    "",
-    "Я не буду подбирать цену и товар, пока вы не попросите именно **поставить** или **подобрать** мебель на планировку. Для размещения можно написать: **поставь кровать до 70 000 ₽**."
-  ].join("\n");
+  return [`**Рекомендации для ${roomName}:**`, "", ...baseTips, "", "Цену и товар подберу только если вы попросите именно поставить или подобрать мебель."].join("\n");
 }
 
 function buildBudgetQuestion(request: FurniturePlacementRequest) {
   if (request.needsItemClarification) {
     return [
-      `Понял, вы хотите поставить мебель на планировку в зоне **${request.roomName}**.`,
+      `Понял, нужно поставить мебель на планировку в зоне **${request.roomName}**.`,
       "",
-      "Уточните, **какую именно мебель** ставим и в каком бюджете. Например:",
+      "Уточните, какую именно мебель ставим и в каком бюджете. Например:",
+      "- **шкаф до 70 000 ₽**",
       "- **кровать и шкаф до 120 000 ₽**",
-      "- **диван до 80 000 ₽**",
-      "- **стол и шкаф, средний вариант**",
-      "",
-      "Если нужны только рекомендации без размещения на плане, напишите: *как лучше расставить мебель*."
+      "- **диван до 80 000 ₽**"
     ].join("\n");
   }
 
   return [
-    `Понял, нужно подобрать **${request.label}** и поставить на планировку в зоне **${request.roomName}**.`,
+    `Понял, нужно поставить **${request.label}** на планировку в зоне **${request.roomName}**.`,
     "",
     "Под какой бюджет подбирать мебель? Напишите, например:",
     "- **до 70 000 ₽**",
     "- **40–80 тыс. ₽**",
-    "- **средний вариант**",
-    "",
-    "Если нужны только рекомендации без размещения товара, напишите: *как лучше расположить мебель*."
+    "- **средний вариант**"
   ].join("\n");
 }
 
@@ -509,119 +388,71 @@ function buildPlacementAnswer(
 ) {
   const allFit = placedItems.every((entry) => entry.fitsBudget);
   const budgetLine = allFit
-    ? `Подобрал средние варианты в бюджете **${budget.label}**.`
-    : `Часть товаров не попала точно в бюджет, поэтому взял ближайшие варианты из каталога.`;
+    ? `Подобрал варианты в бюджете **${budget.label}**.`
+    : "Часть товаров не попала точно в бюджет, поэтому взял ближайшие варианты из каталога.";
 
   return [
     budgetLine,
     "",
-    ...placedItems.map(
-      ({ item }) => `- **${item.title}** — **${formatPrice(item.price)}**: ${furniturePlacementAdvice(item.category, room)}.`
-    ),
+    ...placedItems.map(({ item }) => `- **${item.title}** — **${formatPrice(item.price)}**: ${furniturePlacementAdvice(item.category, room)}.`),
     "",
-    "Я поставил мебель на планировку. Если не понравится один предмет, напишите, например: **передвинь кровать** или **передвинь шкаф** — изменю только его."
+    "Я поставил мебель на планировку безопасно: не на дверь и не в основной проход. При необходимости предмет можно перетащить вручную прямо на плане."
   ].join("\n");
 }
 
 function getMoveWords(message: string) {
   const lower = message.toLowerCase();
-  return hasAny(lower, [
-    "передвин",
-    "перемест",
-    "сдвин",
-    "другое место",
-    "по-другому",
-    "поменяй расположение",
-    "не нравится расположение",
-    "не понравилось расположение",
-    "не понравил",
-    "не нравится где",
-    "не нравится как",
-    "неудобно стоит",
-    "поставь иначе"
-  ]);
+  return hasAny(lower, ["передвин", "перемест", "сдвин", "другое место", "по-другому", "поставь иначе", "неудобно стоит"]);
+}
+
+function getRemoveWords(message: string) {
+  const lower = message.toLowerCase();
+  return hasAny(lower, ["убери", "убрать", "удали", "удалить", "сними", "не нужна", "не нужен", "не подходит"]);
+}
+
+function getClearFurnitureWords(message: string) {
+  const lower = message.toLowerCase();
+  return hasAny(lower, ["очисти всю", "очистить всю", "сбрось мебель", "удали все", "убери все", "убери всё", "очисти план"]);
 }
 
 function matchingPlacementsByMessage(message: string, placements: FurniturePlacement[], room?: Room) {
   const lower = message.toLowerCase();
   const categories = inferFurnitureCategories(lower, room);
-  const hasSpecificCategory = categories.some((category) => lower.includes(categoryLabel(category).split(" ")[0])) ||
-    hasAny(lower, ["кроват", "диван", "стол", "шкаф", "кухон", "тумб", "свет", "текстил"]);
-
+  const hasSpecificCategory = hasAny(lower, ["кроват", "диван", "стол", "шкаф", "кухон", "тумб", "свет", "декор"]);
   const byTitle = placements.filter((placement) => lower.includes(placement.title.toLowerCase().split(" ")[0]));
+
   if (byTitle.length > 0) return byTitle;
 
-  let candidates = placements;
-
-  if (room) {
-    const roomCandidates = candidates.filter((placement) => placement.roomId === room.id);
-    if (roomCandidates.length > 0) candidates = roomCandidates;
-  }
+  let candidates = room ? placements.filter((placement) => placement.roomId === room.id) : placements;
+  if (candidates.length === 0) candidates = placements;
 
   if (hasSpecificCategory) {
     const categoryCandidates = candidates.filter((placement) => categories.includes(placement.category));
-
-    if (categoryCandidates.length > 0) {
-      return categoryCandidates;
-    }
-
-    return placements.filter((placement) => categories.includes(placement.category));
+    if (categoryCandidates.length > 0) return categoryCandidates;
   }
 
   return candidates;
 }
 
-function buildMoveAnswer(placement: FurniturePlacement) {
+function getRoomContextText(room?: Room) {
+  if (!room) return "Комната не выбрана. Ответ относится к квартире в целом.";
+
   return [
-    `Передвинул именно **${placement.title}**. Остальная мебель осталась на месте.`,
-    "",
-    "Если новое расположение тоже не подойдет, напишите еще раз: **передвинь этот предмет**."
-  ].join("\n");
+    `Текущая выбранная комната: ${room.name}, площадь ${room.area} м².`,
+    `Описание: ${room.description}.`,
+    `Советы по мебели: ${room.furnitureTips.join("; ")}.`
+  ].join(" ");
 }
 
-function getRemoveWords(message: string) {
-  const lower = message.toLowerCase();
-  return hasAny(lower, [
-    "убери",
-    "убрать",
-    "удали",
-    "удалить",
-    "сними",
-    "убирай",
-    "не нужна",
-    "не нужен",
-    "не подходит",
-    "не хочу"
-  ]);
-}
+function getRoomStarterPrompts(room?: Room) {
+  if (!room) return apartmentStarterPrompts;
+  if (room.chatPrompts?.length) return room.chatPrompts;
 
-function getClearFurnitureWords(message: string) {
-  const lower = message.toLowerCase();
-  const wantsClear = hasAny(lower, ["очисти", "очистить", "сбрось", "сбросить", "удали все", "убери все", "убери всё"]);
+  if (room.type === "hall") {
+    return ["Как сделать входную зону удобнее?", "Поставь шкаф до 70 000 ₽", "Передвинь шкаф", "Очисти всю мебель"];
+  }
 
-  return (
-    (getRemoveWords(lower) || wantsClear) &&
-    hasAny(lower, [
-      "всю мебель",
-      "вся мебель",
-      "все мебель",
-      "всё мебель",
-      "все предмет",
-      "всё",
-      "все",
-      "полностью",
-      "планировку",
-      "план"
-    ])
-  );
-}
-
-function buildRemoveAnswer(placement: FurniturePlacement) {
-  return [
-    `Убрал именно **${placement.title}** с планировки.`,
-    "",
-    "Остальная мебель осталась на месте. Если нужно убрать другой предмет, напишите его название."
-  ].join("\n");
+  return [`Как лучше использовать ${room.name.toLowerCase()} ${room.area} м²?`, "Поставь шкаф до 70 000 ₽", "Передвинь мебель", "Очисти всю мебель"];
 }
 
 export function AiChat({
@@ -634,67 +465,56 @@ export function AiChat({
   onFurnitureClear
 }: AiChatProps) {
   const selectedRoomRef = useRef<Room | undefined>(selectedRoom);
+  const messagesRef = useRef<Message[]>([]);
   const chatHistoryKey = useMemo(() => apartmentChatHistoryKey(apartment.id), [apartment.id]);
   const initialMessages = useMemo(() => getInitialMessages(apartment), [apartment]);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [pendingFurnitureRequest, setPendingFurnitureRequest] = useState<FurniturePlacementRequest | null>(null);
   const [lastFurnitureRequest, setLastFurnitureRequest] = useState<FurniturePlacementRequest | null>(null);
 
   useEffect(() => {
-    clearAllChatHistory();
-    setMessages(initialMessages);
+    const next = loadChatHistory(chatHistoryKey, initialMessages);
+    setMessages(next);
+    messagesRef.current = next;
     setHistoryLoaded(true);
   }, [chatHistoryKey, initialMessages]);
 
   useEffect(() => {
-    if (!historyLoaded) return;
-    saveChatHistory(chatHistoryKey, messages);
+    messagesRef.current = messages;
+    if (historyLoaded) saveChatHistory(chatHistoryKey, messages);
   }, [chatHistoryKey, historyLoaded, messages]);
 
   useEffect(() => {
     selectedRoomRef.current = selectedRoom;
   }, [selectedRoom]);
 
+  const isLoading = pendingCount > 0;
   const selectedRoomLabel = selectedRoom ? `${selectedRoom.name}, ${selectedRoom.area} м²` : "квартира в целом";
   const roomPrompts = useMemo(() => getRoomStarterPrompts(selectedRoom), [selectedRoom]);
 
-  const placeholder = useMemo(() => {
-    if (pendingFurnitureRequest) return "Напишите бюджет: например, до 70 000 ₽ или 40–80 тыс. ₽...";
-    if (lastFurnitureRequest) return "Можно написать новый бюджет или попросить передвинуть конкретную мебель...";
-    if (selectedRoom) return `Вопрос по помещению: ${selectedRoom.name.toLowerCase()}...`;
-    return "Задайте вопрос о квартире, цене, планировке или меблировке...";
-  }, [lastFurnitureRequest, pendingFurnitureRequest, selectedRoom]);
+  function addMessages(nextMessages: Message[]) {
+    setMessages((current) => [...current, ...nextMessages]);
+  }
 
   async function sendMessage(text: string) {
     const cleaned = text.trim();
-    if (!cleaned || isLoading) return;
+    if (!cleaned) return;
 
     const currentRoom = selectedRoomRef.current;
     const userMessage: Message = { role: "user", content: cleaned };
     const budget = parseBudget(cleaned);
     const directFurnitureRequest = detectFurniturePlacementRequest(cleaned, currentRoom);
-    const specificCategoriesInMessage = inferSpecificFurnitureCategories(cleaned);
-    const clarifiedPendingRequest =
-      pendingFurnitureRequest?.needsItemClarification && specificCategoriesInMessage.length > 0
-        ? {
-            ...pendingFurnitureRequest,
-            categories: specificCategoriesInMessage,
-            label: categoriesLabel(specificCategoriesInMessage),
-            needsItemClarification: false
-          }
-        : null;
-    const activeFurnitureRequest = directFurnitureRequest ?? clarifiedPendingRequest ?? pendingFurnitureRequest ?? (budget ? lastFurnitureRequest : null);
+    const activeFurnitureRequest = directFurnitureRequest ?? pendingFurnitureRequest ?? (budget ? lastFurnitureRequest : null);
 
     if ((getRemoveWords(cleaned) || getMoveWords(cleaned) || getClearFurnitureWords(cleaned)) && furniturePlacements.length === 0) {
-      setMessages((current) => [
-        ...current,
+      addMessages([
         userMessage,
         {
           role: "assistant",
-          content: "На планировке пока нет мебели. Сначала попросите поставить предмет, например: **поставь кровать до 70 000 ₽**."
+          content: "На планировке пока нет мебели. Сначала попросите поставить предмет, например: **поставь шкаф до 70 000 ₽**."
         }
       ]);
       setInput("");
@@ -703,119 +523,55 @@ export function AiChat({
 
     if (getClearFurnitureWords(cleaned) && furniturePlacements.length > 0) {
       onFurnitureClear?.();
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: "Очистил всю мебель с планировки. Теперь можно заново попросить поставить нужные предметы."
-        }
-      ]);
+      addMessages([userMessage, { role: "assistant", content: "Очистил всю мебель с планировки этого устройства." }]);
       setInput("");
       return;
     }
 
     if (getRemoveWords(cleaned) && furniturePlacements.length > 0) {
       const candidates = matchingPlacementsByMessage(cleaned, furniturePlacements, currentRoom);
-
       if (candidates.length === 1) {
         onFurnitureRemove?.(candidates[0].id);
-        setMessages((current) => [
-          ...current,
-          userMessage,
-          { role: "assistant", content: buildRemoveAnswer(candidates[0]) }
-        ]);
-        setInput("");
-        return;
-      }
-
-      if (candidates.length > 1) {
-        setMessages((current) => [
-          ...current,
+        addMessages([userMessage, { role: "assistant", content: `Убрал **${candidates[0].title}** с планировки.` }]);
+      } else {
+        addMessages([
           userMessage,
           {
             role: "assistant",
-            content: [
-              "Уточните, какую именно мебель убрать:",
-              "",
-              ...candidates.map((placement) => `- **${placement.title}**`)
-            ].join("\n")
+            content: ["Уточните, какую мебель убрать:", "", ...candidates.map((placement) => `- **${placement.title}**`)].join("\n")
           }
         ]);
-        setInput("");
-        return;
       }
-
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: "Я не нашел на планировке такую мебель. Напишите точнее, например: **убери кровать** или **убери шкаф**."
-        }
-      ]);
       setInput("");
       return;
     }
 
     if (getMoveWords(cleaned) && furniturePlacements.length > 0) {
       const candidates = matchingPlacementsByMessage(cleaned, furniturePlacements, currentRoom);
-
       if (candidates.length === 1) {
         onFurnitureMove?.(candidates[0].id);
-        setMessages((current) => [
-          ...current,
-          userMessage,
-          { role: "assistant", content: buildMoveAnswer(candidates[0]) }
-        ]);
-        setInput("");
-        return;
-      }
-
-      if (candidates.length > 1) {
-        setMessages((current) => [
-          ...current,
+        addMessages([
           userMessage,
           {
             role: "assistant",
-            content: [
-              "Уточните, какую именно мебель передвинуть:",
-              "",
-              ...candidates.map((placement) => `- **${placement.title}**`)
-            ].join("\n")
+            content: `Передвинул **${candidates[0].title}**. Остальную мебель не трогал. Можно также перетащить предмет вручную на плане.`
           }
         ]);
-        setInput("");
-        return;
+      } else {
+        addMessages([
+          userMessage,
+          {
+            role: "assistant",
+            content: ["Уточните, какую мебель передвинуть:", "", ...candidates.map((placement) => `- **${placement.title}**`)].join("\n")
+          }
+        ]);
       }
-
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: "Я не нашел на планировке такую мебель. Сначала поставьте ее через ИИ, например: **поставь кровать до 70 000 ₽**."
-        }
-      ]);
       setInput("");
       return;
     }
 
-    if (
-      isFurnitureAdviceRequest(cleaned) &&
-      !directFurnitureRequest &&
-      !clarifiedPendingRequest &&
-      !budget &&
-      !pendingFurnitureRequest
-    ) {
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: buildFurnitureAdviceAnswer(cleaned, currentRoom)
-        }
-      ]);
+    if (isFurnitureAdviceRequest(cleaned) && !directFurnitureRequest && !budget && !pendingFurnitureRequest) {
+      addMessages([userMessage, { role: "assistant", content: buildFurnitureAdviceAnswer(cleaned, currentRoom) }]);
       setInput("");
       return;
     }
@@ -827,29 +583,7 @@ export function AiChat({
     if (activeFurnitureRequest?.needsItemClarification) {
       setPendingFurnitureRequest(activeFurnitureRequest);
       setLastFurnitureRequest(activeFurnitureRequest);
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: buildBudgetQuestion(activeFurnitureRequest)
-        }
-      ]);
-      setInput("");
-      return;
-    }
-
-    if (clarifiedPendingRequest && !budget) {
-      setPendingFurnitureRequest(clarifiedPendingRequest);
-      setLastFurnitureRequest(clarifiedPendingRequest);
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: buildBudgetQuestion(clarifiedPendingRequest)
-        }
-      ]);
+      addMessages([userMessage, { role: "assistant", content: buildBudgetQuestion(activeFurnitureRequest) }]);
       setInput("");
       return;
     }
@@ -863,6 +597,7 @@ export function AiChat({
         const shouldReplace = Boolean(existing && !activeFurnitureRequest.addMore);
         const { item, fitsBudget } = selectFurnitureItem(category, budget, targetRoom, [...usedItemIds]);
         usedItemIds.add(item.id);
+
         const placement: FurniturePlacement = {
           id: `${activeFurnitureRequest.roomId}-${category}-${item.id}-${Date.now()}-${index}`,
           roomId: activeFurnitureRequest.roomId,
@@ -883,14 +618,7 @@ export function AiChat({
 
       setPendingFurnitureRequest(null);
       setLastFurnitureRequest({ ...activeFurnitureRequest, addMore: false });
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: buildPlacementAnswer(activeFurnitureRequest, budget, placedItems, targetRoom)
-        }
-      ]);
+      addMessages([userMessage, { role: "assistant", content: buildPlacementAnswer(activeFurnitureRequest, budget, placedItems, targetRoom) }]);
       setInput("");
       return;
     }
@@ -898,38 +626,17 @@ export function AiChat({
     if (directFurnitureRequest && !budget) {
       setPendingFurnitureRequest(directFurnitureRequest);
       setLastFurnitureRequest(directFurnitureRequest);
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content: buildBudgetQuestion(directFurnitureRequest)
-        }
-      ]);
-      setInput("");
-      return;
-    }
-
-    if ((pendingFurnitureRequest || lastFurnitureRequest) && !budget && hasAny(cleaned.toLowerCase(), ["да", "ок", "хорошо", "подбери", "поставь"])) {
-      setMessages((current) => [
-        ...current,
-        userMessage,
-        {
-          role: "assistant",
-          content:
-            "Чтобы поставить мебель на планировку, мне нужен бюджет. Напишите, например: **до 70 000 ₽**, **40–80 тыс. ₽** или **средний вариант**."
-        }
-      ]);
+      addMessages([userMessage, { role: "assistant", content: buildBudgetQuestion(directFurnitureRequest) }]);
       setInput("");
       return;
     }
 
     const roomContext = getRoomContextText(currentRoom);
-    const historySnapshot = messages.slice(-8);
+    const historySnapshot = messagesRef.current.slice(-8);
 
-    setMessages((current) => [...current, userMessage]);
+    addMessages([userMessage]);
     setInput("");
-    setIsLoading(true);
+    setPendingCount((count) => count + 1);
 
     try {
       const data = await postJson("/api/chat", {
@@ -940,19 +647,17 @@ export function AiChat({
         history: historySnapshot
       });
 
-      setMessages((current) => [
-        ...current,
+      addMessages([
         {
           role: "assistant",
           content: sanitizeAssistantContent(
             data.answer ?? data.error,
-            "**Краткая консультация:** старый ответ про лимит OpenRouter скрыт. Напишите вопрос еще раз коротко: например, **где поставить кровать**, **куда поставить шкаф** или **какие преимущества у этой комнаты**."
+            "**Краткая консультация:** напишите вопрос коротко: например, **как сделать входную зону удобнее**, **где лучше хранение** или **какие преимущества у комнаты**."
           )
         }
       ]);
     } catch (error) {
-      setMessages((current) => [
-        ...current,
+      addMessages([
         {
           role: "assistant",
           content:
@@ -962,14 +667,15 @@ export function AiChat({
         }
       ]);
     } finally {
-      setIsLoading(false);
+      setPendingCount((count) => Math.max(0, count - 1));
     }
   }
 
   function clearCurrentChat() {
     clearChatHistory(chatHistoryKey);
-    clearAllChatHistory();
-    setMessages(initialMessages);
+    const next = initialMessages;
+    setMessages(next);
+    messagesRef.current = next;
     setInput("");
     setPendingFurnitureRequest(null);
     setLastFurnitureRequest(null);
@@ -1005,12 +711,12 @@ export function AiChat({
 
       {furniturePlacements.length > 0 && (
         <div className="selected-room-note furniture-budget-note" aria-live="polite">
-          На плане уже стоит мебели: <strong>{furniturePlacements.length}</strong>. Можно написать: <strong>передвинь кровать</strong> или <strong>убери шкаф</strong>.
+          Мебель хранится только на этом устройстве. Можно перетаскивать предметы прямо на плане.
         </div>
       )}
 
       <div className="chat-history-actions">
-        <span>История сохраняется в этом браузере.</span>
+        <span>{pendingCount > 0 ? `Обрабатывается запросов: ${pendingCount}` : "История сохраняется в этом браузере."}</span>
         <button type="button" onClick={clearCurrentChat}>
           Очистить историю
         </button>
@@ -1022,9 +728,9 @@ export function AiChat({
             <MarkdownText content={message.content} />
           </div>
         ))}
-        {isLoading && (
+        {pendingCount > 0 && (
           <div className="chat-message chat-assistant">
-            <MarkdownText content="*Подготавливаю ответ...*" />
+            <MarkdownText content={`*Подготавливаю ответ... (${pendingCount})*`} />
           </div>
         )}
       </div>
@@ -1038,8 +744,19 @@ export function AiChat({
       </div>
 
       <form className="chat-form" onSubmit={onSubmit}>
-        <textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={placeholder} rows={2} />
-        <button className="button button-primary" type="submit" disabled={isLoading}>
+        <textarea
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder={
+            pendingFurnitureRequest
+              ? "Напишите бюджет: например, до 70 000 ₽..."
+              : selectedRoom
+                ? `Вопрос по помещению: ${selectedRoom.name.toLowerCase()}...`
+                : "Задайте вопрос о квартире..."
+          }
+          rows={2}
+        />
+        <button className="button button-primary" type="submit">
           Отправить
         </button>
       </form>

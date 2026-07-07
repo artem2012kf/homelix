@@ -1,24 +1,31 @@
-/* 
-Вставь этот блок В САМЫЙ КОНЕЦ app/globals.css.
-Он гасит старые неудачные блоки со "скрином/картой", если они остались после прошлых правок.
+/*
+Добавь этот блок в самый конец app/globals.css.
+Он нужен для ручного перетаскивания мебели и зоны свободного прохода у дверей.
 */
 
-.district-preview,
-.clean-district-preview,
-.map-preview-section,
-.tyumen-city-map-section,
-.yandex-map-section,
-.map-page-section,
-.map-page-hero {
-  display: none !important;
+.door-clearance {
+  fill: rgba(249, 62, 62, 0.06);
+  stroke: rgba(249, 62, 62, 0.16);
+  stroke-width: 1;
+  pointer-events: none;
 }
 
-.brand-mark img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: contain !important;
+.furniture-placement {
+  pointer-events: auto;
+  touch-action: none;
 }
 
-.hero-widget img {
-  max-width: 100% !important;
+.furniture-placement:active {
+  cursor: grabbing !important;
+}
+
+.placed-furniture-panel .prompt-chip {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
 }

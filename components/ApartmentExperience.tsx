@@ -13,10 +13,26 @@ type PlacementOptions = {
   replaceSameCategoryInRoom?: boolean;
 };
 
+function getDeviceId() {
+  if (typeof window === "undefined") return "server";
+
+  const key = "sq-device-id";
+  const saved = window.localStorage.getItem(key);
+  if (saved) return saved;
+
+  const next =
+    typeof window.crypto?.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : `device-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  window.localStorage.setItem(key, next);
+  return next;
+}
+
 function normalizePlacement(placement: FurniturePlacement, roomPlacementIndex: number): FurniturePlacement {
   return {
     ...placement,
-    layoutVariant: placement.layoutVariant ?? roomPlacementIndex % 4,
+    layoutVariant: placement.layoutVariant ?? roomPlacementIndex % 5,
     createdAt: placement.createdAt ?? Date.now()
   };
 }
@@ -25,15 +41,19 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
   const [selectedRoomId, setSelectedRoomId] = useState(apartment.rooms[0]?.id);
   const [furniturePlacements, setFurniturePlacements] = useState<FurniturePlacement[]>([]);
   const [furniturePlanLoaded, setFurniturePlanLoaded] = useState(false);
-  const furniturePlanKey = `sq-furniture-plan-${apartment.id}`;
+  const [furniturePlanKey, setFurniturePlanKey] = useState("");
 
   useEffect(() => {
+    setFurniturePlanKey(`sq-furniture-plan-${getDeviceId()}-${apartment.id}`);
+  }, [apartment.id]);
+
+  useEffect(() => {
+    if (!furniturePlanKey) return;
+
     try {
       const raw = window.localStorage.getItem(furniturePlanKey);
       const saved = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(saved)) {
-        setFurniturePlacements(saved);
-      }
+      setFurniturePlacements(Array.isArray(saved) ? saved : []);
     } catch {
       setFurniturePlacements([]);
     } finally {
@@ -42,7 +62,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
   }, [furniturePlanKey]);
 
   useEffect(() => {
-    if (!furniturePlanLoaded) return;
+    if (!furniturePlanLoaded || !furniturePlanKey) return;
     window.localStorage.setItem(furniturePlanKey, JSON.stringify(furniturePlacements));
   }, [furniturePlanKey, furniturePlanLoaded, furniturePlacements]);
 
@@ -67,8 +87,9 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
       }
 
       const roomPlacementIndex = next.filter((placement) => placement.roomId === nextPlacement.roomId).length;
-      return [...next, normalizePlacement(nextPlacement, roomPlacementIndex)];
+      return [...next, normalizePlacement({ ...nextPlacement, manualX: undefined, manualY: undefined }, roomPlacementIndex)];
     });
+
     setSelectedRoomId(nextPlacement.roomId);
   }
 
@@ -78,7 +99,23 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
         placement.id === placementId
           ? {
               ...placement,
-              layoutVariant: ((placement.layoutVariant ?? 0) + 1) % 5
+              manualX: undefined,
+              manualY: undefined,
+              layoutVariant: ((placement.layoutVariant ?? 0) + 1) % 8
+            }
+          : placement
+      )
+    );
+  }
+
+  function moveFurnitureManually(placementId: string, x: number, y: number) {
+    setFurniturePlacements((current) =>
+      current.map((placement) =>
+        placement.id === placementId
+          ? {
+              ...placement,
+              manualX: x,
+              manualY: y
             }
           : placement
       )
@@ -99,13 +136,17 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
         <div className="section-heading compact-heading">
           <span className="eyebrow">Планировка</span>
           <h2>Выберите комнату</h2>
-          <p className="muted">Наведите курсор на помещение, нажмите на планировке или выберите комнату из списка ниже.</p>
+          <p className="muted">
+            Нажмите на комнату или перетащите уже поставленную мебель мышью/пальцем. Мебель сохраняется только на этом устройстве.
+          </p>
         </div>
+
         <ApartmentPlan
           rooms={apartment.rooms}
           selectedRoomId={selectedRoom?.id}
           onRoomSelect={setSelectedRoomId}
           furniturePlacements={furniturePlacements}
+          onFurnitureManualMove={moveFurnitureManually}
         />
 
         {furniturePlacements.length > 0 && (
@@ -113,7 +154,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
             <div>
               <strong>Мебель на планировке</strong>
               <span>
-                Управление идет через чат: напишите «передвинь кровать», «убери шкаф» или «очисти всю мебель».
+                На другом устройстве эта мебель не появится. Можно перетащить предмет вручную, передвинуть через ИИ или убрать.
               </span>
             </div>
             <ul>
@@ -124,6 +165,14 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
                     <span>{room?.name ?? "Комната"}</span>
                     <strong>{placement.title}</strong>
                     <small>{formatPrice(placement.price)}</small>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      <button type="button" className="prompt-chip" onClick={() => moveFurniture(placement.id)}>
+                        Передвинуть
+                      </button>
+                      <button type="button" className="prompt-chip" onClick={() => removeFurniture(placement.id)}>
+                        Убрать
+                      </button>
+                    </div>
                   </li>
                 );
               })}
