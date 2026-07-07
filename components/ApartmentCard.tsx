@@ -6,10 +6,12 @@ import { ApartmentCardActions } from "@/components/ApartmentCardActions";
 import { ApartmentMiniPlan } from "@/components/ApartmentMiniPlan";
 import { useAuth } from "@/components/AuthProvider";
 import { formatArea, formatPrice, statusLabel } from "@/lib/format";
+import { getResidentialComplexByApartmentId } from "@/lib/residential-complexes";
 
 export function ApartmentCard({ apartment }: { apartment: Apartment }) {
   const { getApartmentStatus } = useAuth();
   const effectiveStatus = getApartmentStatus(apartment.id, apartment.status);
+  const complex = getResidentialComplexByApartmentId(apartment.id, apartment.project);
 
   return (
     <article className="apartment-card">
@@ -27,7 +29,7 @@ export function ApartmentCard({ apartment }: { apartment: Apartment }) {
           style={{
             display: "inline-flex",
             marginBottom: 10,
-            padding: "7px 10px",
+            padding: "7px 11px",
             borderRadius: 999,
             color: "var(--primary-dark)",
             background: "rgba(249, 62, 62, 0.08)",
@@ -35,13 +37,13 @@ export function ApartmentCard({ apartment }: { apartment: Apartment }) {
             fontWeight: 900
           }}
         >
-          ЖК: {apartment.project}
+          {complex.name}
         </span>
         <h3>{apartment.title}</h3>
       </div>
 
       <p className="muted">
-        {apartment.project}, {apartment.building}, {apartment.section}. Вид: {apartment.windowView}.
+        {complex.name}, {complex.district}, {apartment.building}, {apartment.section}. Вид: {apartment.windowView}.
       </p>
 
       <div className="card-metrics">

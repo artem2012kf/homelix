@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ApartmentCatalog } from "@/components/ApartmentCatalog";
 import { apartments } from "@/lib/apartments";
 import { formatPrice } from "@/lib/format";
+import { residentialComplexes } from "@/lib/residential-complexes";
 
 const availableCount = apartments.filter((item) => item.status === "available").length;
 const totalCount = apartments.length;
@@ -22,8 +23,8 @@ export default function HomePage() {
             <a className="button button-primary" href="#apartments">
               Смотреть квартиры
             </a>
-            <a className="button button-ghost" href="#architecture">
-              Как работает
+            <a className="button button-ghost" href="#complexes">
+              ЖК Тюмени
             </a>
           </div>
           <div className="hero-stats" aria-label="Ключевые показатели каталога">
@@ -76,9 +77,9 @@ export default function HomePage() {
               style={{ width: "min(78%, 270px)", height: "auto", objectFit: "contain" }}
             />
             <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
-              <strong style={{ fontSize: 30, lineHeight: 1, color: "var(--text)" }}>ЖК Солнечный квартал</strong>
+              <strong style={{ fontSize: 30, lineHeight: 1, color: "var(--text)" }}>ЖК Тюмени в одном каталоге</strong>
               <span style={{ color: "var(--muted)", lineHeight: 1.45 }}>
-                Маскот помогает выбрать квартиру, сравнить планировки и задать вопрос ИИ-консультанту.
+                Маскот помогает выбрать квартиру, сравнить жилые комплексы и задать вопрос ИИ-консультанту.
               </span>
             </div>
           </div>
@@ -90,11 +91,109 @@ export default function HomePage() {
           <span className="eyebrow">Каталог</span>
           <h2>Квартиры в продаже</h2>
           <p>
-            В каждой карточке указано, в каком ЖК находится квартира, а также корпус, секция, этаж, площадь и цена.
-            Свободные варианты идут первыми, затем бронь и проданные квартиры.
+            В карточках указано, в каком ЖК находится квартира: название комплекса, район, корпус, секция, этаж,
+            площадь и цена.
           </p>
         </div>
         <ApartmentCatalog apartments={apartments} />
+      </section>
+
+      <section className="section" id="complexes">
+        <div className="section-heading wide-heading">
+          <span className="eyebrow">20 ЖК Тюмени</span>
+          <h2>Жилые комплексы, которые можно показывать в каталоге</h2>
+          <p>
+            Список оформлен нормально: без лишних символов, с районом, оценками, количеством отзывов, уровнем цен и
+            застройщиком.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: 18
+          }}
+        >
+          {residentialComplexes.map((complex, index) => (
+            <article
+              key={complex.id}
+              style={{
+                display: "grid",
+                gap: 14,
+                padding: 22,
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius-xl)",
+                background: "rgba(255, 255, 255, 0.86)",
+                boxShadow: "0 18px 56px rgba(65, 45, 20, 0.08)"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                <span
+                  style={{
+                    display: "grid",
+                    minWidth: 42,
+                    height: 42,
+                    placeItems: "center",
+                    borderRadius: 14,
+                    color: "#ffffff",
+                    background: "var(--primary)",
+                    fontWeight: 900
+                  }}
+                >
+                  {index + 1}
+                </span>
+                {typeof complex.rating === "number" ? (
+                  <strong style={{ color: "var(--text)" }}>★ {complex.rating}</strong>
+                ) : null}
+              </div>
+
+              <div>
+                <h3 style={{ margin: 0, fontSize: 25, letterSpacing: "-0.04em" }}>{complex.name}</h3>
+                <p style={{ margin: "8px 0 0", color: "var(--muted)", lineHeight: 1.45 }}>
+                  {complex.district}
+                  {complex.microdistrict ? ` · ${complex.microdistrict}` : ""}
+                </p>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 10
+                }}
+              >
+                <div style={{ padding: 12, borderRadius: 18, background: "#fbf7ef" }}>
+                  <small style={{ display: "block", color: "var(--muted)" }}>Общий балл</small>
+                  <strong>{complex.score?.toLocaleString("ru-RU") ?? "—"}</strong>
+                </div>
+                <div style={{ padding: 12, borderRadius: 18, background: "#fbf7ef" }}>
+                  <small style={{ display: "block", color: "var(--muted)" }}>Оценок</small>
+                  <strong>{complex.reviews?.toLocaleString("ru-RU") ?? "—"}</strong>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {complex.tags.slice(0, 5).map((tag) => (
+                  <span
+                    key={tag}
+                    style={{
+                      padding: "7px 9px",
+                      border: "1px solid var(--line)",
+                      borderRadius: 999,
+                      color: "var(--muted)",
+                      background: "#ffffff",
+                      fontSize: 12,
+                      fontWeight: 800
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="section architecture" id="architecture">
@@ -115,8 +214,8 @@ export default function HomePage() {
           </article>
           <article>
             <span>02</span>
-            <h3>Мини-план</h3>
-            <p>В карточке сразу видно примерную структуру квартиры: комнаты, санузел, прихожую и лоджию.</p>
+            <h3>ЖК</h3>
+            <p>У каждой квартиры видно название жилого комплекса, район и основные характеристики объекта.</p>
           </article>
           <article>
             <span>03</span>
@@ -129,60 +228,12 @@ export default function HomePage() {
             <p>После регистрации клиент сохраняет избранное и бронирует свободные квартиры.</p>
           </article>
         </div>
-
-        <div className="steps-grid extended-steps">
-          <article>
-            <strong>1</strong>
-            <h3>Актуальные статусы</h3>
-            <p>Квартиры автоматически группируются: сначала свободные, затем забронированные, затем проданные.</p>
-          </article>
-          <article>
-            <strong>2</strong>
-            <h3>Интерактивная SVG-планировка</h3>
-            <p>Каждая комната — отдельная зона. При наведении меняется выбранная комната и быстрые подсказки для ИИ.</p>
-          </article>
-          <article>
-            <strong>3</strong>
-            <h3>Контекстный ИИ-чат</h3>
-            <p>ИИ знает площадь, цену, этаж, отделку, преимущества квартиры и параметры выбранной комнаты.</p>
-          </article>
-          <article>
-            <strong>4</strong>
-            <h3>История диалога</h3>
-            <p>Чат сохраняет сообщения и не начинает каждый ответ заново с приветствия.</p>
-          </article>
-          <article>
-            <strong>5</strong>
-            <h3>Регистрация клиента</h3>
-            <p>Почта и пароль дают доступ к избранному, бронированиям и личному кабинету.</p>
-          </article>
-          <article>
-            <strong>6</strong>
-            <h3>База данных проекта</h3>
-            <p>В проекте есть серверная JSON-база и SQL-схема для перехода на PostgreSQL или Supabase.</p>
-          </article>
-          <article>
-            <strong>7</strong>
-            <h3>Магазин мебели</h3>
-            <p>Отдельная вкладка показывает мебель с изображениями, ценами, размерами и сроками доставки.</p>
-          </article>
-          <article>
-            <strong>8</strong>
-            <h3>Работа в локальной сети</h3>
-            <p>Проект можно открыть с другого компьютера по IP-адресу, если сервер запущен с hostname 0.0.0.0.</p>
-          </article>
-          <article>
-            <strong>9</strong>
-            <h3>Готовность к расширению</h3>
-            <p>Структура позволяет подключить CRM, платежи, админ-панель, менеджеров и реальные SVG-планировки.</p>
-          </article>
-        </div>
       </section>
 
       <section className="section contacts-section" id="contacts">
         <div className="section-heading">
           <span className="eyebrow">Контакты</span>
-          <h2>Офис продаж ЖК «Солнечный квартал» в Тюмени</h2>
+          <h2>Офис продаж в Тюмени</h2>
           <p>
             Оставьте заявку на сайте, сохраните квартиру в личном кабинете или забронируйте свободный вариант для
             дальнейшего звонка менеджера.
@@ -196,7 +247,7 @@ export default function HomePage() {
           </article>
           <article>
             <span>Адрес</span>
-            <strong>г. Тюмень, ул. Солнечная, 12</strong>
+            <strong>г. Тюмень</strong>
             <p>Шоурум, консультации и подбор квартиры</p>
           </article>
           <article>
