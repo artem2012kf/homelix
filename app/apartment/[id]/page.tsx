@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ApartmentBuildingMap } from "@/components/ApartmentBuildingMap";
-import { TyumenCityMap } from "@/components/TyumenCityMap";
 import { ApartmentExperience } from "@/components/ApartmentExperience";
 import { ApartmentCardActions } from "@/components/ApartmentCardActions";
 import { ApartmentStatusBadge } from "@/components/ApartmentStatusBadge";
@@ -57,20 +55,6 @@ export default async function ApartmentPage({ params }: { params: Promise<{ id: 
             <strong>{apartment.finishing}</strong>
           </div>
         </div>
-      </section>
-
-
-      <section className="section apartment-location-section">
-        <div className="section-heading">
-          <span className="eyebrow">Расположение</span>
-          <h2>Квартира на карте ЖК</h2>
-          <p>
-            Эта квартира находится в {apartment.building}. На схеме корпус выделен красным, рядом показаны остальные
-            корпуса и доступные квартиры.
-          </p>
-        </div>
-        <TyumenCityMap compact />
-        <ApartmentBuildingMap apartments={apartments} highlightBuilding={apartment.building} compact />
       </section>
 
       <section className="section apartment-details">
