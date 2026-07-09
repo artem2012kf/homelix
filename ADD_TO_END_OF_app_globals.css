@@ -1,11 +1,12 @@
 /*
 Вставь в самый конец app/globals.css.
-Мебель двигается напрямую мышью или пальцем.
+Добавляет поворот мебели и итоговую стоимость квартиры с мебелью.
 */
 
 .apartment-plan,
 .furniture-placement,
-.furniture-drag-hitbox {
+.furniture-drag-hitbox,
+.furniture-rotate-handle {
   touch-action: none !important;
 }
 
@@ -32,8 +33,71 @@
   stroke: transparent !important;
 }
 
+.furniture-rotate-handle {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.furniture-rotate-handle circle {
+  fill: #ffffff;
+  stroke: var(--primary);
+  stroke-width: 2;
+  filter: drop-shadow(0 8px 14px rgba(65, 45, 20, 0.16));
+}
+
+.furniture-rotate-handle text {
+  fill: var(--primary-dark);
+  font-size: 18px;
+  font-weight: 900;
+  pointer-events: none;
+  user-select: none;
+}
+
 body.is-dragging-furniture {
   cursor: grabbing !important;
   user-select: none !important;
   overscroll-behavior: none;
+}
+
+.apartment-total-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.apartment-total-panel div {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.apartment-total-panel span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.apartment-total-panel strong {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.apartment-total-panel .apartment-total-panel-main {
+  border-color: rgba(249, 62, 62, 0.28);
+  background: rgba(249, 62, 62, 0.08);
+}
+
+.apartment-total-panel .apartment-total-panel-main strong {
+  color: var(--primary-dark);
+}
+
+@media (max-width: 760px) {
+  .apartment-total-panel {
+    grid-template-columns: 1fr;
+  }
 }

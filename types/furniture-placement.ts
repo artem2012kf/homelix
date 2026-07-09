@@ -18,5 +18,10 @@ export type FurniturePlacement = {
    */
   manualX?: number;
   manualY?: number;
+  /**
+   * Ручной поворот мебели на планировке.
+   * 0, 90, 180 или 270 градусов.
+   */
+  manualRotation?: number;
   createdAt?: number;
 };

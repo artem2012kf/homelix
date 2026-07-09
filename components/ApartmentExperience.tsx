@@ -33,6 +33,7 @@ function normalizePlacement(placement: FurniturePlacement, roomPlacementIndex: n
   return {
     ...placement,
     layoutVariant: placement.layoutVariant ?? roomPlacementIndex % 5,
+    manualRotation: placement.manualRotation ?? 0,
     createdAt: placement.createdAt ?? Date.now()
   };
 }
@@ -71,6 +72,12 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
     [apartment.rooms, selectedRoomId]
   );
 
+  const furnitureTotal = useMemo(
+    () => furniturePlacements.reduce((sum, placement) => sum + placement.price, 0),
+    [furniturePlacements]
+  );
+  const totalWithFurniture = apartment.price + furnitureTotal;
+
   function placeFurniture(nextPlacement: FurniturePlacement, options: PlacementOptions = {}) {
     setFurniturePlacements((current) => {
       let next = current;
@@ -87,7 +94,18 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
       }
 
       const roomPlacementIndex = next.filter((placement) => placement.roomId === nextPlacement.roomId).length;
-      return [...next, normalizePlacement({ ...nextPlacement, manualX: undefined, manualY: undefined }, roomPlacementIndex)];
+      return [
+        ...next,
+        normalizePlacement(
+          {
+            ...nextPlacement,
+            manualX: undefined,
+            manualY: undefined,
+            manualRotation: 0
+          },
+          roomPlacementIndex
+        )
+      ];
     });
 
     setSelectedRoomId(nextPlacement.roomId);
@@ -122,6 +140,19 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
     );
   }
 
+  function rotateFurniture(placementId: string) {
+    setFurniturePlacements((current) =>
+      current.map((placement) =>
+        placement.id === placementId
+          ? {
+              ...placement,
+              manualRotation: ((placement.manualRotation ?? 0) + 90) % 360
+            }
+          : placement
+      )
+    );
+  }
+
   function removeFurniture(placementId: string) {
     setFurniturePlacements((current) => current.filter((placement) => placement.id !== placementId));
   }
@@ -137,8 +168,8 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           <span className="eyebrow">Планировка</span>
           <h2>Выберите комнату</h2>
           <p className="muted">
-            Чтобы передвинуть мебель, зажмите предмет прямо на планировке и перетащите мышью или пальцем.
-            Отдельная кнопка для перемещения больше не нужна.
+            Мебель можно двигать мышью/пальцем. Чтобы повернуть предмет, нажмите на круглый значок ↻ рядом с ним
+            или используйте кнопку в списке мебели.
           </p>
         </div>
 
@@ -148,14 +179,30 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           onRoomSelect={setSelectedRoomId}
           furniturePlacements={furniturePlacements}
           onFurnitureManualMove={moveFurnitureManually}
+          onFurnitureRotate={rotateFurniture}
         />
+
+        <div className="apartment-total-panel">
+          <div>
+            <span>Стоимость квартиры</span>
+            <strong>{formatPrice(apartment.price)}</strong>
+          </div>
+          <div>
+            <span>Мебель на планировке</span>
+            <strong>{formatPrice(furnitureTotal)}</strong>
+          </div>
+          <div className="apartment-total-panel-main">
+            <span>Итого квартира + мебель</span>
+            <strong>{formatPrice(totalWithFurniture)}</strong>
+          </div>
+        </div>
 
         {furniturePlacements.length > 0 && (
           <div className="placed-furniture-panel">
             <div>
               <strong>Мебель на планировке</strong>
               <span>
-                Зажмите мебель на плане и двигайте её мышью или пальцем. На другом устройстве эта мебель не появится.
+                Цена этой мебели уже прибавлена к стоимости квартиры. Предмет можно перетащить и повернуть.
               </span>
             </div>
             <ul>
@@ -165,8 +212,16 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
                   <li key={placement.id}>
                     <span>{room?.name ?? "Комната"}</span>
                     <strong>{placement.title}</strong>
-                    <small>{formatPrice(placement.price)}</small>
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <small>
+                      {formatPrice(placement.price)}
+                      {typeof placement.manualRotation === "number" && placement.manualRotation > 0
+                        ? ` · поворот ${placement.manualRotation}°`
+                        : ""}
+                    </small>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                      <button type="button" className="prompt-chip" onClick={() => rotateFurniture(placement.id)}>
+                        Повернуть
+                      </button>
                       <button type="button" className="prompt-chip" onClick={() => removeFurniture(placement.id)}>
                         Убрать
                       </button>
