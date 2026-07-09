@@ -1,0 +1,25 @@
+/*
+Вставь этот блок в самый конец app/globals.css.
+Он дополнительно страхует планировку от старых черных прямоугольников дверей.
+*/
+
+.door-clearance {
+  display: none !important;
+  fill: transparent !important;
+  stroke: transparent !important;
+}
+
+.door-opening rect {
+  display: none !important;
+}
+
+.door-gap {
+  fill: none !important;
+  stroke: #fffaf2 !important;
+  stroke-width: 18 !important;
+  stroke-linecap: round !important;
+}
+
+.door-opening {
+  pointer-events: none;
+}
