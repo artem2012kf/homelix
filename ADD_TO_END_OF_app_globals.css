@@ -1,6 +1,6 @@
 /*
 Вставь в самый конец app/globals.css.
-Страховка от старых чёрных SVG-стилей.
+Страховка от старых чёрных SVG-стилей и старых дверей.
 */
 
 .apartment-plan,
@@ -10,6 +10,12 @@
 
 .apartment-plan rect,
 .card-mini-plan rect {
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+}
+
+.apartment-plan polygon,
+.card-mini-plan polygon {
   fill-opacity: 1 !important;
   stroke-opacity: 1 !important;
 }

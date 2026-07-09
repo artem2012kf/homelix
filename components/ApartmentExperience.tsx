@@ -182,11 +182,12 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           <span className="eyebrow">Планировка</span>
           <h2>Выберите комнату</h2>
           <p className="muted">
-            Мебель можно двигать мышью/пальцем. Поворот — только под планировкой через кнопку.
+            Первые 10 квартир переделаны вручную по нормальным схемам. Мебель можно двигать мышью или пальцем.
           </p>
         </div>
 
         <ApartmentPlan
+          apartmentId={apartment.id}
           rooms={apartment.rooms}
           selectedRoomId={selectedRoom?.id}
           onRoomSelect={setSelectedRoomId}
@@ -199,7 +200,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
             <div>
               <strong>Мебель на планировке</strong>
               <span>
-                Мебель уже учитывается в верхней карточке стоимости. Предмет можно перетащить на плане и повернуть кнопкой ниже.
+                Мебель учитывается в верхней карточке стоимости. Предмет можно перетащить на плане и повернуть кнопкой ниже.
               </span>
             </div>
             <ul>
