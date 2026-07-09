@@ -61,7 +61,18 @@ export const FIRST_PLAN_BATCH_IDS = [
   "apt-416",
   "apt-452",
   "apt-518",
-  "apt-566"
+  "apt-566",
+
+  // Финальная партия — оставшиеся квартиры
+  "apt-604",
+  "apt-649",
+  "apt-702",
+  "apt-748",
+  "apt-811",
+  "apt-858",
+  "apt-930",
+  "apt-976",
+  "apt-1004"
 ];
 
 export const PLAN_FRAME = {
@@ -327,9 +338,9 @@ function makeFourRoomLayout(rooms: Room[]) {
 }
 
 function qualityLayout(apartmentId: string | undefined, rooms: Room[]): VisualRoom[] {
-  if (!apartmentId || !FIRST_PLAN_BATCH_IDS.includes(apartmentId)) {
-    return rooms.map(legacyVisualRoom);
-  }
+  // Финальный этап: качественный генератор теперь работает для всех квартир.
+  // apartmentId оставлен в сигнатуре, чтобы не ломать вызовы и чтобы потом можно было делать точечные схемы.
+  void apartmentId;
 
   const bedrooms = rooms.filter(isBedroom);
   const hasSeparateLiving = rooms.some((room) => isLiving(room) && !isKitchen(room));
