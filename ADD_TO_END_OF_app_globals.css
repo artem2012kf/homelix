@@ -1,29 +1,22 @@
 /*
 Вставь в самый конец app/globals.css.
-Страховка: убирает старые чёрные стили и старые дуги.
-Основные цвета уже прописаны прямо в компонентах.
+Страховка от старых чёрных SVG-стилей.
 */
 
-.outer-wall,
-.door-opening path,
-.furniture-rotate-handle {
-  display: none !important;
-}
-
-.apartment-plan polygon,
-.card-mini-plan polygon {
-  fill-opacity: 1 !important;
-  stroke-opacity: 1 !important;
+.apartment-plan,
+.card-mini-plan svg {
+  background: #fffdf8 !important;
 }
 
 .apartment-plan rect,
 .card-mini-plan rect {
   fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
 }
 
-.door-opening,
-.door-opening * {
-  pointer-events: none !important;
+.outer-wall,
+.furniture-rotate-handle {
+  display: none !important;
 }
 
 .furniture-placement {

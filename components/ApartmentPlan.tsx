@@ -13,7 +13,15 @@ type ApartmentPlanProps = {
   onFurnitureManualMove?: (placementId: string, x: number, y: number) => void;
 };
 
-type Point = { x: number; y: number };
+type LayoutRoom = Room & {
+  visualX: number;
+  visualY: number;
+  visualWidth: number;
+  visualHeight: number;
+  visualLabelX: number;
+  visualLabelY: number;
+};
+
 type Bounds = { minX: number; minY: number; maxX: number; maxY: number; centerX: number; centerY: number };
 type DoorSide = "left" | "right" | "top" | "bottom";
 type DoorKind = "entry" | "room" | "balcony";
@@ -35,91 +43,236 @@ type WindowOpening = {
 };
 type FurnitureGeometry = { x: number; y: number; width: number; height: number; label: string; rotate?: number };
 
-const EPS = 3;
-const MIN_SHARED = 34;
+const PLAN = {
+  x: 56,
+  y: 56,
+  width: 672,
+  height: 488
+};
 
-function parsePolygon(polygon: string): Point[] {
-  return polygon
-    .trim()
-    .split(/\s+/)
-    .map((pair) => {
-      const [x, y] = pair.split(",").map(Number);
-      return { x, y };
-    })
-    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
-}
-
-function getBounds(room: Room): Bounds {
-  const points = parsePolygon(room.polygon);
-  const xs = points.map((point) => point.x);
-  const ys = points.map((point) => point.y);
-  const minX = Math.min(...xs);
-  const minY = Math.min(...ys);
-  const maxX = Math.max(...xs);
-  const maxY = Math.max(...ys);
-
-  return {
-    minX,
-    minY,
-    maxX,
-    maxY,
-    centerX: (minX + maxX) / 2,
-    centerY: (minY + maxY) / 2
-  };
-}
-
-function getPlanBounds(rooms: Room[]): Bounds {
-  const bounds = rooms.map(getBounds);
-  const minX = Math.min(...bounds.map((item) => item.minX));
-  const minY = Math.min(...bounds.map((item) => item.minY));
-  const maxX = Math.max(...bounds.map((item) => item.maxX));
-  const maxY = Math.max(...bounds.map((item) => item.maxY));
-
-  return {
-    minX,
-    minY,
-    maxX,
-    maxY,
-    centerX: (minX + maxX) / 2,
-    centerY: (minY + maxY) / 2
-  };
-}
+const GAP = 0;
 
 function clamp(value: number, min: number, max: number) {
   if (max < min) return min;
   return Math.min(Math.max(value, min), max);
 }
 
-function touching(a: number, b: number) {
-  return Math.abs(a - b) <= EPS;
+function getBounds(room: LayoutRoom): Bounds {
+  const minX = room.visualX;
+  const minY = room.visualY;
+  const maxX = room.visualX + room.visualWidth;
+  const maxY = room.visualY + room.visualHeight;
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    centerX: (minX + maxX) / 2,
+    centerY: (minY + maxY) / 2
+  };
 }
 
-function overlapRange(aMin: number, aMax: number, bMin: number, bMax: number) {
+function byAreaDesc(a: Room, b: Room) {
+  return b.area - a.area;
+}
+
+function pickRoom(rooms: Room[], types: Room["type"][]) {
+  return rooms.find((room) => types.includes(room.type));
+}
+
+function isLiving(room: Room) {
+  const name = room.name.toLowerCase();
+  return room.type === "living" || name.includes("гостин") || name.includes("жилая");
+}
+
+function isKitchen(room: Room) {
+  const name = room.name.toLowerCase();
+  return room.type === "kitchen" || name.includes("кухн");
+}
+
+function isBalcony(room: Room) {
+  const name = room.name.toLowerCase();
+  return room.type === "balcony" || name.includes("лодж") || name.includes("балкон");
+}
+
+function isWet(room: Room) {
+  return room.type === "bathroom" || room.name.toLowerCase().includes("сануз");
+}
+
+function isHall(room: Room) {
+  return room.type === "hall" || room.name.toLowerCase().includes("прихож") || room.name.toLowerCase().includes("холл");
+}
+
+function isStorage(room: Room) {
+  return room.type === "wardrobe" || room.name.toLowerCase().includes("гардер") || room.name.toLowerCase().includes("клад");
+}
+
+function isBedroomLike(room: Room) {
+  const name = room.name.toLowerCase();
+  return room.type === "bedroom" || room.type === "children" || name.includes("спаль") || name.includes("детск");
+}
+
+function layoutRoom(room: Room, x: number, y: number, width: number, height: number): LayoutRoom {
+  return {
+    ...room,
+    visualX: x,
+    visualY: y,
+    visualWidth: width,
+    visualHeight: height,
+    visualLabelX: x + width / 2,
+    visualLabelY: y + height / 2
+  };
+}
+
+function makeSmartLayout(rooms: Room[]): LayoutRoom[] {
+  const used = new Set<string>();
+  const result: LayoutRoom[] = [];
+
+  const hall = pickRoom(rooms, ["hall"]);
+  const bathroom = pickRoom(rooms, ["bathroom"]);
+  const balcony = rooms.find(isBalcony);
+  const kitchen = rooms.find((room) => isKitchen(room) && !isLiving(room));
+  const living = rooms.find((room) => isLiving(room) && !isKitchen(room));
+  const kitchenLiving = rooms.find((room) => isKitchen(room) && isLiving(room));
+  const storage = rooms.find(isStorage);
+  const bedrooms = rooms.filter(isBedroomLike).sort(byAreaDesc);
+  const otherRooms = rooms
+    .filter(
+      (room) =>
+        !isHall(room) &&
+        !isWet(room) &&
+        !isBalcony(room) &&
+        !isStorage(room) &&
+        !isBedroomLike(room) &&
+        room.id !== kitchen?.id &&
+        room.id !== living?.id &&
+        room.id !== kitchenLiving?.id
+    )
+    .sort(byAreaDesc);
+
+  function add(room: Room | undefined, x: number, y: number, width: number, height: number) {
+    if (!room || used.has(room.id)) return;
+    used.add(room.id);
+    result.push(layoutRoom(room, x, y, width, height));
+  }
+
+  const totalRooms = rooms.length;
+  const bedroomsCount = bedrooms.length;
+
+  if (totalRooms <= 5 && bedroomsCount <= 1) {
+    const leftW = 170;
+    const topH = 150;
+    const balconyH = balcony ? 96 : 0;
+    const mainTopW = balcony ? 360 : PLAN.width - leftW;
+    const rightW = PLAN.width - leftW - mainTopW;
+
+    add(bathroom, PLAN.x, PLAN.y, leftW, topH);
+    add(hall, PLAN.x, PLAN.y + topH, leftW, 126);
+
+    const mainRoom = kitchenLiving ?? kitchen ?? living ?? otherRooms[0] ?? bedrooms[0];
+    add(mainRoom, PLAN.x + leftW, PLAN.y, mainTopW, balcony ? topH : 210);
+
+    if (balcony) {
+      add(balcony, PLAN.x + leftW + mainTopW, PLAN.y, rightW, topH);
+    }
+
+    const bedroom = bedrooms.find((room) => room.id !== mainRoom?.id) ?? bedrooms[0];
+    add(bedroom, PLAN.x + leftW, PLAN.y + (balcony ? topH : 210), PLAN.width - leftW, PLAN.height - (balcony ? topH : 210));
+
+    if (storage && !used.has(storage.id)) {
+      add(storage, PLAN.x, PLAN.y + topH + 126, leftW, PLAN.height - topH - 126);
+    }
+  } else if (bedroomsCount <= 2) {
+    const leftW = 168;
+    const topH = 158;
+    const midH = 172;
+    const rightW = balcony ? 172 : 0;
+    const mainW = PLAN.width - leftW - rightW;
+
+    add(bathroom, PLAN.x, PLAN.y, leftW, topH);
+    add(hall, PLAN.x, PLAN.y + topH, leftW, 132);
+
+    const mainRoom = kitchenLiving ?? kitchen ?? living ?? otherRooms[0];
+    add(mainRoom, PLAN.x + leftW, PLAN.y, mainW, topH);
+
+    if (balcony) {
+      add(balcony, PLAN.x + leftW + mainW, PLAN.y, rightW, topH);
+    }
+
+    add(bedrooms[0], PLAN.x + leftW, PLAN.y + topH, Math.round(mainW * 0.54), midH);
+    add(bedrooms[1], PLAN.x + leftW + Math.round(mainW * 0.54), PLAN.y + topH, mainW - Math.round(mainW * 0.54) + rightW, midH);
+
+    add(storage, PLAN.x, PLAN.y + topH + 132, leftW, PLAN.height - topH - 132);
+    const rest = otherRooms.find((room) => !used.has(room.id));
+    add(rest, PLAN.x + leftW, PLAN.y + topH + midH, PLAN.width - leftW, PLAN.height - topH - midH);
+  } else {
+    const leftW = 168;
+    const topH = 154;
+    const midH = 166;
+    const bottomH = PLAN.height - topH - midH;
+    const usableW = PLAN.width - leftW;
+    const colW = Math.round(usableW / 3);
+
+    add(bathroom, PLAN.x, PLAN.y, leftW, Math.round(topH * 0.55));
+    add(hall, PLAN.x, PLAN.y + Math.round(topH * 0.55), leftW, Math.round(topH * 0.7));
+    add(storage, PLAN.x, PLAN.y + Math.round(topH * 1.25), leftW, PLAN.height - Math.round(topH * 1.25));
+
+    const mainRoom = kitchenLiving ?? kitchen ?? living ?? otherRooms[0];
+    add(mainRoom, PLAN.x + leftW, PLAN.y, colW * 2, topH);
+    add(balcony, PLAN.x + leftW + colW * 2, PLAN.y, usableW - colW * 2, topH);
+
+    add(bedrooms[0], PLAN.x + leftW, PLAN.y + topH, colW, midH);
+    add(bedrooms[1], PLAN.x + leftW + colW, PLAN.y + topH, colW, midH);
+    add(bedrooms[2], PLAN.x + leftW + colW * 2, PLAN.y + topH, usableW - colW * 2, midH);
+
+    const bottomRooms = [...bedrooms.slice(3), ...otherRooms].filter((room) => !used.has(room.id));
+    if (bottomRooms.length <= 1) {
+      add(bottomRooms[0], PLAN.x + leftW, PLAN.y + topH + midH, usableW, bottomH);
+    } else {
+      const firstW = Math.round(usableW * 0.56);
+      add(bottomRooms[0], PLAN.x + leftW, PLAN.y + topH + midH, firstW, bottomH);
+      add(bottomRooms[1], PLAN.x + leftW + firstW, PLAN.y + topH + midH, usableW - firstW, bottomH);
+    }
+  }
+
+  const remaining = rooms.filter((room) => !used.has(room.id));
+  if (remaining.length > 0) {
+    const slotW = Math.floor(PLAN.width / remaining.length);
+    remaining.forEach((room, index) => {
+      add(room, PLAN.x + slotW * index, PLAN.y + PLAN.height - 110, index === remaining.length - 1 ? PLAN.width - slotW * index : slotW, 110);
+    });
+  }
+
+  return result;
+}
+
+function overlapRangeVisual(aMin: number, aMax: number, bMin: number, bMax: number) {
   const min = Math.max(aMin, bMin);
   const max = Math.min(aMax, bMax);
   return { size: Math.max(0, max - min), center: (min + max) / 2 };
 }
 
-function sharedDoor(room: Room, neighbor: Room, size = 46): Omit<DoorOpening, "id" | "roomId" | "kind"> | null {
+function sharedDoorVisual(room: LayoutRoom, neighbor: LayoutRoom, size = 46): Omit<DoorOpening, "id" | "roomId" | "kind"> | null {
   const a = getBounds(room);
   const b = getBounds(neighbor);
-  const v = overlapRange(a.minY, a.maxY, b.minY, b.maxY);
-  const h = overlapRange(a.minX, a.maxX, b.minX, b.maxX);
+  const v = overlapRangeVisual(a.minY, a.maxY, b.minY, b.maxY);
+  const h = overlapRangeVisual(a.minX, a.maxX, b.minX, b.maxX);
 
-  if (touching(a.minX, b.maxX) && v.size >= MIN_SHARED) {
-    return { side: "left", x: a.minX, y: clamp(v.center, a.minY + 28, a.maxY - 28), size: clamp(size, 34, Math.max(34, v.size - 18)) };
+  if (Math.abs(a.minX - b.maxX) <= 1 && v.size >= 30) {
+    return { side: "left", x: a.minX, y: clamp(v.center, a.minY + 30, a.maxY - 30), size: clamp(size, 34, v.size - 20) };
   }
 
-  if (touching(a.maxX, b.minX) && v.size >= MIN_SHARED) {
-    return { side: "right", x: a.maxX, y: clamp(v.center, a.minY + 28, a.maxY - 28), size: clamp(size, 34, Math.max(34, v.size - 18)) };
+  if (Math.abs(a.maxX - b.minX) <= 1 && v.size >= 30) {
+    return { side: "right", x: a.maxX, y: clamp(v.center, a.minY + 30, a.maxY - 30), size: clamp(size, 34, v.size - 20) };
   }
 
-  if (touching(a.minY, b.maxY) && h.size >= MIN_SHARED) {
-    return { side: "top", x: clamp(h.center, a.minX + 28, a.maxX - 28), y: a.minY, size: clamp(size, 34, Math.max(34, h.size - 18)) };
+  if (Math.abs(a.minY - b.maxY) <= 1 && h.size >= 30) {
+    return { side: "top", x: clamp(h.center, a.minX + 30, a.maxX - 30), y: a.minY, size: clamp(size, 34, h.size - 20) };
   }
 
-  if (touching(a.maxY, b.minY) && h.size >= MIN_SHARED) {
-    return { side: "bottom", x: clamp(h.center, a.minX + 28, a.maxX - 28), y: a.maxY, size: clamp(size, 34, Math.max(34, h.size - 18)) };
+  if (Math.abs(a.maxY - b.minY) <= 1 && h.size >= 30) {
+    return { side: "bottom", x: clamp(h.center, a.minX + 30, a.maxX - 30), y: a.maxY, size: clamp(size, 34, h.size - 20) };
   }
 
   return null;
@@ -129,41 +282,32 @@ function pairKey(a: string, b: string) {
   return [a, b].sort().join("--");
 }
 
-function buildDoorOpenings(rooms: Room[]) {
-  const hall = rooms.find((room) => room.type === "hall");
+function buildDoorOpenings(layoutRooms: LayoutRoom[]) {
+  const hall = layoutRooms.find(isHall);
   const doors: DoorOpening[] = [];
   const usedPairs = new Set<string>();
-  const planBounds = getPlanBounds(rooms);
 
   if (hall) {
     const hallBounds = getBounds(hall);
-    const sideScores = [
-      { side: "left" as DoorSide, value: touching(hallBounds.minX, planBounds.minX) ? 1 : 0 },
-      { side: "right" as DoorSide, value: touching(hallBounds.maxX, planBounds.maxX) ? 1 : 0 },
-      { side: "top" as DoorSide, value: touching(hallBounds.minY, planBounds.minY) ? 1 : 0 },
-      { side: "bottom" as DoorSide, value: touching(hallBounds.maxY, planBounds.maxY) ? 1 : 0 }
-    ].sort((a, b) => b.value - a.value);
-
-    const entrySide = sideScores[0]?.value ? sideScores[0].side : "left";
-
     doors.push({
       id: `${hall.id}-entry`,
       roomId: hall.id,
       kind: "entry",
-      side: entrySide,
-      x: entrySide === "left" ? hallBounds.minX : entrySide === "right" ? hallBounds.maxX : hallBounds.centerX,
-      y: entrySide === "top" ? hallBounds.minY : entrySide === "bottom" ? hallBounds.maxY : hallBounds.centerY,
-      size: 48
+      side: "left",
+      x: hallBounds.minX,
+      y: hallBounds.centerY,
+      size: 50
     });
 
-    for (const room of rooms) {
-      if (room.id === hall.id || room.type === "balcony") continue;
-      const door = sharedDoor(room, hall, room.type === "kitchen" || room.type === "living" ? 54 : 44);
+    for (const room of layoutRooms) {
+      if (room.id === hall.id || isBalcony(room)) continue;
+
+      const door = sharedDoorVisual(room, hall, isKitchen(room) || isLiving(room) ? 54 : 44);
       if (!door) continue;
 
       usedPairs.add(pairKey(room.id, hall.id));
       doors.push({
-        id: `${room.id}-to-hall`,
+        id: `${room.id}-hall-door`,
         roomId: room.id,
         kind: "room",
         ...door
@@ -171,51 +315,49 @@ function buildDoorOpenings(rooms: Room[]) {
     }
   }
 
-  for (const room of rooms) {
-    if (room.type !== "balcony") continue;
+  for (const room of layoutRooms) {
+    if (!isBalcony(room)) continue;
 
-    const preferred = rooms
+    const neighbors = layoutRooms
       .filter((neighbor) => neighbor.id !== room.id && !usedPairs.has(pairKey(room.id, neighbor.id)))
-      .map((neighbor) => ({ neighbor, door: sharedDoor(room, neighbor, 58) }))
-      .filter((item): item is { neighbor: Room; door: Omit<DoorOpening, "id" | "roomId" | "kind"> } => Boolean(item.door))
+      .map((neighbor) => ({ neighbor, door: sharedDoorVisual(room, neighbor, 58) }))
+      .filter((item): item is { neighbor: LayoutRoom; door: Omit<DoorOpening, "id" | "roomId" | "kind"> } => Boolean(item.door))
       .sort((a, b) => {
-        const scoreA = a.neighbor.type === "kitchen" || a.neighbor.type === "living" ? 3 : a.neighbor.type === "bedroom" || a.neighbor.type === "children" ? 2 : 1;
-        const scoreB = b.neighbor.type === "kitchen" || b.neighbor.type === "living" ? 3 : b.neighbor.type === "bedroom" || b.neighbor.type === "children" ? 2 : 1;
+        const scoreA = isKitchen(a.neighbor) || isLiving(a.neighbor) ? 3 : isBedroomLike(a.neighbor) ? 2 : 1;
+        const scoreB = isKitchen(b.neighbor) || isLiving(b.neighbor) ? 3 : isBedroomLike(b.neighbor) ? 2 : 1;
         return scoreB - scoreA;
-      })[0];
+      });
 
-    if (!preferred) continue;
+    const selected = neighbors[0];
+    if (!selected) continue;
 
-    usedPairs.add(pairKey(room.id, preferred.neighbor.id));
+    usedPairs.add(pairKey(room.id, selected.neighbor.id));
     doors.push({
       id: `${room.id}-balcony-door`,
       roomId: room.id,
       kind: "balcony",
-      ...preferred.door
+      ...selected.door
     });
   }
 
   return doors;
 }
 
-function buildWindowOpenings(rooms: Room[]) {
-  const planBounds = getPlanBounds(rooms);
+function buildWindowOpenings(layoutRooms: LayoutRoom[]) {
   const windows: WindowOpening[] = [];
 
-  for (const room of rooms) {
-    if (room.type === "hall" || room.type === "bathroom" || room.type === "wardrobe") continue;
+  for (const room of layoutRooms) {
+    if (isHall(room) || isWet(room) || isStorage(room)) continue;
 
     const b = getBounds(room);
     const horizontalSize = clamp((b.maxX - b.minX) * 0.42, 46, 112);
     const verticalSize = clamp((b.maxY - b.minY) * 0.42, 46, 112);
 
-    if (touching(b.minY, planBounds.minY)) {
+    if (Math.abs(b.minY - PLAN.y) <= 1) {
       windows.push({ id: `${room.id}-window-top`, x1: b.centerX - horizontalSize / 2, y1: b.minY, x2: b.centerX + horizontalSize / 2, y2: b.minY });
-    } else if (touching(b.maxY, planBounds.maxY)) {
+    } else if (Math.abs(b.maxY - (PLAN.y + PLAN.height)) <= 1) {
       windows.push({ id: `${room.id}-window-bottom`, x1: b.centerX - horizontalSize / 2, y1: b.maxY, x2: b.centerX + horizontalSize / 2, y2: b.maxY });
-    } else if (touching(b.minX, planBounds.minX)) {
-      windows.push({ id: `${room.id}-window-left`, x1: b.minX, y1: b.centerY - verticalSize / 2, x2: b.minX, y2: b.centerY + verticalSize / 2 });
-    } else if (touching(b.maxX, planBounds.maxX)) {
+    } else if (Math.abs(b.maxX - (PLAN.x + PLAN.width)) <= 1) {
       windows.push({ id: `${room.id}-window-right`, x1: b.maxX, y1: b.centerY - verticalSize / 2, x2: b.maxX, y2: b.centerY + verticalSize / 2 });
     }
   }
@@ -332,7 +474,7 @@ function safePosition(bounds: Bounds, doors: DoorOpening[], width: number, heigh
   };
 }
 
-function getFurnitureGeometry(room: Room, placement: FurniturePlacement, orderInRoom: number, doors: DoorOpening[]): FurnitureGeometry {
+function getFurnitureGeometry(room: LayoutRoom, placement: FurniturePlacement, orderInRoom: number, doors: DoorOpening[]): FurnitureGeometry {
   const bounds = getBounds(room);
   let size = getFurnitureSize(bounds, placement);
 
@@ -371,24 +513,23 @@ function splitRoomName(name: string) {
   return [parts.slice(0, middle).join(" "), parts.slice(middle).join(" ")];
 }
 
-function roomFill(type: Room["type"]) {
-  if (type === "kitchen" || type === "living") return "#eef5fb";
-  if (type === "bedroom" || type === "children") return "#eef8ef";
-  if (type === "bathroom") return "#eef3fa";
-  if (type === "hall") return "#fff6e8";
-  if (type === "balcony") return "#f2f7ff";
-  if (type === "wardrobe") return "#f7f1ff";
+function roomFill(room: Room) {
+  if (isKitchen(room) || isLiving(room)) return "#eef5fb";
+  if (isBedroomLike(room)) return "#eef8ef";
+  if (isWet(room)) return "#eef3fa";
+  if (isHall(room)) return "#fff6e8";
+  if (isBalcony(room)) return "#f2f7ff";
+  if (isStorage(room)) return "#f7f1ff";
   return "#ffffff";
 }
 
-function RoomLabel({ room }: { room: Room }) {
-  const bounds = getBounds(room);
+function RoomLabel({ room }: { room: LayoutRoom }) {
   const lines = splitRoomName(room.name);
-  const y = bounds.centerY - (lines.length > 1 ? 10 : 0);
+  const y = room.visualLabelY - (lines.length > 1 ? 10 : 0);
 
   return (
     <text
-      x={bounds.centerX}
+      x={room.visualLabelX}
       y={y}
       textAnchor="middle"
       fill="#2d2922"
@@ -403,11 +544,11 @@ function RoomLabel({ room }: { room: Room }) {
       }}
     >
       {lines.map((line, index) => (
-        <tspan key={`${room.id}-${line}`} x={bounds.centerX} dy={index === 0 ? 0 : 18}>
+        <tspan key={`${room.id}-${line}`} x={room.visualLabelX} dy={index === 0 ? 0 : 18}>
           {line}
         </tspan>
       ))}
-      <tspan x={bounds.centerX} dy="22" fill="#003BA6" fontSize="14" fontWeight="900">
+      <tspan x={room.visualLabelX} dy="22" fill="#003BA6" fontSize="14" fontWeight="900">
         {room.area} м²
       </tspan>
     </text>
@@ -416,20 +557,50 @@ function RoomLabel({ room }: { room: Room }) {
 
 function Door({ door }: { door: DoorOpening }) {
   const half = door.size / 2;
+  const swing = Math.min(door.size * 0.86, 42);
+  const gapStroke = "#fffdf8";
+  const lineStroke = "#3f362c";
+  const swingStroke = "rgba(63, 54, 44, 0.45)";
 
-  if (door.side === "left" || door.side === "right") {
+  if (door.side === "left") {
+    const hingeY = door.y - half;
     return (
       <g pointerEvents="none">
-        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke="#fffdf8" strokeWidth="17" strokeLinecap="round" />
-        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke="rgba(63,54,44,0.48)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 8" />
+        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke={gapStroke} strokeWidth="13" strokeLinecap="round" />
+        <line x1={door.x} y1={hingeY} x2={door.x + swing} y2={hingeY + swing} stroke={lineStroke} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <path d={`M ${door.x} ${hingeY} Q ${door.x + swing * 0.78} ${hingeY + swing * 0.16} ${door.x + swing} ${hingeY + swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
       </g>
     );
   }
 
+  if (door.side === "right") {
+    const hingeY = door.y - half;
+    return (
+      <g pointerEvents="none">
+        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke={gapStroke} strokeWidth="13" strokeLinecap="round" />
+        <line x1={door.x} y1={hingeY} x2={door.x - swing} y2={hingeY + swing} stroke={lineStroke} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <path d={`M ${door.x} ${hingeY} Q ${door.x - swing * 0.78} ${hingeY + swing * 0.16} ${door.x - swing} ${hingeY + swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
+      </g>
+    );
+  }
+
+  if (door.side === "top") {
+    const hingeX = door.x - half;
+    return (
+      <g pointerEvents="none">
+        <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke={gapStroke} strokeWidth="13" strokeLinecap="round" />
+        <line x1={hingeX} y1={door.y} x2={hingeX + swing} y2={door.y + swing} stroke={lineStroke} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <path d={`M ${hingeX} ${door.y} Q ${hingeX + swing * 0.16} ${door.y + swing * 0.78} ${hingeX + swing} ${door.y + swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
+      </g>
+    );
+  }
+
+  const hingeX = door.x - half;
   return (
     <g pointerEvents="none">
-      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke="#fffdf8" strokeWidth="17" strokeLinecap="round" />
-      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke="rgba(63,54,44,0.48)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 8" />
+      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke={gapStroke} strokeWidth="13" strokeLinecap="round" />
+      <line x1={hingeX} y1={door.y} x2={hingeX + swing} y2={door.y - swing} stroke={lineStroke} strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <path d={`M ${hingeX} ${door.y} Q ${hingeX + swing * 0.16} ${door.y - swing * 0.78} ${hingeX + swing} ${door.y - swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
     </g>
   );
 }
@@ -437,7 +608,7 @@ function Door({ door }: { door: DoorOpening }) {
 function WindowLine({ window }: { window: WindowOpening }) {
   return (
     <g pointerEvents="none">
-      <line x1={window.x1} y1={window.y1} x2={window.x2} y2={window.y2} stroke="#fffdf8" strokeWidth="15" strokeLinecap="round" />
+      <line x1={window.x1} y1={window.y1} x2={window.x2} y2={window.y2} stroke="#fffdf8" strokeWidth="13" strokeLinecap="round" />
       <line x1={window.x1} y1={window.y1} x2={window.x2} y2={window.y2} stroke="#8fc5ec" strokeWidth="6" strokeLinecap="round" />
     </g>
   );
@@ -499,7 +670,7 @@ function PlacedFurniture({
   onManualMove
 }: {
   placement: FurniturePlacement;
-  room: Room;
+  room: LayoutRoom;
   orderInRoom: number;
   doors: DoorOpening[];
   onManualMove?: (placementId: string, x: number, y: number) => void;
@@ -596,9 +767,9 @@ export function ApartmentPlan({
   furniturePlacements = [],
   onFurnitureManualMove
 }: ApartmentPlanProps) {
-  const doors = useMemo(() => buildDoorOpenings(rooms), [rooms]);
-  const windows = useMemo(() => buildWindowOpenings(rooms), [rooms]);
-  const planBounds = useMemo(() => getPlanBounds(rooms), [rooms]);
+  const layoutRooms = useMemo(() => makeSmartLayout(rooms), [rooms]);
+  const doors = useMemo(() => buildDoorOpenings(layoutRooms), [layoutRooms]);
+  const windows = useMemo(() => buildWindowOpenings(layoutRooms), [layoutRooms]);
 
   return (
     <div
@@ -620,7 +791,7 @@ export function ApartmentPlan({
       >
         <rect x="34" y="34" width="720" height="530" rx="28" fill="#fffdf8" stroke="rgba(0, 59, 166, 0.14)" strokeWidth="2" />
 
-        {rooms.map((room) => {
+        {layoutRooms.map((room) => {
           const selected = selectedRoomId === room.id;
 
           return (
@@ -641,12 +812,14 @@ export function ApartmentPlan({
                 }
               }}
             >
-              <polygon
-                points={room.polygon}
-                fill={selected ? "rgba(249, 62, 62, 0.14)" : roomFill(room.type)}
+              <rect
+                x={room.visualX}
+                y={room.visualY}
+                width={room.visualWidth}
+                height={room.visualHeight}
+                fill={selected ? "rgba(249, 62, 62, 0.14)" : roomFill(room)}
                 stroke={selected ? "#F93E3E" : "#c9ba9a"}
                 strokeWidth="4"
-                strokeLinejoin="round"
                 style={{ cursor: "pointer" }}
               />
             </g>
@@ -654,10 +827,10 @@ export function ApartmentPlan({
         })}
 
         <rect
-          x={planBounds.minX}
-          y={planBounds.minY}
-          width={planBounds.maxX - planBounds.minX}
-          height={planBounds.maxY - planBounds.minY}
+          x={PLAN.x}
+          y={PLAN.y}
+          width={PLAN.width}
+          height={PLAN.height}
           fill="none"
           stroke="#3f362c"
           strokeWidth="8"
@@ -677,13 +850,13 @@ export function ApartmentPlan({
           ))}
         </g>
 
-        {rooms.map((room) => (
+        {layoutRooms.map((room) => (
           <RoomLabel key={`${room.id}-label`} room={room} />
         ))}
 
         <g aria-label="Размещенная мебель">
           {furniturePlacements.map((placement) => {
-            const room = rooms.find((item) => item.id === placement.roomId);
+            const room = layoutRooms.find((item) => item.id === placement.roomId);
             if (!room) return null;
 
             const orderInRoom = furniturePlacements
