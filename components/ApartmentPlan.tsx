@@ -62,6 +62,102 @@ function overlapCenter(aMin: number, aMax: number, bMin: number, bMax: number, f
   return max > min ? (min + max) / 2 : fallback;
 }
 
+
+function touching(a: number, b: number) {
+  return Math.abs(a - b) <= 3;
+}
+
+function overlapRange(aMin: number, aMax: number, bMin: number, bMax: number) {
+  const min = Math.max(aMin, bMin);
+  const max = Math.min(aMax, bMax);
+  return { min, max, size: Math.max(0, max - min), center: (min + max) / 2 };
+}
+
+function pairKey(a: string, b: string) {
+  return [a, b].sort().join("--");
+}
+
+function sharedDoorFromRoom(room: Room, neighbor: Room): Omit<DoorOpening, "id" | "roomId" | "size"> | null {
+  const roomBounds = getBounds(room);
+  const neighborBounds = getBounds(neighbor);
+  const verticalOverlap = overlapRange(roomBounds.minY, roomBounds.maxY, neighborBounds.minY, neighborBounds.maxY);
+  const horizontalOverlap = overlapRange(roomBounds.minX, roomBounds.maxX, neighborBounds.minX, neighborBounds.maxX);
+  const minOverlap = 34;
+
+  if (touching(roomBounds.minX, neighborBounds.maxX) && verticalOverlap.size >= minOverlap) {
+    return {
+      side: "left",
+      x: roomBounds.minX,
+      y: clamp(verticalOverlap.center, roomBounds.minY + 32, roomBounds.maxY - 32)
+    };
+  }
+
+  if (touching(roomBounds.maxX, neighborBounds.minX) && verticalOverlap.size >= minOverlap) {
+    return {
+      side: "right",
+      x: roomBounds.maxX,
+      y: clamp(verticalOverlap.center, roomBounds.minY + 32, roomBounds.maxY - 32)
+    };
+  }
+
+  if (touching(roomBounds.minY, neighborBounds.maxY) && horizontalOverlap.size >= minOverlap) {
+    return {
+      side: "top",
+      x: clamp(horizontalOverlap.center, roomBounds.minX + 32, roomBounds.maxX - 32),
+      y: roomBounds.minY
+    };
+  }
+
+  if (touching(roomBounds.maxY, neighborBounds.minY) && horizontalOverlap.size >= minOverlap) {
+    return {
+      side: "bottom",
+      x: clamp(horizontalOverlap.center, roomBounds.minX + 32, roomBounds.maxX - 32),
+      y: roomBounds.maxY
+    };
+  }
+
+  return null;
+}
+
+function getPlanBounds(rooms: Room[]): Bounds {
+  const bounds = rooms.map(getBounds);
+  const minX = Math.min(...bounds.map((item) => item.minX));
+  const minY = Math.min(...bounds.map((item) => item.minY));
+  const maxX = Math.max(...bounds.map((item) => item.maxX));
+  const maxY = Math.max(...bounds.map((item) => item.maxY));
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    centerX: (minX + maxX) / 2,
+    centerY: (minY + maxY) / 2
+  };
+}
+
+function findBestAdjacentRoom(room: Room, rooms: Room[], usedPairs: Set<string>) {
+  let best: { room: Room; score: number } | undefined;
+
+  for (const candidate of rooms) {
+    if (candidate.id === room.id || usedPairs.has(pairKey(room.id, candidate.id))) continue;
+
+    const door = sharedDoorFromRoom(room, candidate);
+    if (!door) continue;
+
+    let score = 10;
+    if (candidate.type === "hall") score += 1000;
+    if (room.type === "balcony" && ["kitchen", "living", "bedroom", "children"].includes(candidate.type)) score += 700;
+    if (["kitchen", "living"].includes(candidate.type)) score += 220;
+    if (["bedroom", "children"].includes(candidate.type)) score += 80;
+    if (candidate.type === "bathroom") score -= 250;
+
+    if (!best || score > best.score) best = { room: candidate, score };
+  }
+
+  return best?.room;
+}
+
 function getFacingDoor(roomBounds: Bounds, targetBounds: Bounds): Omit<DoorOpening, "id" | "roomId" | "size"> {
   const dx = targetBounds.centerX - roomBounds.centerX;
   const dy = targetBounds.centerY - roomBounds.centerY;
@@ -91,31 +187,83 @@ function getFacingDoor(roomBounds: Bounds, targetBounds: Bounds): Omit<DoorOpeni
 }
 
 function buildDoorOpenings(rooms: Room[]) {
-  const boundsByRoom = new Map(rooms.map((room) => [room.id, getBounds(room)]));
   const hall = rooms.find((room) => room.type === "hall");
-  const hallBounds = hall ? boundsByRoom.get(hall.id) : undefined;
+  const usedPairs = new Set<string>();
+  const doors: DoorOpening[] = [];
 
-  return rooms.flatMap((room): DoorOpening[] => {
-    const bounds = boundsByRoom.get(room.id);
-    if (!bounds) return [];
+  if (hall) {
+    const hallBounds = getBounds(hall);
+    const planBounds = getPlanBounds(rooms);
+    let entrySide: DoorSide = "left";
 
-    if (room.type === "hall") {
-      return [{ id: `${room.id}-entry`, roomId: room.id, side: "left", x: bounds.minX, y: bounds.centerY, size: 50 }];
-    }
+    if (touching(hallBounds.minX, planBounds.minX)) entrySide = "left";
+    else if (touching(hallBounds.maxX, planBounds.maxX)) entrySide = "right";
+    else if (touching(hallBounds.maxY, planBounds.maxY)) entrySide = "bottom";
+    else if (touching(hallBounds.minY, planBounds.minY)) entrySide = "top";
 
-    if (!hallBounds) {
-      return [{ id: `${room.id}-door`, roomId: room.id, side: "left", x: bounds.minX, y: bounds.centerY, size: 44 }];
-    }
+    doors.push({
+      id: `${hall.id}-entry`,
+      roomId: hall.id,
+      side: entrySide,
+      x: entrySide === "left" ? hallBounds.minX : entrySide === "right" ? hallBounds.maxX : hallBounds.centerX,
+      y: entrySide === "top" ? hallBounds.minY : entrySide === "bottom" ? hallBounds.maxY : hallBounds.centerY,
+      size: 48
+    });
 
-    return [
-      {
+    for (const room of rooms) {
+      if (room.id === hall.id || room.type === "balcony") continue;
+
+      const door = sharedDoorFromRoom(room, hall);
+      if (!door) continue;
+
+      usedPairs.add(pairKey(room.id, hall.id));
+      doors.push({
         id: `${room.id}-door`,
         roomId: room.id,
-        ...getFacingDoor(bounds, hallBounds),
-        size: room.type === "kitchen" || room.type === "living" ? 52 : 44
-      }
-    ];
-  });
+        ...door,
+        size: room.type === "kitchen" || room.type === "living" ? 56 : 46
+      });
+    }
+  }
+
+  for (const room of rooms) {
+    if (room.type !== "balcony") continue;
+
+    const neighbor = findBestAdjacentRoom(room, rooms, usedPairs);
+    if (!neighbor) continue;
+
+    const door = sharedDoorFromRoom(room, neighbor);
+    if (!door) continue;
+
+    usedPairs.add(pairKey(room.id, neighbor.id));
+    doors.push({
+      id: `${room.id}-door`,
+      roomId: room.id,
+      ...door,
+      size: 60
+    });
+  }
+
+  for (const room of rooms) {
+    if (room.type === "hall" || room.type === "balcony") continue;
+    if (doors.some((door) => door.roomId === room.id)) continue;
+
+    const neighbor = findBestAdjacentRoom(room, rooms, usedPairs);
+    if (!neighbor) continue;
+
+    const door = sharedDoorFromRoom(room, neighbor);
+    if (!door) continue;
+
+    usedPairs.add(pairKey(room.id, neighbor.id));
+    doors.push({
+      id: `${room.id}-door`,
+      roomId: room.id,
+      ...door,
+      size: room.type === "kitchen" || room.type === "living" ? 56 : 46
+    });
+  }
+
+  return doors;
 }
 
 function doorBlockRect(door: DoorOpening) {
@@ -254,6 +402,66 @@ function getFurnitureGeometry(room: Room, placement: FurniturePlacement, orderIn
     label: getPlacementLabel(placement),
     rotate: placement.manualRotation ?? (placement.category === "lighting" && (placement.layoutVariant ?? 0) % 2 === 1 ? 90 : 0)
   };
+}
+
+
+function isRectangularRoom(room: Room) {
+  return parsePolygon(room.polygon).length === 4;
+}
+
+function splitRoomName(name: string) {
+  if (name.length <= 14) return [name];
+
+  if (name.includes("-")) {
+    const parts = name.split("-");
+    return [parts[0], parts.slice(1).join("-")].filter(Boolean);
+  }
+
+  const words = name.split(/\s+/);
+  if (words.length < 2) return [name];
+
+  const middle = Math.ceil(words.length / 2);
+  return [words.slice(0, middle).join(" "), words.slice(middle).join(" ")];
+}
+
+function RoomShape({ room, selected }: { room: Room; selected: boolean }) {
+  const bounds = getBounds(room);
+  const className = `room-zone room-${room.type} ${selected ? "room-selected" : ""}`;
+
+  if (isRectangularRoom(room)) {
+    return (
+      <rect
+        x={bounds.minX}
+        y={bounds.minY}
+        width={bounds.maxX - bounds.minX}
+        height={bounds.maxY - bounds.minY}
+        rx="16"
+        ry="16"
+        className={className}
+      />
+    );
+  }
+
+  return <polygon points={room.polygon} className={className} />;
+}
+
+function RoomLabel({ room }: { room: Room }) {
+  const bounds = getBounds(room);
+  const lines = splitRoomName(room.name);
+  const startY = bounds.centerY - (lines.length > 1 ? 12 : 4);
+
+  return (
+    <text x={bounds.centerX} y={startY} textAnchor="middle" className="room-label">
+      {lines.map((line, index) => (
+        <tspan key={`${room.id}-${index}`} x={bounds.centerX} dy={index === 0 ? 0 : 18}>
+          {line}
+        </tspan>
+      ))}
+      <tspan x={bounds.centerX} dy="22" className="room-area">
+        {room.area} м²
+      </tspan>
+    </text>
+  );
 }
 
 function Door({ door }: { door: DoorOpening }) {
@@ -465,8 +673,8 @@ export function ApartmentPlan({
   const doors = useMemo(() => buildDoorOpenings(rooms), [rooms]);
 
   return (
-    <div className="plan-shell">
-      <svg viewBox="0 0 785 600" role="img" aria-label="Интерактивная планировка квартиры" className="apartment-plan">
+    <div className="plan-shell plan-shell-redesigned">
+      <svg viewBox="0 0 785 600" role="img" aria-label="Интерактивная планировка квартиры" className="apartment-plan apartment-plan-redesigned">
         <rect x="34" y="34" width="720" height="530" rx="26" className="plan-bg" />
 
         {rooms.map((room) => {
@@ -490,13 +698,8 @@ export function ApartmentPlan({
                 }
               }}
             >
-              <polygon points={room.polygon} className={`room-zone room-${room.type} ${selected ? "room-selected" : ""}`} />
-              <text x={room.labelX} y={room.labelY} textAnchor="middle" className="room-label">
-                {room.name}
-              </text>
-              <text x={room.labelX} y={room.labelY + 22} textAnchor="middle" className="room-area">
-                {room.area} м²
-              </text>
+              <RoomShape room={room} selected={selected} />
+              <RoomLabel room={room} />
             </g>
           );
         })}
@@ -529,8 +732,6 @@ export function ApartmentPlan({
           })}
         </g>
 
-        <path d="M70 220 L70 180 Q70 70 180 70 L225 70" className="outer-wall" />
-        <path d="M715 300 L715 530 L70 530 L70 390" className="outer-wall" />
       </svg>
     </div>
   );

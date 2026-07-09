@@ -1,23 +1,119 @@
 /*
 Вставь в самый конец app/globals.css.
-Фиксит поворот мебели: убирает черный кружок с планировки,
-оставляет поворот под планировкой и не вращает текст мебели.
+Новый аккуратный дизайн планировок и нормальное расположение дверей для всех квартир.
 */
 
-.furniture-rotate-handle {
-  display: none !important;
+.plan-shell-redesigned {
+  overflow: hidden;
+  border: 1px solid rgba(0, 59, 166, 0.14) !important;
+  border-radius: 34px !important;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(0, 59, 166, 0.08), transparent 260px),
+    radial-gradient(circle at 92% 92%, rgba(249, 62, 62, 0.08), transparent 280px),
+    #ffffff !important;
+  box-shadow: 0 22px 70px rgba(0, 59, 166, 0.10);
 }
 
-.apartment-plan,
-.furniture-placement,
-.furniture-drag-hitbox {
-  touch-action: none !important;
+.apartment-plan-redesigned {
+  display: block;
+  width: 100%;
+  min-height: 560px;
+  background: #ffffff;
+}
+
+.apartment-plan-redesigned .plan-bg {
+  fill: #fffdf8 !important;
+  stroke: rgba(0, 59, 166, 0.16) !important;
+  stroke-width: 2 !important;
+}
+
+.apartment-plan-redesigned .room-zone {
+  outline: none;
+  stroke: rgba(63, 54, 44, 0.28) !important;
+  stroke-width: 4 !important;
+  cursor: pointer;
+  filter: drop-shadow(0 8px 18px rgba(0, 59, 166, 0.06));
+  transition: fill 0.18s ease, stroke 0.18s ease, filter 0.18s ease;
+}
+
+.apartment-plan-redesigned .room-zone:hover,
+.apartment-plan-redesigned .room-zone:focus,
+.apartment-plan-redesigned .room-selected {
+  stroke: var(--primary) !important;
+  filter: drop-shadow(0 14px 24px rgba(249, 62, 62, 0.16));
+}
+
+.apartment-plan-redesigned .room-kitchen,
+.apartment-plan-redesigned .room-living {
+  fill: #eaf3ff !important;
+}
+
+.apartment-plan-redesigned .room-bedroom,
+.apartment-plan-redesigned .room-children {
+  fill: #edf8ef !important;
+}
+
+.apartment-plan-redesigned .room-bathroom {
+  fill: #edf3fb !important;
+}
+
+.apartment-plan-redesigned .room-hall {
+  fill: #fff6e8 !important;
+}
+
+.apartment-plan-redesigned .room-balcony {
+  fill: #f1f7ff !important;
+}
+
+.apartment-plan-redesigned .room-wardrobe {
+  fill: #f8f1ff !important;
+}
+
+.apartment-plan-redesigned .room-selected {
+  fill: rgba(249, 62, 62, 0.12) !important;
+}
+
+.apartment-plan-redesigned .room-label {
+  fill: #2d2922;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  paint-order: stroke;
+  stroke: rgba(255, 253, 248, 0.92);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.apartment-plan-redesigned .room-area {
+  fill: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0;
+  stroke-width: 3px;
+}
+
+.door-opening,
+.door-opening * {
+  fill: none !important;
+  pointer-events: none !important;
+}
+
+.door-opening line,
+.door-opening path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.outer-wall {
+  display: none !important;
 }
 
 .furniture-placement {
   pointer-events: auto !important;
   cursor: grab !important;
   user-select: none !important;
+  touch-action: none !important;
 }
 
 .furniture-placement:active {
@@ -49,45 +145,48 @@ body.is-dragging-furniture {
   overscroll-behavior: none;
 }
 
-.apartment-total-panel {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 16px 0;
+.card-mini-plan svg {
+  display: block;
+  width: 100%;
 }
 
-.apartment-total-panel div {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.86);
+.card-mini-plan .mini-plan-bg {
+  fill: #fffdf8;
+  stroke: rgba(0, 59, 166, 0.16);
+  stroke-width: 2;
 }
 
-.apartment-total-panel span {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
+.card-mini-plan .mini-room {
+  stroke: rgba(63, 54, 44, 0.24);
+  stroke-width: 4;
 }
 
-.apartment-total-panel strong {
-  color: var(--text);
-  font-size: 18px;
-  font-weight: 950;
+.card-mini-plan .mini-room-kitchen {
+  fill: #eaf3ff;
 }
 
-.apartment-total-panel .apartment-total-panel-main {
-  border-color: rgba(249, 62, 62, 0.28);
-  background: rgba(249, 62, 62, 0.08);
+.card-mini-plan .mini-room-bedroom {
+  fill: #edf8ef;
 }
 
-.apartment-total-panel .apartment-total-panel-main strong {
-  color: var(--primary-dark);
+.card-mini-plan .mini-room-bathroom {
+  fill: #edf3fb;
 }
 
-@media (max-width: 760px) {
-  .apartment-total-panel {
-    grid-template-columns: 1fr;
-  }
+.card-mini-plan .mini-room-hall {
+  fill: #fff6e8;
+}
+
+.card-mini-plan .mini-room-balcony {
+  fill: #f1f7ff;
+}
+
+.card-mini-plan .mini-room-wardrobe {
+  fill: #f8f1ff;
+}
+
+.card-mini-plan .mini-door-gap {
+  stroke: #fffdf8;
+  stroke-width: 13;
+  stroke-linecap: round;
 }
