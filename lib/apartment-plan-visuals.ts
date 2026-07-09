@@ -38,43 +38,6 @@ export type VisualWindow = {
   y2: number;
 };
 
-export const FIRST_PLAN_BATCH_IDS = [
-  // Первая партия — 10 квартир
-  "apt-204",
-  "apt-318",
-  "apt-112",
-  "apt-407",
-  "apt-509",
-  "apt-621",
-  "apt-715",
-  "apt-806",
-  "apt-233",
-  "apt-103",
-
-  // Вторая партия — ещё 10 квартир
-  "apt-126",
-  "apt-145",
-  "apt-219",
-  "apt-276",
-  "apt-331",
-  "apt-384",
-  "apt-416",
-  "apt-452",
-  "apt-518",
-  "apt-566",
-
-  // Финальная партия — оставшиеся квартиры
-  "apt-604",
-  "apt-649",
-  "apt-702",
-  "apt-748",
-  "apt-811",
-  "apt-858",
-  "apt-930",
-  "apt-976",
-  "apt-1004"
-];
-
 export const PLAN_FRAME = {
   x: 58,
   y: 58,
@@ -87,15 +50,30 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function hashId(apartmentId: string | undefined) {
+  const text = apartmentId || "default";
+  let hash = 0;
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash = (hash * 31 + text.charCodeAt(index)) >>> 0;
+  }
+
+  return hash;
+}
+
+function getVariant(apartmentId: string | undefined, count: number) {
+  return hashId(apartmentId) % count;
+}
+
 function rect(room: Room, x: number, y: number, width: number, height: number): VisualRoom {
   return {
     ...room,
-    visualX: x,
-    visualY: y,
-    visualWidth: width,
-    visualHeight: height,
-    visualLabelX: x + width / 2,
-    visualLabelY: y + height / 2
+    visualX: Math.round(x),
+    visualY: Math.round(y),
+    visualWidth: Math.round(width),
+    visualHeight: Math.round(height),
+    visualLabelX: Math.round(x + width / 2),
+    visualLabelY: Math.round(y + height / 2)
   };
 }
 
@@ -138,22 +116,6 @@ function byAreaDesc(a: Room, b: Room) {
   return b.area - a.area;
 }
 
-export function getVisualBounds(room: VisualRoom): VisualBounds {
-  const minX = room.visualX;
-  const minY = room.visualY;
-  const maxX = room.visualX + room.visualWidth;
-  const maxY = room.visualY + room.visualHeight;
-
-  return {
-    minX,
-    minY,
-    maxX,
-    maxY,
-    centerX: (minX + maxX) / 2,
-    centerY: (minY + maxY) / 2
-  };
-}
-
 function findFirst(rooms: Room[], predicate: (room: Room) => boolean, used: Set<string>) {
   return rooms.find((room) => !used.has(room.id) && predicate(room));
 }
@@ -172,9 +134,29 @@ function addRoom(
   result.push(rect(room, x, y, width, height));
 }
 
-function makeStudioLayout(rooms: Room[]) {
+function fillRemaining(result: VisualRoom[], used: Set<string>, rooms: Room[]) {
+  const remaining = rooms.filter((room) => !used.has(room.id));
+  if (remaining.length === 0) return;
+
+  const slotWidth = PLAN_FRAME.width / remaining.length;
+  remaining.forEach((room, index) => {
+    addRoom(
+      result,
+      used,
+      room,
+      PLAN_FRAME.x + slotWidth * index,
+      PLAN_FRAME.y + PLAN_FRAME.height - 112,
+      index === remaining.length - 1 ? PLAN_FRAME.width - slotWidth * index : slotWidth,
+      112
+    );
+  });
+}
+
+function makeStudioLayout(apartmentId: string | undefined, rooms: Room[]) {
+  const variant = getVariant(apartmentId, 5);
   const used = new Set<string>();
   const result: VisualRoom[] = [];
+
   const hall = findFirst(rooms, isHall, used);
   const bathroom = findFirst(rooms, isBathroom, used);
   const balcony = findFirst(rooms, isBalcony, used);
@@ -182,29 +164,47 @@ function makeStudioLayout(rooms: Room[]) {
   const living = rooms.find((room) => !used.has(room.id) && (isLiving(room) || isBedroom(room)));
   const kitchenLiving = rooms.find((room) => !used.has(room.id) && isKitchen(room) && isLiving(room));
 
-  addRoom(result, used, bathroom, 58, 58, 154, 160);
-  addRoom(result, used, hall, 58, 218, 154, 118);
-
-  if (kitchenLiving) {
-    addRoom(result, used, kitchenLiving, 212, 58, balcony ? 340 : 516, 210);
-    addRoom(result, used, balcony, 552, 58, 176, 210);
-    const main = rooms.find((room) => !used.has(room.id) && (isLiving(room) || isBedroom(room)));
-    addRoom(result, used, main, 212, 268, 516, 270);
+  if (variant === 0) {
+    addRoom(result, used, bathroom, 58, 58, 154, 160);
+    addRoom(result, used, hall, 58, 218, 154, 126);
+    addRoom(result, used, kitchenLiving ?? kitchen, 212, 58, balcony ? 340 : 516, 190);
+    addRoom(result, used, balcony, 552, 58, 176, 190);
+    addRoom(result, used, living, 212, 248, 516, 290);
+  } else if (variant === 1) {
+    addRoom(result, used, hall, 58, 58, 156, 136);
+    addRoom(result, used, bathroom, 58, 194, 156, 166);
+    addRoom(result, used, kitchenLiving ?? kitchen, 214, 58, 300, 170);
+    addRoom(result, used, balcony, 514, 58, 214, 170);
+    addRoom(result, used, living, 214, 228, 514, 310);
+  } else if (variant === 2) {
+    addRoom(result, used, bathroom, 58, 58, 166, 150);
+    addRoom(result, used, hall, 224, 58, 150, 150);
+    addRoom(result, used, kitchenLiving ?? kitchen, 374, 58, 354, 150);
+    addRoom(result, used, living, 58, 208, 500, 330);
+    addRoom(result, used, balcony, 558, 208, 170, 330);
+  } else if (variant === 3) {
+    addRoom(result, used, bathroom, 58, 58, 150, 160);
+    addRoom(result, used, kitchenLiving ?? kitchen, 208, 58, 270, 160);
+    addRoom(result, used, balcony, 478, 58, 250, 160);
+    addRoom(result, used, hall, 58, 218, 150, 120);
+    addRoom(result, used, living, 208, 218, 520, 320);
   } else {
-    addRoom(result, used, kitchen, 212, 58, balcony ? 250 : 516, 160);
-    addRoom(result, used, balcony, 462, 58, 266, 160);
-    addRoom(result, used, living, 212, 218, 516, 320);
+    addRoom(result, used, hall, 58, 58, 150, 120);
+    addRoom(result, used, bathroom, 58, 178, 150, 170);
+    addRoom(result, used, kitchenLiving ?? kitchen, 208, 58, 520, 150);
+    addRoom(result, used, living, 208, 208, balcony ? 350 : 520, 330);
+    addRoom(result, used, balcony, 558, 208, 170, 330);
   }
 
-  const remaining = rooms.filter((room) => !used.has(room.id));
-  remaining.forEach((room, index) => addRoom(result, used, room, 58, 336 + index * 68, 154, 68));
-
+  fillRemaining(result, used, rooms);
   return result;
 }
 
-function makeEuroTwoLayout(rooms: Room[]) {
+function makeEuroTwoLayout(apartmentId: string | undefined, rooms: Room[]) {
+  const variant = getVariant(apartmentId, 6);
   const used = new Set<string>();
   const result: VisualRoom[] = [];
+
   const hall = findFirst(rooms, isHall, used);
   const bathroom = findFirst(rooms, isBathroom, used);
   const storage = findFirst(rooms, isStorage, used);
@@ -212,36 +212,64 @@ function makeEuroTwoLayout(rooms: Room[]) {
   const kitchenLiving = rooms.find((room) => !used.has(room.id) && isKitchen(room));
   const bedrooms = rooms.filter((room) => isBedroom(room)).sort(byAreaDesc);
 
-  addRoom(result, used, bathroom, 58, 58, 154, 150);
-  addRoom(result, used, hall, 58, 208, 154, 130);
-  addRoom(result, used, storage, 58, 338, 154, 200);
-
-  addRoom(result, used, kitchenLiving, 212, 58, balcony ? 356 : 516, 190);
-  addRoom(result, used, balcony, 568, 58, 160, 190);
-
-  if (bedrooms.length <= 1) {
+  if (variant === 0) {
+    addRoom(result, used, bathroom, 58, 58, 154, 150);
+    addRoom(result, used, hall, 58, 208, 154, 130);
+    addRoom(result, used, storage, 58, 338, 154, 200);
+    addRoom(result, used, kitchenLiving, 212, 58, balcony ? 356 : 516, 190);
+    addRoom(result, used, balcony, 568, 58, 160, 190);
     addRoom(result, used, bedrooms[0], 212, 248, 516, 290);
+  } else if (variant === 1) {
+    addRoom(result, used, hall, 58, 58, 166, 144);
+    addRoom(result, used, bathroom, 58, 202, 166, 156);
+    addRoom(result, used, storage, 58, 358, 166, 180);
+    addRoom(result, used, kitchenLiving, 224, 58, 504, 230);
+    addRoom(result, used, bedrooms[0], 224, 288, balcony ? 330 : 504, 250);
+    addRoom(result, used, balcony, 554, 288, 174, 250);
+  } else if (variant === 2) {
+    addRoom(result, used, bathroom, 58, 58, 154, 152);
+    addRoom(result, used, kitchenLiving, 212, 58, 350, 206);
+    addRoom(result, used, balcony, 562, 58, 166, 206);
+    addRoom(result, used, hall, 58, 210, 154, 150);
+    addRoom(result, used, bedrooms[0], 212, 264, 516, 274);
+    addRoom(result, used, storage, 58, 360, 154, 178);
+  } else if (variant === 3) {
+    addRoom(result, used, hall, 58, 58, 190, 130);
+    addRoom(result, used, kitchenLiving, 248, 58, 480, 210);
+    addRoom(result, used, bathroom, 58, 188, 190, 150);
+    addRoom(result, used, bedrooms[0], 248, 268, 330, 270);
+    addRoom(result, used, balcony, 578, 268, 150, 270);
+    addRoom(result, used, storage, 58, 338, 190, 200);
+  } else if (variant === 4) {
+    addRoom(result, used, bathroom, 58, 58, 160, 150);
+    addRoom(result, used, hall, 218, 58, 160, 150);
+    addRoom(result, used, kitchenLiving, 378, 58, 350, 210);
+    addRoom(result, used, bedrooms[0], 58, 208, 500, 330);
+    addRoom(result, used, balcony, 558, 268, 170, 270);
+    addRoom(result, used, storage, 558, 208, 170, 60);
   } else {
-    addRoom(result, used, bedrooms[0], 212, 248, 258, 290);
-    addRoom(result, used, bedrooms[1], 470, 248, 258, 290);
+    addRoom(result, used, kitchenLiving, 58, 58, 430, 200);
+    addRoom(result, used, balcony, 488, 58, 240, 200);
+    addRoom(result, used, hall, 58, 258, 160, 130);
+    addRoom(result, used, bathroom, 58, 388, 160, 150);
+    addRoom(result, used, bedrooms[0], 218, 258, 510, 280);
+    addRoom(result, used, storage, 58, 388, 160, 150);
   }
 
-  const remaining = rooms.filter((room) => !used.has(room.id));
-  if (remaining.length === 1) {
-    addRoom(result, used, remaining[0], 470, 248, 258, 290);
-  } else {
-    remaining.forEach((room, index) => {
-      const w = Math.floor(516 / remaining.length);
-      addRoom(result, used, room, 212 + w * index, 248, index === remaining.length - 1 ? 516 - w * index : w, 290);
-    });
+  const unplacedBedrooms = bedrooms.filter((room) => !used.has(room.id));
+  if (unplacedBedrooms.length === 1) {
+    addRoom(result, used, unplacedBedrooms[0], 470, 248, 258, 290);
   }
 
+  fillRemaining(result, used, rooms);
   return result;
 }
 
-function makeThreeRoomLayout(rooms: Room[]) {
+function makeTwoBedroomLayout(apartmentId: string | undefined, rooms: Room[]) {
+  const variant = getVariant(apartmentId, 5);
   const used = new Set<string>();
   const result: VisualRoom[] = [];
+
   const hall = findFirst(rooms, isHall, used);
   const bathroom = findFirst(rooms, isBathroom, used);
   const storage = findFirst(rooms, isStorage, used);
@@ -249,26 +277,120 @@ function makeThreeRoomLayout(rooms: Room[]) {
   const kitchenLiving = rooms.find((room) => !used.has(room.id) && isKitchen(room));
   const bedrooms = rooms.filter((room) => isBedroom(room)).sort(byAreaDesc);
 
-  addRoom(result, used, bathroom, 58, 58, 154, 146);
-  addRoom(result, used, hall, 58, 204, 154, 126);
-  addRoom(result, used, storage, 58, 330, 154, 208);
+  if (variant === 0) {
+    addRoom(result, used, bathroom, 58, 58, 154, 146);
+    addRoom(result, used, hall, 58, 204, 154, 126);
+    addRoom(result, used, storage, 58, 330, 154, 208);
+    addRoom(result, used, kitchenLiving, 212, 58, balcony ? 356 : 516, 186);
+    addRoom(result, used, balcony, 568, 58, 160, 186);
+    addRoom(result, used, bedrooms[0], 212, 244, 258, 294);
+    addRoom(result, used, bedrooms[1], 470, 244, 258, 294);
+  } else if (variant === 1) {
+    addRoom(result, used, hall, 58, 58, 176, 140);
+    addRoom(result, used, bathroom, 58, 198, 176, 150);
+    addRoom(result, used, storage, 58, 348, 176, 190);
+    addRoom(result, used, kitchenLiving, 234, 58, 494, 200);
+    addRoom(result, used, bedrooms[0], 234, 258, 247, 280);
+    addRoom(result, used, bedrooms[1], 481, 258, 247, 280);
+    addRoom(result, used, balcony, 558, 58, 170, 200);
+  } else if (variant === 2) {
+    addRoom(result, used, bathroom, 58, 58, 160, 152);
+    addRoom(result, used, hall, 58, 210, 160, 150);
+    addRoom(result, used, kitchenLiving, 218, 58, 340, 210);
+    addRoom(result, used, balcony, 558, 58, 170, 210);
+    addRoom(result, used, bedrooms[0], 218, 268, 255, 270);
+    addRoom(result, used, bedrooms[1], 473, 268, 255, 270);
+    addRoom(result, used, storage, 58, 360, 160, 178);
+  } else if (variant === 3) {
+    addRoom(result, used, kitchenLiving, 58, 58, 430, 190);
+    addRoom(result, used, balcony, 488, 58, 240, 190);
+    addRoom(result, used, hall, 58, 248, 170, 138);
+    addRoom(result, used, bathroom, 58, 386, 170, 152);
+    addRoom(result, used, bedrooms[0], 228, 248, 250, 290);
+    addRoom(result, used, bedrooms[1], 478, 248, 250, 290);
+    addRoom(result, used, storage, 58, 386, 170, 152);
+  } else {
+    addRoom(result, used, bathroom, 58, 58, 150, 150);
+    addRoom(result, used, hall, 208, 58, 150, 150);
+    addRoom(result, used, kitchenLiving, 358, 58, 370, 190);
+    addRoom(result, used, bedrooms[0], 58, 208, 335, 330);
+    addRoom(result, used, bedrooms[1], 393, 248, 335, 290);
+    addRoom(result, used, balcony, 558, 58, 170, 190);
+    addRoom(result, used, storage, 393, 208, 165, 40);
+  }
 
-  addRoom(result, used, kitchenLiving, 212, 58, balcony ? 356 : 516, 186);
-  addRoom(result, used, balcony, 568, 58, 160, 186);
-
-  addRoom(result, used, bedrooms[0], 212, 244, 172, 294);
-  addRoom(result, used, bedrooms[1], 384, 244, 172, 294);
-  addRoom(result, used, bedrooms[2], 556, 244, 172, 294);
-
-  const remaining = rooms.filter((room) => !used.has(room.id));
-  remaining.forEach((room, index) => addRoom(result, used, room, 212 + index * 172, 398, 172, 140));
-
+  fillRemaining(result, used, rooms);
   return result;
 }
 
-function makeFourRoomLayout(rooms: Room[]) {
+function makeThreeBedroomLayout(apartmentId: string | undefined, rooms: Room[]) {
+  const variant = getVariant(apartmentId, 5);
   const used = new Set<string>();
   const result: VisualRoom[] = [];
+
+  const hall = findFirst(rooms, isHall, used);
+  const bathroom = findFirst(rooms, isBathroom, used);
+  const storage = findFirst(rooms, isStorage, used);
+  const balcony = findFirst(rooms, isBalcony, used);
+  const kitchenLiving = rooms.find((room) => !used.has(room.id) && isKitchen(room));
+  const bedrooms = rooms.filter((room) => isBedroom(room)).sort(byAreaDesc);
+
+  if (variant === 0) {
+    addRoom(result, used, bathroom, 58, 58, 154, 146);
+    addRoom(result, used, hall, 58, 204, 154, 126);
+    addRoom(result, used, storage, 58, 330, 154, 208);
+    addRoom(result, used, kitchenLiving, 212, 58, balcony ? 356 : 516, 186);
+    addRoom(result, used, balcony, 568, 58, 160, 186);
+    addRoom(result, used, bedrooms[0], 212, 244, 172, 294);
+    addRoom(result, used, bedrooms[1], 384, 244, 172, 294);
+    addRoom(result, used, bedrooms[2], 556, 244, 172, 294);
+  } else if (variant === 1) {
+    addRoom(result, used, hall, 58, 58, 170, 138);
+    addRoom(result, used, bathroom, 58, 196, 170, 152);
+    addRoom(result, used, storage, 58, 348, 170, 190);
+    addRoom(result, used, kitchenLiving, 228, 58, 500, 182);
+    addRoom(result, used, bedrooms[0], 228, 240, 250, 298);
+    addRoom(result, used, bedrooms[1], 478, 240, 250, 150);
+    addRoom(result, used, bedrooms[2], 478, 390, 250, 148);
+    addRoom(result, used, balcony, 578, 58, 150, 182);
+  } else if (variant === 2) {
+    addRoom(result, used, kitchenLiving, 58, 58, 420, 190);
+    addRoom(result, used, balcony, 478, 58, 250, 190);
+    addRoom(result, used, hall, 58, 248, 160, 130);
+    addRoom(result, used, bathroom, 58, 378, 160, 160);
+    addRoom(result, used, bedrooms[0], 218, 248, 255, 290);
+    addRoom(result, used, bedrooms[1], 473, 248, 255, 145);
+    addRoom(result, used, bedrooms[2], 473, 393, 255, 145);
+    addRoom(result, used, storage, 58, 378, 160, 160);
+  } else if (variant === 3) {
+    addRoom(result, used, bathroom, 58, 58, 150, 150);
+    addRoom(result, used, hall, 208, 58, 150, 150);
+    addRoom(result, used, kitchenLiving, 358, 58, 370, 180);
+    addRoom(result, used, bedrooms[0], 58, 208, 223, 330);
+    addRoom(result, used, bedrooms[1], 281, 238, 223, 300);
+    addRoom(result, used, bedrooms[2], 504, 238, 224, 300);
+    addRoom(result, used, balcony, 558, 58, 170, 180);
+    addRoom(result, used, storage, 358, 238, 146, 70);
+  } else {
+    addRoom(result, used, hall, 58, 58, 172, 150);
+    addRoom(result, used, bathroom, 230, 58, 150, 150);
+    addRoom(result, used, kitchenLiving, 380, 58, 348, 220);
+    addRoom(result, used, bedrooms[0], 58, 208, 320, 330);
+    addRoom(result, used, bedrooms[1], 378, 278, 175, 260);
+    addRoom(result, used, bedrooms[2], 553, 278, 175, 260);
+    addRoom(result, used, balcony, 558, 58, 170, 220);
+    addRoom(result, used, storage, 230, 208, 148, 80);
+  }
+
+  fillRemaining(result, used, rooms);
+  return result;
+}
+
+function makeFourBedroomLayout(apartmentId: string | undefined, rooms: Room[]) {
+  const variant = getVariant(apartmentId, 4);
+  const used = new Set<string>();
+  const result: VisualRoom[] = [];
+
   const hall = findFirst(rooms, isHall, used);
   const bathrooms = rooms.filter(isBathroom).sort(byAreaDesc);
   const storage = findFirst(rooms, isStorage, used);
@@ -278,60 +400,75 @@ function makeFourRoomLayout(rooms: Room[]) {
   const kitchenLiving = rooms.find((room) => !used.has(room.id) && isKitchen(room) && isLiving(room));
   const bedrooms = rooms.filter((room) => isBedroom(room)).sort(byAreaDesc);
 
-  addRoom(result, used, bathrooms[0], 58, 58, 154, 132);
-  addRoom(result, used, bathrooms[1], 58, 190, 154, 110);
-  addRoom(result, used, hall, 58, 300, 154, 128);
-  addRoom(result, used, storage, 58, 428, 154, 110);
-
-  if (kitchenLiving) {
-    addRoom(result, used, kitchenLiving, 212, 58, balcony ? 356 : 516, 160);
-  } else {
-    addRoom(result, used, kitchen, 212, 58, 250, 160);
+  if (variant === 0) {
+    addRoom(result, used, bathrooms[0], 58, 58, 154, 132);
+    addRoom(result, used, bathrooms[1], 58, 190, 154, 110);
+    addRoom(result, used, hall, 58, 300, 154, 128);
+    addRoom(result, used, storage, 58, 428, 154, 110);
+    addRoom(result, used, kitchenLiving ?? kitchen, 212, 58, 250, 160);
     addRoom(result, used, living, 462, 58, balcony ? 106 : 266, 160);
-  }
-
-  addRoom(result, used, balcony, 568, 58, 160, 160);
-
-  addRoom(result, used, bedrooms[0], 212, 218, 172, 160);
-  addRoom(result, used, bedrooms[1], 384, 218, 172, 160);
-  addRoom(result, used, bedrooms[2], 556, 218, 172, 160);
-  addRoom(result, used, bedrooms[3], 212, 378, 258, 160);
-
-  const remaining = rooms.filter((room) => !used.has(room.id));
-  if (remaining.length === 1) {
-    addRoom(result, used, remaining[0], 470, 378, 258, 160);
+    addRoom(result, used, balcony, 568, 58, 160, 160);
+    addRoom(result, used, bedrooms[0], 212, 218, 172, 160);
+    addRoom(result, used, bedrooms[1], 384, 218, 172, 160);
+    addRoom(result, used, bedrooms[2], 556, 218, 172, 160);
+    addRoom(result, used, bedrooms[3], 212, 378, 258, 160);
+  } else if (variant === 1) {
+    addRoom(result, used, hall, 58, 58, 170, 138);
+    addRoom(result, used, bathrooms[0], 58, 196, 170, 138);
+    addRoom(result, used, bathrooms[1], 58, 334, 170, 100);
+    addRoom(result, used, storage, 58, 434, 170, 104);
+    addRoom(result, used, kitchenLiving ?? kitchen, 228, 58, 260, 180);
+    addRoom(result, used, living, 488, 58, 240, 180);
+    addRoom(result, used, bedrooms[0], 228, 238, 250, 150);
+    addRoom(result, used, bedrooms[1], 478, 238, 250, 150);
+    addRoom(result, used, bedrooms[2], 228, 388, 250, 150);
+    addRoom(result, used, bedrooms[3], 478, 388, 250, 150);
+    addRoom(result, used, balcony, 608, 58, 120, 180);
+  } else if (variant === 2) {
+    addRoom(result, used, kitchenLiving ?? kitchen, 58, 58, 330, 170);
+    addRoom(result, used, living, 388, 58, 240, 170);
+    addRoom(result, used, balcony, 628, 58, 100, 170);
+    addRoom(result, used, hall, 58, 228, 170, 130);
+    addRoom(result, used, bathrooms[0], 58, 358, 170, 90);
+    addRoom(result, used, bathrooms[1], 58, 448, 170, 90);
+    addRoom(result, used, bedrooms[0], 228, 228, 166, 310);
+    addRoom(result, used, bedrooms[1], 394, 228, 166, 155);
+    addRoom(result, used, bedrooms[2], 560, 228, 168, 155);
+    addRoom(result, used, bedrooms[3], 394, 383, 334, 155);
+    addRoom(result, used, storage, 58, 448, 170, 90);
   } else {
-    remaining.forEach((room, index) => addRoom(result, used, room, 470 + index * 129, 378, 129, 160));
+    addRoom(result, used, bathrooms[0], 58, 58, 150, 125);
+    addRoom(result, used, hall, 208, 58, 150, 125);
+    addRoom(result, used, bathrooms[1], 58, 183, 150, 115);
+    addRoom(result, used, storage, 208, 183, 150, 115);
+    addRoom(result, used, kitchenLiving ?? kitchen, 358, 58, 370, 160);
+    addRoom(result, used, living, 358, 218, 185, 160);
+    addRoom(result, used, balcony, 543, 218, 185, 160);
+    addRoom(result, used, bedrooms[0], 58, 298, 225, 240);
+    addRoom(result, used, bedrooms[1], 283, 378, 148, 160);
+    addRoom(result, used, bedrooms[2], 431, 378, 148, 160);
+    addRoom(result, used, bedrooms[3], 579, 378, 149, 160);
   }
 
+  fillRemaining(result, used, rooms);
   return result;
 }
 
-function qualityLayout(_apartmentId: string | undefined, rooms: Room[]): VisualRoom[] {
-  // Финальный этап: качественный генератор теперь работает для всех квартир.
-  // _apartmentId оставлен в сигнатуре, чтобы не ломать вызовы и чтобы потом можно было делать точечные схемы.
-
+function qualityLayout(apartmentId: string | undefined, rooms: Room[]): VisualRoom[] {
   const bedrooms = rooms.filter(isBedroom);
   const hasSeparateLiving = rooms.some((room) => isLiving(room) && !isKitchen(room));
   const hasSeparateKitchen = rooms.some((room) => isKitchen(room) && !isLiving(room));
 
-  if (bedrooms.length >= 4 || rooms.length >= 9) return makeFourRoomLayout(rooms);
-  if (bedrooms.length >= 3 || rooms.length >= 7) return makeThreeRoomLayout(rooms);
-  if (bedrooms.length >= 2) return makeEuroTwoLayout(rooms);
-  if (hasSeparateLiving && hasSeparateKitchen) return makeStudioLayout(rooms);
-  if (bedrooms.length <= 1 && rooms.length <= 5) return makeStudioLayout(rooms);
-  return makeEuroTwoLayout(rooms);
+  if (bedrooms.length >= 4 || rooms.length >= 9) return makeFourBedroomLayout(apartmentId, rooms);
+  if (bedrooms.length >= 3 || rooms.length >= 7) return makeThreeBedroomLayout(apartmentId, rooms);
+  if (bedrooms.length >= 2) return makeTwoBedroomLayout(apartmentId, rooms);
+  if (hasSeparateLiving && hasSeparateKitchen) return makeStudioLayout(apartmentId, rooms);
+  if (bedrooms.length <= 1 && rooms.length <= 5) return makeStudioLayout(apartmentId, rooms);
+  return makeEuroTwoLayout(apartmentId, rooms);
 }
 
 export function getApartmentVisualRooms(apartmentId: string | undefined, rooms: Room[]) {
-  const visualRooms = qualityLayout(apartmentId, rooms);
-  const used = new Set(visualRooms.map((room) => room.id));
-
-  const missing = rooms
-    .filter((room) => !used.has(room.id))
-    .map((room, index) => rect(room, 58 + index * 120, 438, 120, 100));
-
-  return [...visualRooms, ...missing];
+  return qualityLayout(apartmentId, rooms);
 }
 
 export function roomFill(room: Room) {
@@ -342,6 +479,22 @@ export function roomFill(room: Room) {
   if (isBalcony(room)) return "#f2f7ff";
   if (isStorage(room)) return "#f7f1ff";
   return "#ffffff";
+}
+
+export function getVisualBounds(room: VisualRoom): VisualBounds {
+  const minX = room.visualX;
+  const minY = room.visualY;
+  const maxX = room.visualX + room.visualWidth;
+  const maxY = room.visualY + room.visualHeight;
+
+  return {
+    minX,
+    minY,
+    maxX,
+    maxY,
+    centerX: (minX + maxX) / 2,
+    centerY: (minY + maxY) / 2
+  };
 }
 
 export function getPlanBounds(visualRooms: VisualRoom[]): VisualBounds {
