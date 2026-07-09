@@ -133,17 +133,6 @@ function byAreaDesc(a: Room, b: Room) {
   return b.area - a.area;
 }
 
-function parsePolygon(polygon: string) {
-  return polygon
-    .trim()
-    .split(/\s+/)
-    .map((pair) => {
-      const [x, y] = pair.split(",").map(Number);
-      return { x, y };
-    })
-    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
-}
-
 export function getVisualBounds(room: VisualRoom): VisualBounds {
   const minX = room.visualX;
   const minY = room.visualY;
@@ -158,30 +147,6 @@ export function getVisualBounds(room: VisualRoom): VisualBounds {
     centerX: (minX + maxX) / 2,
     centerY: (minY + maxY) / 2
   };
-}
-
-function getLegacyBounds(room: Room): VisualBounds {
-  const points = parsePolygon(room.polygon);
-  const xs = points.map((point) => point.x);
-  const ys = points.map((point) => point.y);
-  const minX = Math.min(...xs);
-  const minY = Math.min(...ys);
-  const maxX = Math.max(...xs);
-  const maxY = Math.max(...ys);
-
-  return {
-    minX,
-    minY,
-    maxX,
-    maxY,
-    centerX: (minX + maxX) / 2,
-    centerY: (minY + maxY) / 2
-  };
-}
-
-function legacyVisualRoom(room: Room): VisualRoom {
-  const bounds = getLegacyBounds(room);
-  return rect(room, bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
 }
 
 function findFirst(rooms: Room[], predicate: (room: Room) => boolean, used: Set<string>) {
@@ -337,10 +302,9 @@ function makeFourRoomLayout(rooms: Room[]) {
   return result;
 }
 
-function qualityLayout(apartmentId: string | undefined, rooms: Room[]): VisualRoom[] {
+function qualityLayout(_apartmentId: string | undefined, rooms: Room[]): VisualRoom[] {
   // Финальный этап: качественный генератор теперь работает для всех квартир.
-  // apartmentId оставлен в сигнатуре, чтобы не ломать вызовы и чтобы потом можно было делать точечные схемы.
-  void apartmentId;
+  // _apartmentId оставлен в сигнатуре, чтобы не ломать вызовы и чтобы потом можно было делать точечные схемы.
 
   const bedrooms = rooms.filter(isBedroom);
   const hasSeparateLiving = rooms.some((room) => isLiving(room) && !isKitchen(room));
