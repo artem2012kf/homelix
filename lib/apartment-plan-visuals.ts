@@ -82,6 +82,11 @@ export const PLAN_FRAME = {
   height: 480
 };
 
+function clamp(value: number, min: number, max: number) {
+  if (max < min) return min;
+  return Math.min(Math.max(value, min), max);
+}
+
 function rect(room: Room, x: number, y: number, width: number, height: number): VisualRoom {
   return {
     ...room,
