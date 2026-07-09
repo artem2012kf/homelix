@@ -7,21 +7,9 @@ export type FurniturePlacement = {
   title: string;
   category: FurnitureCategory;
   price: number;
-  /**
-   * Вариант расположения внутри комнаты. ИИ меняет это поле,
-   * когда пользователь просит передвинуть конкретную мебель.
-   */
   layoutVariant?: number;
-  /**
-   * Ручные координаты мебели на SVG-планировке.
-   * Сохраняются только в браузере текущего устройства.
-   */
   manualX?: number;
   manualY?: number;
-  /**
-   * Ручной поворот мебели на планировке.
-   * 0, 90, 180 или 270 градусов.
-   */
   manualRotation?: number;
   createdAt?: number;
 };
