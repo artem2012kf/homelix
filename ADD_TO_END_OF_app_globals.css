@@ -1,134 +1,29 @@
 /*
 Вставь в самый конец app/globals.css.
-Полностью гасит кривые дуги дверей и делает чистую планировку.
+Страховка: убирает старые чёрные стили и старые дуги.
+Основные цвета уже прописаны прямо в компонентах.
 */
 
-.plan-shell-clean {
-  overflow: hidden;
-  border: 1px solid rgba(0, 59, 166, 0.14) !important;
-  border-radius: 32px !important;
-  background: #fffdf8 !important;
-  box-shadow: 0 22px 70px rgba(0, 59, 166, 0.10);
-}
-
-.apartment-plan-clean {
-  display: block;
-  width: 100%;
-  min-height: 560px;
-  background: #fffdf8;
-}
-
-.plan-bg-clean {
-  fill: #fffdf8;
-  stroke: rgba(0, 59, 166, 0.14);
-  stroke-width: 2;
-}
-
-.room-zone-clean {
-  stroke: #c9ba9a !important;
-  stroke-width: 4 !important;
-  stroke-linejoin: round !important;
-  cursor: pointer;
-  transition: fill 0.18s ease, stroke 0.18s ease, filter 0.18s ease;
-}
-
-.room-zone-clean.room-kitchen,
-.room-zone-clean.room-living {
-  fill: #eef5fb !important;
-}
-
-.room-zone-clean.room-bedroom,
-.room-zone-clean.room-children {
-  fill: #eef8ef !important;
-}
-
-.room-zone-clean.room-bathroom {
-  fill: #eef3fa !important;
-}
-
-.room-zone-clean.room-hall {
-  fill: #fff6e8 !important;
-}
-
-.room-zone-clean.room-balcony {
-  fill: #f2f7ff !important;
-}
-
-.room-zone-clean.room-wardrobe {
-  fill: #f7f1ff !important;
-}
-
-.room-zone-clean:hover,
-.room-selected-clean {
-  fill: rgba(249, 62, 62, 0.12) !important;
-  stroke: var(--primary) !important;
-  filter: drop-shadow(0 10px 18px rgba(249, 62, 62, 0.12));
-}
-
-.plan-outer-border-clean {
-  fill: none;
-  stroke: #3f362c;
-  stroke-width: 8;
-  stroke-linejoin: round;
-  pointer-events: none;
-}
-
-.room-label {
-  fill: #2d2922 !important;
-  font-size: 18px !important;
-  font-weight: 950 !important;
-  letter-spacing: -0.03em;
-  paint-order: stroke;
-  stroke: rgba(255, 253, 248, 0.95);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  pointer-events: none;
-}
-
-.room-area {
-  fill: var(--text) !important;
-  font-size: 14px !important;
-  font-weight: 900 !important;
-  stroke-width: 3px;
-}
-
-.door-opening path {
+.outer-wall,
+.door-opening path,
+.furniture-rotate-handle {
   display: none !important;
+}
+
+.apartment-plan polygon,
+.card-mini-plan polygon {
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+}
+
+.apartment-plan rect,
+.card-mini-plan rect {
+  fill-opacity: 1 !important;
 }
 
 .door-opening,
 .door-opening * {
-  fill: none !important;
   pointer-events: none !important;
-}
-
-.door-gap-clean {
-  stroke: #fffdf8 !important;
-  stroke-width: 17 !important;
-  stroke-linecap: round !important;
-}
-
-.door-threshold-clean {
-  stroke: rgba(63, 54, 44, 0.55) !important;
-  stroke-width: 2 !important;
-  stroke-linecap: round !important;
-  stroke-dasharray: 2 8;
-}
-
-.window-gap-clean {
-  stroke: #fffdf8 !important;
-  stroke-width: 15 !important;
-  stroke-linecap: round !important;
-}
-
-.window-glass-clean {
-  stroke: #8fc5ec !important;
-  stroke-width: 6 !important;
-  stroke-linecap: round !important;
-}
-
-.outer-wall {
-  display: none !important;
 }
 
 .furniture-placement {
@@ -165,51 +60,4 @@ body.is-dragging-furniture {
   cursor: grabbing !important;
   user-select: none !important;
   overscroll-behavior: none;
-}
-
-.card-mini-plan svg {
-  display: block;
-  width: 100%;
-}
-
-.mini-plan-bg-clean {
-  fill: #fffdf8;
-  stroke: rgba(0, 59, 166, 0.12);
-  stroke-width: 2;
-}
-
-.mini-room-clean {
-  stroke: #c9ba9a;
-  stroke-width: 4;
-  stroke-linejoin: round;
-}
-
-.mini-room-clean.mini-room-kitchen {
-  fill: #eef5fb;
-}
-
-.mini-room-clean.mini-room-bedroom {
-  fill: #eef8ef;
-}
-
-.mini-room-clean.mini-room-bathroom {
-  fill: #eef3fa;
-}
-
-.mini-room-clean.mini-room-hall {
-  fill: #fff6e8;
-}
-
-.mini-room-clean.mini-room-balcony {
-  fill: #f2f7ff;
-}
-
-.mini-room-clean.mini-room-wardrobe {
-  fill: #f7f1ff;
-}
-
-.mini-door-gap-clean {
-  stroke: #fffdf8;
-  stroke-width: 14;
-  stroke-linecap: round;
 }

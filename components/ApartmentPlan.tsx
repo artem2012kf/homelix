@@ -38,17 +38,6 @@ type FurnitureGeometry = { x: number; y: number; width: number; height: number; 
 const EPS = 3;
 const MIN_SHARED = 34;
 
-const roomTypeClass: Record<string, string> = {
-  kitchen: "room-kitchen",
-  living: "room-living",
-  bedroom: "room-bedroom",
-  children: "room-children",
-  bathroom: "room-bathroom",
-  hall: "room-hall",
-  balcony: "room-balcony",
-  wardrobe: "room-wardrobe"
-};
-
 function parsePolygon(polygon: string): Point[] {
   return polygon
     .trim()
@@ -108,49 +97,29 @@ function touching(a: number, b: number) {
 function overlapRange(aMin: number, aMax: number, bMin: number, bMax: number) {
   const min = Math.max(aMin, bMin);
   const max = Math.min(aMax, bMax);
-  return { min, max, size: Math.max(0, max - min), center: (min + max) / 2 };
+  return { size: Math.max(0, max - min), center: (min + max) / 2 };
 }
 
 function sharedDoor(room: Room, neighbor: Room, size = 46): Omit<DoorOpening, "id" | "roomId" | "kind"> | null {
   const a = getBounds(room);
   const b = getBounds(neighbor);
-  const verticalOverlap = overlapRange(a.minY, a.maxY, b.minY, b.maxY);
-  const horizontalOverlap = overlapRange(a.minX, a.maxX, b.minX, b.maxX);
+  const v = overlapRange(a.minY, a.maxY, b.minY, b.maxY);
+  const h = overlapRange(a.minX, a.maxX, b.minX, b.maxX);
 
-  if (touching(a.minX, b.maxX) && verticalOverlap.size >= MIN_SHARED) {
-    return {
-      side: "left",
-      x: a.minX,
-      y: clamp(verticalOverlap.center, a.minY + 30, a.maxY - 30),
-      size: clamp(size, 34, Math.max(34, verticalOverlap.size - 18))
-    };
+  if (touching(a.minX, b.maxX) && v.size >= MIN_SHARED) {
+    return { side: "left", x: a.minX, y: clamp(v.center, a.minY + 28, a.maxY - 28), size: clamp(size, 34, Math.max(34, v.size - 18)) };
   }
 
-  if (touching(a.maxX, b.minX) && verticalOverlap.size >= MIN_SHARED) {
-    return {
-      side: "right",
-      x: a.maxX,
-      y: clamp(verticalOverlap.center, a.minY + 30, a.maxY - 30),
-      size: clamp(size, 34, Math.max(34, verticalOverlap.size - 18))
-    };
+  if (touching(a.maxX, b.minX) && v.size >= MIN_SHARED) {
+    return { side: "right", x: a.maxX, y: clamp(v.center, a.minY + 28, a.maxY - 28), size: clamp(size, 34, Math.max(34, v.size - 18)) };
   }
 
-  if (touching(a.minY, b.maxY) && horizontalOverlap.size >= MIN_SHARED) {
-    return {
-      side: "top",
-      x: clamp(horizontalOverlap.center, a.minX + 30, a.maxX - 30),
-      y: a.minY,
-      size: clamp(size, 34, Math.max(34, horizontalOverlap.size - 18))
-    };
+  if (touching(a.minY, b.maxY) && h.size >= MIN_SHARED) {
+    return { side: "top", x: clamp(h.center, a.minX + 28, a.maxX - 28), y: a.minY, size: clamp(size, 34, Math.max(34, h.size - 18)) };
   }
 
-  if (touching(a.maxY, b.minY) && horizontalOverlap.size >= MIN_SHARED) {
-    return {
-      side: "bottom",
-      x: clamp(horizontalOverlap.center, a.minX + 30, a.maxX - 30),
-      y: a.maxY,
-      size: clamp(size, 34, Math.max(34, horizontalOverlap.size - 18))
-    };
+  if (touching(a.maxY, b.minY) && h.size >= MIN_SHARED) {
+    return { side: "bottom", x: clamp(h.center, a.minX + 28, a.maxX - 28), y: a.maxY, size: clamp(size, 34, Math.max(34, h.size - 18)) };
   }
 
   return null;
@@ -168,14 +137,14 @@ function buildDoorOpenings(rooms: Room[]) {
 
   if (hall) {
     const hallBounds = getBounds(hall);
-    const sides = [
+    const sideScores = [
       { side: "left" as DoorSide, value: touching(hallBounds.minX, planBounds.minX) ? 1 : 0 },
       { side: "right" as DoorSide, value: touching(hallBounds.maxX, planBounds.maxX) ? 1 : 0 },
       { side: "top" as DoorSide, value: touching(hallBounds.minY, planBounds.minY) ? 1 : 0 },
       { side: "bottom" as DoorSide, value: touching(hallBounds.maxY, planBounds.maxY) ? 1 : 0 }
     ].sort((a, b) => b.value - a.value);
 
-    const entrySide = sides[0]?.value ? sides[0].side : "left";
+    const entrySide = sideScores[0]?.value ? sideScores[0].side : "left";
 
     doors.push({
       id: `${hall.id}-entry`,
@@ -402,19 +371,43 @@ function splitRoomName(name: string) {
   return [parts.slice(0, middle).join(" "), parts.slice(middle).join(" ")];
 }
 
+function roomFill(type: Room["type"]) {
+  if (type === "kitchen" || type === "living") return "#eef5fb";
+  if (type === "bedroom" || type === "children") return "#eef8ef";
+  if (type === "bathroom") return "#eef3fa";
+  if (type === "hall") return "#fff6e8";
+  if (type === "balcony") return "#f2f7ff";
+  if (type === "wardrobe") return "#f7f1ff";
+  return "#ffffff";
+}
+
 function RoomLabel({ room }: { room: Room }) {
   const bounds = getBounds(room);
   const lines = splitRoomName(room.name);
   const y = bounds.centerY - (lines.length > 1 ? 10 : 0);
 
   return (
-    <text x={bounds.centerX} y={y} textAnchor="middle" className="room-label">
+    <text
+      x={bounds.centerX}
+      y={y}
+      textAnchor="middle"
+      fill="#2d2922"
+      fontSize="18"
+      fontWeight="950"
+      style={{
+        paintOrder: "stroke",
+        stroke: "rgba(255, 253, 248, 0.96)",
+        strokeWidth: 4,
+        strokeLinejoin: "round",
+        pointerEvents: "none"
+      }}
+    >
       {lines.map((line, index) => (
         <tspan key={`${room.id}-${line}`} x={bounds.centerX} dy={index === 0 ? 0 : 18}>
           {line}
         </tspan>
       ))}
-      <tspan x={bounds.centerX} dy="22" className="room-area">
+      <tspan x={bounds.centerX} dy="22" fill="#003BA6" fontSize="14" fontWeight="900">
         {room.area} м²
       </tspan>
     </text>
@@ -426,26 +419,26 @@ function Door({ door }: { door: DoorOpening }) {
 
   if (door.side === "left" || door.side === "right") {
     return (
-      <g className={`door-opening door-${door.kind}`} pointerEvents="none">
-        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} className="door-gap-clean" />
-        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} className="door-threshold-clean" />
+      <g pointerEvents="none">
+        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke="#fffdf8" strokeWidth="17" strokeLinecap="round" />
+        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke="rgba(63,54,44,0.48)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 8" />
       </g>
     );
   }
 
   return (
-    <g className={`door-opening door-${door.kind}`} pointerEvents="none">
-      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} className="door-gap-clean" />
-      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} className="door-threshold-clean" />
+    <g pointerEvents="none">
+      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke="#fffdf8" strokeWidth="17" strokeLinecap="round" />
+      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke="rgba(63,54,44,0.48)" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 8" />
     </g>
   );
 }
 
 function WindowLine({ window }: { window: WindowOpening }) {
   return (
-    <g className="window-opening" pointerEvents="none">
-      <line x1={window.x1} y1={window.y1} x2={window.x2} y2={window.y2} className="window-gap-clean" />
-      <line x1={window.x1} y1={window.y1} x2={window.x2} y2={window.y2} className="window-glass-clean" />
+    <g pointerEvents="none">
+      <line x1={window.x1} y1={window.y1} x2={window.x2} y2={window.y2} stroke="#fffdf8" strokeWidth="15" strokeLinecap="round" />
+      <line x1={window.x1} y1={window.y1} x2={window.x2} y2={window.y2} stroke="#8fc5ec" strokeWidth="6" strokeLinecap="round" />
     </g>
   );
 }
@@ -608,9 +601,24 @@ export function ApartmentPlan({
   const planBounds = useMemo(() => getPlanBounds(rooms), [rooms]);
 
   return (
-    <div className="plan-shell plan-shell-clean">
-      <svg viewBox="0 0 785 600" role="img" aria-label="Интерактивная планировка квартиры" className="apartment-plan apartment-plan-clean">
-        <rect x="34" y="34" width="720" height="530" rx="28" className="plan-bg-clean" />
+    <div
+      className="plan-shell"
+      style={{
+        overflow: "hidden",
+        border: "1px solid rgba(0, 59, 166, 0.14)",
+        borderRadius: 32,
+        background: "#fffdf8",
+        boxShadow: "0 22px 70px rgba(0, 59, 166, 0.10)"
+      }}
+    >
+      <svg
+        viewBox="0 0 785 600"
+        role="img"
+        aria-label="Интерактивная планировка квартиры"
+        className="apartment-plan"
+        style={{ display: "block", width: "100%", minHeight: 560, background: "#fffdf8" }}
+      >
+        <rect x="34" y="34" width="720" height="530" rx="28" fill="#fffdf8" stroke="rgba(0, 59, 166, 0.14)" strokeWidth="2" />
 
         {rooms.map((room) => {
           const selected = selectedRoomId === room.id;
@@ -633,7 +641,14 @@ export function ApartmentPlan({
                 }
               }}
             >
-              <polygon points={room.polygon} className={`room-zone-clean ${roomTypeClass[room.type] ?? ""} ${selected ? "room-selected-clean" : ""}`} />
+              <polygon
+                points={room.polygon}
+                fill={selected ? "rgba(249, 62, 62, 0.14)" : roomFill(room.type)}
+                stroke={selected ? "#F93E3E" : "#c9ba9a"}
+                strokeWidth="4"
+                strokeLinejoin="round"
+                style={{ cursor: "pointer" }}
+              />
             </g>
           );
         })}
@@ -643,16 +658,20 @@ export function ApartmentPlan({
           y={planBounds.minY}
           width={planBounds.maxX - planBounds.minX}
           height={planBounds.maxY - planBounds.minY}
-          className="plan-outer-border-clean"
+          fill="none"
+          stroke="#3f362c"
+          strokeWidth="8"
+          strokeLinejoin="round"
+          pointerEvents="none"
         />
 
-        <g className="window-layer" aria-hidden="true">
+        <g aria-hidden="true">
           {windows.map((window) => (
             <WindowLine key={window.id} window={window} />
           ))}
         </g>
 
-        <g className="door-layer" aria-hidden="true">
+        <g aria-hidden="true">
           {doors.map((door) => (
             <Door key={door.id} door={door} />
           ))}
@@ -662,7 +681,7 @@ export function ApartmentPlan({
           <RoomLabel key={`${room.id}-label`} room={room} />
         ))}
 
-        <g className="furniture-placement-layer" aria-label="Размещенная мебель">
+        <g aria-label="Размещенная мебель">
           {furniturePlacements.map((placement) => {
             const room = rooms.find((item) => item.id === placement.roomId);
             if (!room) return null;
