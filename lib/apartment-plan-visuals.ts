@@ -39,6 +39,7 @@ export type VisualWindow = {
 };
 
 export const FIRST_PLAN_BATCH_IDS = [
+  // Первая партия — 10 квартир
   "apt-204",
   "apt-318",
   "apt-112",
@@ -48,7 +49,19 @@ export const FIRST_PLAN_BATCH_IDS = [
   "apt-715",
   "apt-806",
   "apt-233",
-  "apt-103"
+  "apt-103",
+
+  // Вторая партия — ещё 10 квартир
+  "apt-126",
+  "apt-145",
+  "apt-219",
+  "apt-276",
+  "apt-331",
+  "apt-384",
+  "apt-416",
+  "apt-452",
+  "apt-518",
+  "apt-566"
 ];
 
 export const PLAN_FRAME = {

@@ -182,7 +182,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           <span className="eyebrow">Планировка</span>
           <h2>Выберите комнату</h2>
           <p className="muted">
-            Первые 10 квартир переделаны вручную по нормальным схемам. Мебель можно двигать мышью или пальцем.
+            Первые 20 квартир переделаны по нормальным схемам. Мебель можно двигать мышью или пальцем.
           </p>
         </div>
 
