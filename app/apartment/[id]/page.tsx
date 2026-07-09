@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApartmentExperience } from "@/components/ApartmentExperience";
-import { ApartmentCardActions } from "@/components/ApartmentCardActions";
+import { ApartmentPriceBox } from "@/components/ApartmentPriceBox";
 import { ApartmentStatusBadge } from "@/components/ApartmentStatusBadge";
 import { apartments, getApartmentById } from "@/lib/apartments";
-import { formatArea, formatPrice } from "@/lib/format";
+import { formatArea } from "@/lib/format";
 import { getResidentialComplexByApartmentId } from "@/lib/residential-complexes";
 
 export function generateStaticParams() {
@@ -72,12 +72,7 @@ export default async function ApartmentPage({ params }: { params: Promise<{ id: 
               ))}
             </div>
           </div>
-          <div className="price-box">
-            <span>Стоимость</span>
-            <strong>{formatPrice(apartment.price)}</strong>
-            <small>от {formatPrice(apartment.mortgagePayment)} / мес.</small>
-            <ApartmentCardActions apartment={apartment} showPlanLink={false} />
-          </div>
+          <ApartmentPriceBox apartment={apartment} />
         </div>
         <div className="metrics-strip">
           <div>

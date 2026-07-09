@@ -78,6 +78,20 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
   );
   const totalWithFurniture = apartment.price + furnitureTotal;
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.dispatchEvent(
+      new CustomEvent("sq-furniture-price-updated", {
+        detail: {
+          apartmentId: apartment.id,
+          furnitureTotal,
+          totalWithFurniture
+        }
+      })
+    );
+  }, [apartment.id, furnitureTotal, totalWithFurniture]);
+
   function placeFurniture(nextPlacement: FurniturePlacement, options: PlacementOptions = {}) {
     setFurniturePlacements((current) => {
       let next = current;
@@ -168,8 +182,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           <span className="eyebrow">Планировка</span>
           <h2>Выберите комнату</h2>
           <p className="muted">
-            Мебель можно двигать мышью/пальцем. Чтобы повернуть предмет, нажмите на круглый значок ↻ рядом с ним
-            или используйте кнопку в списке мебели.
+            Мебель можно двигать мышью/пальцем. Поворот теперь только под планировкой — без чёрных кружков на плане.
           </p>
         </div>
 
@@ -179,7 +192,6 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           onRoomSelect={setSelectedRoomId}
           furniturePlacements={furniturePlacements}
           onFurnitureManualMove={moveFurnitureManually}
-          onFurnitureRotate={rotateFurniture}
         />
 
         <div className="apartment-total-panel">
@@ -202,7 +214,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
             <div>
               <strong>Мебель на планировке</strong>
               <span>
-                Цена этой мебели уже прибавлена к стоимости квартиры. Предмет можно перетащить и повернуть.
+                Цена этой мебели уже прибавлена к стоимости квартиры. Предмет можно перетащить на плане и повернуть кнопкой ниже.
               </span>
             </div>
             <ul>

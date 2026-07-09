@@ -11,7 +11,6 @@ type ApartmentPlanProps = {
   onRoomSelect: (roomId: string) => void;
   furniturePlacements?: FurniturePlacement[];
   onFurnitureManualMove?: (placementId: string, x: number, y: number) => void;
-  onFurnitureRotate?: (placementId: string) => void;
 };
 
 type Point = { x: number; y: number };
@@ -360,30 +359,18 @@ function PlacedFurniture({
   room,
   orderInRoom,
   doors,
-  onManualMove,
-  onRotate
+  onManualMove
 }: {
   placement: FurniturePlacement;
   room: Room;
   orderInRoom: number;
   doors: DoorOpening[];
   onManualMove?: (placementId: string, x: number, y: number) => void;
-  onRotate?: (placementId: string) => void;
 }) {
   const geometry = getFurnitureGeometry(room, placement, orderInRoom, doors);
   const centerX = geometry.x + geometry.width / 2;
   const centerY = geometry.y + geometry.height / 2;
   const rotate = geometry.rotate ? `rotate(${geometry.rotate} ${centerX} ${centerY})` : undefined;
-  const rotateHandleX = geometry.x + geometry.width + 12;
-  const rotateHandleY = geometry.y - 12;
-
-  function rotatePlacement(event: ReactPointerEvent<SVGGElement>) {
-    if (!onRotate) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    onRotate(placement.id);
-  }
 
   function onPointerDown(event: ReactPointerEvent<SVGGElement>) {
     if (!onManualMove || event.button > 0) return;
@@ -443,14 +430,9 @@ function PlacedFurniture({
   }
 
   return (
-    <g className={`furniture-placement furniture-placement-${placement.category}`}>
-      <g
-        transform={rotate}
-        onPointerDown={onPointerDown}
-        onDoubleClick={() => onRotate?.(placement.id)}
-        style={{ cursor: onManualMove ? "grab" : "default", touchAction: "none" }}
-      >
-        <title>{placement.title}. Зажмите и перетащите. Двойной клик — повернуть.</title>
+    <g className={`furniture-placement furniture-placement-${placement.category}`} onPointerDown={onPointerDown}>
+      <g transform={rotate} style={{ cursor: onManualMove ? "grab" : "default", touchAction: "none" }}>
+        <title>{placement.title}. Зажмите и перетащите. Повернуть можно кнопкой под планировкой.</title>
 
         <rect
           x={geometry.x - 12}
@@ -464,33 +446,11 @@ function PlacedFurniture({
         />
 
         <FurnitureIcon placement={placement} geometry={geometry} />
-
-        <text x={centerX} y={centerY + 4} textAnchor="middle" className="furniture-placement-label">
-          {geometry.label}
-        </text>
       </g>
 
-      {onRotate && (
-        <g
-          className="furniture-rotate-handle"
-          role="button"
-          aria-label={`Повернуть ${placement.title}`}
-          tabIndex={0}
-          onPointerDown={rotatePlacement}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              event.stopPropagation();
-              onRotate(placement.id);
-            }
-          }}
-        >
-          <circle cx={rotateHandleX} cy={rotateHandleY} r="14" />
-          <text x={rotateHandleX} y={rotateHandleY + 5} textAnchor="middle">
-            ↻
-          </text>
-        </g>
-      )}
+      <text x={centerX} y={centerY + 4} textAnchor="middle" className="furniture-placement-label">
+        {geometry.label}
+      </text>
     </g>
   );
 }
@@ -500,8 +460,7 @@ export function ApartmentPlan({
   selectedRoomId,
   onRoomSelect,
   furniturePlacements = [],
-  onFurnitureManualMove,
-  onFurnitureRotate
+  onFurnitureManualMove
 }: ApartmentPlanProps) {
   const doors = useMemo(() => buildDoorOpenings(rooms), [rooms]);
 
@@ -565,7 +524,6 @@ export function ApartmentPlan({
                 orderInRoom={orderInRoom}
                 doors={doors}
                 onManualMove={onFurnitureManualMove}
-                onRotate={onFurnitureRotate}
               />
             );
           })}
