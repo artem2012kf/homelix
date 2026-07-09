@@ -1,25 +1,39 @@
 /*
 Вставь в самый конец app/globals.css.
-Это гарантирует, что двери не будут черными блоками.
+Мебель двигается напрямую мышью или пальцем.
 */
 
-.door-opening,
-.door-opening * {
-  fill: none !important;
-  pointer-events: none !important;
-}
-
-.door-opening line,
-.door-opening path {
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.door-clearance {
-  display: none !important;
+.apartment-plan,
+.furniture-placement,
+.furniture-drag-hitbox {
+  touch-action: none !important;
 }
 
 .furniture-placement {
-  pointer-events: auto;
-  touch-action: none;
+  pointer-events: auto !important;
+  cursor: grab !important;
+  user-select: none !important;
+}
+
+.furniture-placement:active {
+  cursor: grabbing !important;
+}
+
+.furniture-placement-shape,
+.furniture-detail-light,
+.furniture-detail-line,
+.furniture-placement-label {
+  pointer-events: none !important;
+}
+
+.furniture-drag-hitbox {
+  pointer-events: all !important;
+  fill: transparent !important;
+  stroke: transparent !important;
+}
+
+body.is-dragging-furniture {
+  cursor: grabbing !important;
+  user-select: none !important;
+  overscroll-behavior: none;
 }

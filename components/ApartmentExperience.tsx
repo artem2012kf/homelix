@@ -137,7 +137,8 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           <span className="eyebrow">Планировка</span>
           <h2>Выберите комнату</h2>
           <p className="muted">
-            Нажмите на комнату или перетащите уже поставленную мебель мышью/пальцем. Мебель сохраняется только на этом устройстве.
+            Чтобы передвинуть мебель, зажмите предмет прямо на планировке и перетащите мышью или пальцем.
+            Отдельная кнопка для перемещения больше не нужна.
           </p>
         </div>
 
@@ -154,7 +155,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
             <div>
               <strong>Мебель на планировке</strong>
               <span>
-                На другом устройстве эта мебель не появится. Можно перетащить предмет вручную, передвинуть через ИИ или убрать.
+                Зажмите мебель на плане и двигайте её мышью или пальцем. На другом устройстве эта мебель не появится.
               </span>
             </div>
             <ul>
@@ -166,9 +167,6 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
                     <strong>{placement.title}</strong>
                     <small>{formatPrice(placement.price)}</small>
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button type="button" className="prompt-chip" onClick={() => moveFurniture(placement.id)}>
-                        Передвинуть
-                      </button>
                       <button type="button" className="prompt-chip" onClick={() => removeFurniture(placement.id)}>
                         Убрать
                       </button>

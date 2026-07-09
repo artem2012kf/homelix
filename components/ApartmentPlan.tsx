@@ -137,15 +137,24 @@ function getPlacementLabel(placement: FurniturePlacement) {
   if (title.includes("junior")) return "Детская";
 
   switch (placement.category) {
-    case "bed": return "Кровать";
-    case "sofa": return "Диван";
-    case "table": return "Стол";
-    case "storage": return "Шкаф";
-    case "kitchen": return "Кухня";
-    case "bathroom": return "Тумба";
-    case "lighting": return "Свет";
-    case "decor": return "Декор";
-    default: return placement.title.slice(0, 12);
+    case "bed":
+      return "Кровать";
+    case "sofa":
+      return "Диван";
+    case "table":
+      return "Стол";
+    case "storage":
+      return "Шкаф";
+    case "kitchen":
+      return "Кухня";
+    case "bathroom":
+      return "Тумба";
+    case "lighting":
+      return "Свет";
+    case "decor":
+      return "Декор";
+    default:
+      return placement.title.slice(0, 12);
   }
 }
 
@@ -154,17 +163,24 @@ function getFurnitureSize(bounds: Bounds, placement: FurniturePlacement) {
   const roomHeight = bounds.maxY - bounds.minY;
 
   switch (placement.category) {
-    case "bed": return { width: clamp(roomWidth * 0.48, 90, 150), height: clamp(roomHeight * 0.3, 52, 88) };
-    case "sofa": return { width: clamp(roomWidth * 0.52, 88, 165), height: clamp(roomHeight * 0.22, 38, 68) };
+    case "bed":
+      return { width: clamp(roomWidth * 0.48, 90, 150), height: clamp(roomHeight * 0.3, 52, 88) };
+    case "sofa":
+      return { width: clamp(roomWidth * 0.52, 88, 165), height: clamp(roomHeight * 0.22, 38, 68) };
     case "table": {
       const size = clamp(Math.min(roomWidth, roomHeight) * 0.28, 46, 72);
       return { width: size, height: size };
     }
-    case "storage": return { width: clamp(roomWidth * 0.34, 62, 118), height: clamp(roomHeight * 0.18, 34, 56) };
-    case "kitchen": return { width: clamp(roomWidth * 0.62, 118, 218), height: clamp(roomHeight * 0.18, 34, 56) };
-    case "bathroom": return { width: clamp(roomWidth * 0.44, 52, 96), height: clamp(roomHeight * 0.22, 32, 54) };
-    case "lighting": return { width: clamp(roomWidth * 0.54, 76, 170), height: 20 };
-    default: return { width: 82, height: 44 };
+    case "storage":
+      return { width: clamp(roomWidth * 0.34, 62, 118), height: clamp(roomHeight * 0.18, 34, 56) };
+    case "kitchen":
+      return { width: clamp(roomWidth * 0.62, 118, 218), height: clamp(roomHeight * 0.18, 34, 56) };
+    case "bathroom":
+      return { width: clamp(roomWidth * 0.44, 52, 96), height: clamp(roomHeight * 0.22, 32, 54) };
+    case "lighting":
+      return { width: clamp(roomWidth * 0.54, 76, 170), height: 20 };
+    default:
+      return { width: 82, height: 44 };
   }
 }
 
@@ -357,10 +373,16 @@ function PlacedFurniture({
   const rotate = geometry.rotate ? `rotate(${geometry.rotate} ${centerX} ${centerY})` : undefined;
 
   function onPointerDown(event: ReactPointerEvent<SVGGElement>) {
-    if (!onManualMove) return;
+    if (!onManualMove || event.button > 0) return;
 
+    event.preventDefault();
     event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // На некоторых мобильных браузерах capture может быть недоступен.
+    }
 
     const svg = event.currentTarget.ownerSVGElement;
     if (!svg) return;
@@ -368,18 +390,20 @@ function PlacedFurniture({
     const start = pointFromSvg(event, svg);
     if (!start) return;
 
+    const bounds = getBounds(room);
     const offsetX = start.x - geometry.x;
     const offsetY = start.y - geometry.y;
 
-    const onMove = (moveEvent: PointerEvent) => {
+    document.body.classList.add("is-dragging-furniture");
+
+    const moveToClientPoint = (clientX: number, clientY: number) => {
       const matrix = svg.getScreenCTM();
       if (!matrix) return;
 
       const point = svg.createSVGPoint();
-      point.x = moveEvent.clientX;
-      point.y = moveEvent.clientY;
+      point.x = clientX;
+      point.y = clientY;
       const next = point.matrixTransform(matrix.inverse());
-      const bounds = getBounds(room);
 
       onManualMove(
         placement.id,
@@ -388,13 +412,21 @@ function PlacedFurniture({
       );
     };
 
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+    const onMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
+      moveToClientPoint(moveEvent.clientX, moveEvent.clientY);
     };
 
-    window.addEventListener("pointermove", onMove);
+    const onUp = () => {
+      document.body.classList.remove("is-dragging-furniture");
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: false });
     window.addEventListener("pointerup", onUp, { once: true });
+    window.addEventListener("pointercancel", onUp, { once: true });
   }
 
   return (
@@ -404,8 +436,21 @@ function PlacedFurniture({
       onPointerDown={onPointerDown}
       style={{ cursor: onManualMove ? "grab" : "default", touchAction: "none" }}
     >
-      <title>{placement.title}. Можно перетащить вручную.</title>
+      <title>{placement.title}. Зажмите и перетащите мышью или пальцем.</title>
+
+      <rect
+        x={geometry.x - 12}
+        y={geometry.y - 12}
+        width={geometry.width + 24}
+        height={geometry.height + 24}
+        rx="16"
+        fill="transparent"
+        pointerEvents="all"
+        className="furniture-drag-hitbox"
+      />
+
       <FurnitureIcon placement={placement} geometry={geometry} />
+
       <text x={centerX} y={centerY + 4} textAnchor="middle" className="furniture-placement-label">
         {geometry.label}
       </text>
