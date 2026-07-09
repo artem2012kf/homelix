@@ -182,7 +182,7 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           <span className="eyebrow">Планировка</span>
           <h2>Выберите комнату</h2>
           <p className="muted">
-            Мебель можно двигать мышью/пальцем. Поворот теперь только под планировкой — без чёрных кружков на плане.
+            Мебель можно двигать мышью/пальцем. Поворот — только под планировкой через кнопку.
           </p>
         </div>
 
@@ -194,27 +194,12 @@ export function ApartmentExperience({ apartment }: { apartment: Apartment }) {
           onFurnitureManualMove={moveFurnitureManually}
         />
 
-        <div className="apartment-total-panel">
-          <div>
-            <span>Стоимость квартиры</span>
-            <strong>{formatPrice(apartment.price)}</strong>
-          </div>
-          <div>
-            <span>Мебель на планировке</span>
-            <strong>{formatPrice(furnitureTotal)}</strong>
-          </div>
-          <div className="apartment-total-panel-main">
-            <span>Итого квартира + мебель</span>
-            <strong>{formatPrice(totalWithFurniture)}</strong>
-          </div>
-        </div>
-
         {furniturePlacements.length > 0 && (
           <div className="placed-furniture-panel">
             <div>
               <strong>Мебель на планировке</strong>
               <span>
-                Цена этой мебели уже прибавлена к стоимости квартиры. Предмет можно перетащить на плане и повернуть кнопкой ниже.
+                Мебель уже учитывается в верхней карточке стоимости. Предмет можно перетащить на плане и повернуть кнопкой ниже.
               </span>
             </div>
             <ul>
