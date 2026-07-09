@@ -249,6 +249,7 @@ function getFurnitureGeometry(room: Room, placement: FurniturePlacement, orderIn
 
 function Door({ door }: { door: DoorOpening }) {
   const half = door.size / 2;
+<<<<<<< HEAD
   const gapStroke = "#fffaf2";
   const lineStroke = "#3f362c";
   const swing = Math.min(door.size, 54);
@@ -292,10 +293,20 @@ function Door({ door }: { door: DoorOpening }) {
           opacity={0.45}
           vectorEffect="non-scaling-stroke"
         />
+=======
+  const block = doorBlockRect(door);
+
+  if (door.side === "left" || door.side === "right") {
+    return (
+      <g className="door-opening">
+        <rect x={block.x} y={block.y} width={block.width} height={block.height} className="door-clearance" />
+        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} className="door-gap" />
+>>>>>>> f8dfd5c43131d92687b80923af1c55a8fb7278ad
       </g>
     );
   }
 
+<<<<<<< HEAD
   const x1 = door.x - half;
   const x2 = door.x + half;
   const y = door.y;
@@ -333,6 +344,12 @@ function Door({ door }: { door: DoorOpening }) {
         opacity={0.45}
         vectorEffect="non-scaling-stroke"
       />
+=======
+  return (
+    <g className="door-opening">
+      <rect x={block.x} y={block.y} width={block.width} height={block.height} className="door-clearance" />
+      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} className="door-gap" />
+>>>>>>> f8dfd5c43131d92687b80923af1c55a8fb7278ad
     </g>
   );
 }
