@@ -1,58 +1,25 @@
 /*
-<<<<<<< HEAD
-Вставь этот блок в самый конец app/globals.css.
-Он дополнительно страхует планировку от старых черных прямоугольников дверей.
+Вставь в самый конец app/globals.css.
+Это гарантирует, что двери не будут черными блоками.
 */
 
-.door-clearance {
-  display: none !important;
-  fill: transparent !important;
-  stroke: transparent !important;
-}
-
-.door-opening rect {
-  display: none !important;
-}
-
-.door-gap {
+.door-opening,
+.door-opening * {
   fill: none !important;
-  stroke: #fffaf2 !important;
-  stroke-width: 18 !important;
-  stroke-linecap: round !important;
+  pointer-events: none !important;
 }
 
-.door-opening {
-  pointer-events: none;
+.door-opening line,
+.door-opening path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
-=======
-Добавь этот блок в самый конец app/globals.css.
-Он нужен для ручного перетаскивания мебели и зоны свободного прохода у дверей.
-*/
 
 .door-clearance {
-  fill: rgba(249, 62, 62, 0.06);
-  stroke: rgba(249, 62, 62, 0.16);
-  stroke-width: 1;
-  pointer-events: none;
+  display: none !important;
 }
 
 .furniture-placement {
   pointer-events: auto;
   touch-action: none;
 }
-
-.furniture-placement:active {
-  cursor: grabbing !important;
-}
-
-.placed-furniture-panel .prompt-chip {
-  padding: 7px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
->>>>>>> f8dfd5c43131d92687b80923af1c55a8fb7278ad

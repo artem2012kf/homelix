@@ -71,13 +71,21 @@ function getFacingDoor(roomBounds: Bounds, targetBounds: Bounds): Omit<DoorOpeni
     return {
       side,
       x: side === "left" ? roomBounds.minX : roomBounds.maxX,
-      y: clamp(overlapCenter(roomBounds.minY, roomBounds.maxY, targetBounds.minY, targetBounds.maxY, roomBounds.centerY), roomBounds.minY + 36, roomBounds.maxY - 36)
+      y: clamp(
+        overlapCenter(roomBounds.minY, roomBounds.maxY, targetBounds.minY, targetBounds.maxY, roomBounds.centerY),
+        roomBounds.minY + 36,
+        roomBounds.maxY - 36
+      )
     };
   }
 
   return {
     side,
-    x: clamp(overlapCenter(roomBounds.minX, roomBounds.maxX, targetBounds.minX, targetBounds.maxX, roomBounds.centerX), roomBounds.minX + 36, roomBounds.maxX - 36),
+    x: clamp(
+      overlapCenter(roomBounds.minX, roomBounds.maxX, targetBounds.minX, targetBounds.maxX, roomBounds.centerX),
+      roomBounds.minX + 36,
+      roomBounds.maxX - 36
+    ),
     y: side === "top" ? roomBounds.minY : roomBounds.maxY
   };
 }
@@ -92,11 +100,11 @@ function buildDoorOpenings(rooms: Room[]) {
     if (!bounds) return [];
 
     if (room.type === "hall") {
-      return [{ id: `${room.id}-entry`, roomId: room.id, side: "left", x: bounds.minX, y: bounds.centerY, size: 56 }];
+      return [{ id: `${room.id}-entry`, roomId: room.id, side: "left", x: bounds.minX, y: bounds.centerY, size: 50 }];
     }
 
     if (!hallBounds) {
-      return [{ id: `${room.id}-door`, roomId: room.id, side: "left", x: bounds.minX, y: bounds.centerY, size: 46 }];
+      return [{ id: `${room.id}-door`, roomId: room.id, side: "left", x: bounds.minX, y: bounds.centerY, size: 44 }];
     }
 
     return [
@@ -104,7 +112,7 @@ function buildDoorOpenings(rooms: Room[]) {
         id: `${room.id}-door`,
         roomId: room.id,
         ...getFacingDoor(bounds, hallBounds),
-        size: room.type === "kitchen" || room.type === "living" ? 56 : 46
+        size: room.type === "kitchen" || room.type === "living" ? 52 : 44
       }
     ];
   });
@@ -129,24 +137,15 @@ function getPlacementLabel(placement: FurniturePlacement) {
   if (title.includes("junior")) return "Детская";
 
   switch (placement.category) {
-    case "bed":
-      return "Кровать";
-    case "sofa":
-      return "Диван";
-    case "table":
-      return "Стол";
-    case "storage":
-      return "Шкаф";
-    case "kitchen":
-      return "Кухня";
-    case "bathroom":
-      return "Тумба";
-    case "lighting":
-      return "Свет";
-    case "decor":
-      return "Декор";
-    default:
-      return placement.title.slice(0, 12);
+    case "bed": return "Кровать";
+    case "sofa": return "Диван";
+    case "table": return "Стол";
+    case "storage": return "Шкаф";
+    case "kitchen": return "Кухня";
+    case "bathroom": return "Тумба";
+    case "lighting": return "Свет";
+    case "decor": return "Декор";
+    default: return placement.title.slice(0, 12);
   }
 }
 
@@ -155,24 +154,17 @@ function getFurnitureSize(bounds: Bounds, placement: FurniturePlacement) {
   const roomHeight = bounds.maxY - bounds.minY;
 
   switch (placement.category) {
-    case "bed":
-      return { width: clamp(roomWidth * 0.48, 90, 150), height: clamp(roomHeight * 0.3, 52, 88) };
-    case "sofa":
-      return { width: clamp(roomWidth * 0.52, 88, 165), height: clamp(roomHeight * 0.22, 38, 68) };
+    case "bed": return { width: clamp(roomWidth * 0.48, 90, 150), height: clamp(roomHeight * 0.3, 52, 88) };
+    case "sofa": return { width: clamp(roomWidth * 0.52, 88, 165), height: clamp(roomHeight * 0.22, 38, 68) };
     case "table": {
       const size = clamp(Math.min(roomWidth, roomHeight) * 0.28, 46, 72);
       return { width: size, height: size };
     }
-    case "storage":
-      return { width: clamp(roomWidth * 0.34, 62, 118), height: clamp(roomHeight * 0.18, 34, 56) };
-    case "kitchen":
-      return { width: clamp(roomWidth * 0.62, 118, 218), height: clamp(roomHeight * 0.18, 34, 56) };
-    case "bathroom":
-      return { width: clamp(roomWidth * 0.44, 52, 96), height: clamp(roomHeight * 0.22, 32, 54) };
-    case "lighting":
-      return { width: clamp(roomWidth * 0.54, 76, 170), height: 20 };
-    default:
-      return { width: 82, height: 44 };
+    case "storage": return { width: clamp(roomWidth * 0.34, 62, 118), height: clamp(roomHeight * 0.18, 34, 56) };
+    case "kitchen": return { width: clamp(roomWidth * 0.62, 118, 218), height: clamp(roomHeight * 0.18, 34, 56) };
+    case "bathroom": return { width: clamp(roomWidth * 0.44, 52, 96), height: clamp(roomHeight * 0.22, 32, 54) };
+    case "lighting": return { width: clamp(roomWidth * 0.54, 76, 170), height: 20 };
+    default: return { width: 82, height: 44 };
   }
 }
 
@@ -210,9 +202,7 @@ function safePosition(bounds: Bounds, doors: DoorOpening[], width: number, heigh
     const y = clamp(slot.y, bounds.minY + 12, bounds.maxY - height - 12);
     const rect = { x, y, width, height };
 
-    if (!roomDoors.some((doorRect) => intersects(rect, doorRect))) {
-      return { x, y };
-    }
+    if (!roomDoors.some((doorRect) => intersects(rect, doorRect))) return { x, y };
   }
 
   return {
@@ -226,7 +216,10 @@ function getFurnitureGeometry(room: Room, placement: FurniturePlacement, orderIn
   let size = getFurnitureSize(bounds, placement);
 
   if (placement.category === "bed" && (placement.layoutVariant ?? 0) % 2 === 1) {
-    size = { width: Math.min(size.height * 1.2, bounds.maxX - bounds.minX - 34), height: Math.min(size.width * 0.78, bounds.maxY - bounds.minY - 34) };
+    size = {
+      width: Math.min(size.height * 1.2, bounds.maxX - bounds.minX - 34),
+      height: Math.min(size.width * 0.78, bounds.maxY - bounds.minY - 34)
+    };
   }
 
   const position =
@@ -249,107 +242,50 @@ function getFurnitureGeometry(room: Room, placement: FurniturePlacement, orderIn
 
 function Door({ door }: { door: DoorOpening }) {
   const half = door.size / 2;
-<<<<<<< HEAD
+  const swing = Math.min(door.size * 0.86, 42);
   const gapStroke = "#fffaf2";
   const lineStroke = "#3f362c";
-  const swing = Math.min(door.size, 54);
-  const direction = door.side === "left" || door.side === "top" ? 1 : -1;
+  const swingStroke = "rgba(63, 54, 44, 0.45)";
 
-  if (door.side === "left" || door.side === "right") {
-    const x = door.x;
-    const y1 = door.y - half;
-    const y2 = door.y + half;
-    const arcEndX = x + direction * swing;
-    const arcEndY = door.y - half;
-
+  if (door.side === "left") {
+    const hingeY = door.y - half;
     return (
       <g className="door-opening" pointerEvents="none">
-        <line
-          x1={x}
-          y1={y1}
-          x2={x}
-          y2={y2}
-          stroke={gapStroke}
-          strokeWidth={18}
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <line
-          x1={x}
-          y1={y1}
-          x2={x}
-          y2={y2}
-          stroke={lineStroke}
-          strokeWidth={3}
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <path
-          d={`M ${x} ${y1} Q ${arcEndX} ${door.y} ${arcEndX} ${arcEndY}`}
-          fill="none"
-          stroke={lineStroke}
-          strokeWidth={2}
-          strokeLinecap="round"
-          opacity={0.45}
-          vectorEffect="non-scaling-stroke"
-        />
-=======
-  const block = doorBlockRect(door);
-
-  if (door.side === "left" || door.side === "right") {
-    return (
-      <g className="door-opening">
-        <rect x={block.x} y={block.y} width={block.width} height={block.height} className="door-clearance" />
-        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} className="door-gap" />
->>>>>>> f8dfd5c43131d92687b80923af1c55a8fb7278ad
+        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke={gapStroke} strokeWidth="9" strokeLinecap="round" />
+        <line x1={door.x} y1={hingeY} x2={door.x + swing} y2={hingeY + swing} stroke={lineStroke} strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d={`M ${door.x} ${hingeY} Q ${door.x + swing * 0.78} ${hingeY + swing * 0.16} ${door.x + swing} ${hingeY + swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
       </g>
     );
   }
 
-<<<<<<< HEAD
-  const x1 = door.x - half;
-  const x2 = door.x + half;
-  const y = door.y;
-  const arcEndX = door.x - half;
-  const arcEndY = y + direction * swing;
+  if (door.side === "right") {
+    const hingeY = door.y - half;
+    return (
+      <g className="door-opening" pointerEvents="none">
+        <line x1={door.x} y1={door.y - half} x2={door.x} y2={door.y + half} stroke={gapStroke} strokeWidth="9" strokeLinecap="round" />
+        <line x1={door.x} y1={hingeY} x2={door.x - swing} y2={hingeY + swing} stroke={lineStroke} strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d={`M ${door.x} ${hingeY} Q ${door.x - swing * 0.78} ${hingeY + swing * 0.16} ${door.x - swing} ${hingeY + swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
+      </g>
+    );
+  }
 
+  if (door.side === "top") {
+    const hingeX = door.x - half;
+    return (
+      <g className="door-opening" pointerEvents="none">
+        <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke={gapStroke} strokeWidth="9" strokeLinecap="round" />
+        <line x1={hingeX} y1={door.y} x2={hingeX + swing} y2={door.y + swing} stroke={lineStroke} strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d={`M ${hingeX} ${door.y} Q ${hingeX + swing * 0.16} ${door.y + swing * 0.78} ${hingeX + swing} ${door.y + swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
+      </g>
+    );
+  }
+
+  const hingeX = door.x - half;
   return (
     <g className="door-opening" pointerEvents="none">
-      <line
-        x1={x1}
-        y1={y}
-        x2={x2}
-        y2={y}
-        stroke={gapStroke}
-        strokeWidth={18}
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <line
-        x1={x1}
-        y1={y}
-        x2={x2}
-        y2={y}
-        stroke={lineStroke}
-        strokeWidth={3}
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      <path
-        d={`M ${x1} ${y} Q ${door.x} ${arcEndY} ${arcEndX} ${arcEndY}`}
-        fill="none"
-        stroke={lineStroke}
-        strokeWidth={2}
-        strokeLinecap="round"
-        opacity={0.45}
-        vectorEffect="non-scaling-stroke"
-      />
-=======
-  return (
-    <g className="door-opening">
-      <rect x={block.x} y={block.y} width={block.width} height={block.height} className="door-clearance" />
-      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} className="door-gap" />
->>>>>>> f8dfd5c43131d92687b80923af1c55a8fb7278ad
+      <line x1={door.x - half} y1={door.y} x2={door.x + half} y2={door.y} stroke={gapStroke} strokeWidth="9" strokeLinecap="round" />
+      <line x1={hingeX} y1={door.y} x2={hingeX + swing} y2={door.y - swing} stroke={lineStroke} strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d={`M ${hingeX} ${door.y} Q ${hingeX + swing * 0.16} ${door.y - swing * 0.78} ${hingeX + swing} ${door.y - swing}`} stroke={swingStroke} strokeWidth="2" fill="none" />
     </g>
   );
 }
@@ -422,6 +358,7 @@ function PlacedFurniture({
 
   function onPointerDown(event: ReactPointerEvent<SVGGElement>) {
     if (!onManualMove) return;
+
     event.stopPropagation();
     event.currentTarget.setPointerCapture(event.pointerId);
 
@@ -443,6 +380,7 @@ function PlacedFurniture({
       point.y = moveEvent.clientY;
       const next = point.matrixTransform(matrix.inverse());
       const bounds = getBounds(room);
+
       onManualMove(
         placement.id,
         clamp(next.x - offsetX, bounds.minX + 12, bounds.maxX - geometry.width - 12),
@@ -491,6 +429,7 @@ export function ApartmentPlan({
 
         {rooms.map((room) => {
           const selected = selectedRoomId === room.id;
+
           return (
             <g
               key={room.id}
@@ -530,6 +469,7 @@ export function ApartmentPlan({
           {furniturePlacements.map((placement) => {
             const room = rooms.find((item) => item.id === placement.roomId);
             if (!room) return null;
+
             const orderInRoom = furniturePlacements
               .filter((item) => item.roomId === placement.roomId)
               .findIndex((item) => item.id === placement.id);
