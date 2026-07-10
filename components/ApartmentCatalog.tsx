@@ -5,6 +5,7 @@ import { ApartmentCard } from "@/components/ApartmentCard";
 import { useAuth } from "@/components/AuthProvider";
 import type { Apartment } from "@/types/apartment";
 import { formatArea, formatPrice } from "@/lib/format";
+import { siteText, type Locale } from "@/lib/i18n";
 
 type SortOption =
   | "recommended"
@@ -17,19 +18,6 @@ type SortOption =
   | "rooms-asc"
   | "rooms-desc"
   | "mortgage-asc";
-
-const sortLabels: Record<SortOption, string> = {
-  recommended: "Свободные → бронь → проданные",
-  "price-asc": "Цена: сначала дешевле",
-  "price-desc": "Цена: сначала дороже",
-  "area-asc": "Площадь: сначала меньше",
-  "area-desc": "Площадь: сначала больше",
-  "floor-asc": "Этаж: сначала ниже",
-  "floor-desc": "Этаж: сначала выше",
-  "rooms-asc": "Комнатность: сначала меньше",
-  "rooms-desc": "Комнатность: сначала больше",
-  "mortgage-asc": "Платеж по ипотеке: сначала ниже"
-};
 
 const statusWeight: Record<Apartment["status"], number> = {
   available: 0,
@@ -50,8 +38,6 @@ function compareInsideStatus(a: Apartment, b: Apartment, sort: SortOption) {
 
   return a.price - b.price;
 }
-
-
 
 function trackSortInterest(sort: SortOption) {
   if (typeof window === "undefined") return;
@@ -78,9 +64,11 @@ function sortApartments(items: Apartment[], sort: SortOption) {
   });
 }
 
-export function ApartmentCatalog({ apartments }: { apartments: Apartment[] }) {
+export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Apartment[]; locale?: Locale }) {
   const [sort, setSort] = useState<SortOption>("recommended");
   const { getApartmentStatus, reservedApartmentIds } = useAuth();
+  const text = siteText[locale].catalog;
+  const sortLabels = text.sortLabels;
 
   const effectiveApartments = useMemo(
     () =>
@@ -117,12 +105,16 @@ export function ApartmentCatalog({ apartments }: { apartments: Apartment[] }) {
     <div className="catalog-block">
       <div className="catalog-toolbar">
         <div>
-          <strong>{sortedApartments.length} квартир</strong>
-          <span>Сортировка: {sortLabels[sort]}</span>
+          <strong>
+            {sortedApartments.length} {text.apartmentWord}
+          </strong>
+          <span>
+            {text.sorting}: {sortLabels[sort]}
+          </span>
         </div>
 
         <label className="sort-control">
-          <span>Сортировать</span>
+          <span>{text.sortControl}</span>
           <select
             value={sort}
             onChange={(event) => {
@@ -131,7 +123,7 @@ export function ApartmentCatalog({ apartments }: { apartments: Apartment[] }) {
               trackSortInterest(nextSort);
             }}
           >
-            {Object.entries(sortLabels).map(([value, label]) => (
+            {(Object.entries(sortLabels) as [SortOption, string][]).map(([value, label]) => (
               <option value={value} key={value}>
                 {label}
               </option>
@@ -140,29 +132,64 @@ export function ApartmentCatalog({ apartments }: { apartments: Apartment[] }) {
         </label>
       </div>
 
-
-      <div className="quick-sort-row" aria-label="Быстрая сортировка квартир">
-        <button type="button" onClick={() => { setSort("price-asc"); trackSortInterest("price-asc"); }}>
-          Дешевле
-          {cheapestApartment ? <small>от {formatPrice(cheapestApartment.price)}</small> : null}
+      <div className="quick-sort-row" aria-label={text.quickSortAria}>
+        <button
+          type="button"
+          onClick={() => {
+            setSort("price-asc");
+            trackSortInterest("price-asc");
+          }}
+        >
+          {text.cheaper}
+          {cheapestApartment ? (
+            <small>
+              {siteText[locale].home.from} {formatPrice(cheapestApartment.price, locale)}
+            </small>
+          ) : null}
         </button>
-        <button type="button" onClick={() => { setSort("area-desc"); trackSortInterest("area-desc"); }}>
-          Больше площадь
-          {largestApartment ? <small>до {formatArea(largestApartment.totalArea)}</small> : null}
+        <button
+          type="button"
+          onClick={() => {
+            setSort("area-desc");
+            trackSortInterest("area-desc");
+          }}
+        >
+          {text.larger}
+          {largestApartment ? (
+            <small>
+              {text.upTo} {formatArea(largestApartment.totalArea, locale)}
+            </small>
+          ) : null}
         </button>
-        <button type="button" onClick={() => { setSort("floor-desc"); trackSortInterest("floor-desc"); }}>
-          Выше этаж
-          {highestFloorApartment ? <small>до {highestFloorApartment.floor} этажа</small> : null}
+        <button
+          type="button"
+          onClick={() => {
+            setSort("floor-desc");
+            trackSortInterest("floor-desc");
+          }}
+        >
+          {text.higher}
+          {highestFloorApartment ? (
+            <small>
+              {text.upTo} {highestFloorApartment.floor} {text.floorUpTo}
+            </small>
+          ) : null}
         </button>
-        <button type="button" onClick={() => { setSort("mortgage-asc"); trackSortInterest("mortgage-asc"); }}>
-          Ниже ипотека
-          <small>по платежу</small>
+        <button
+          type="button"
+          onClick={() => {
+            setSort("mortgage-asc");
+            trackSortInterest("mortgage-asc");
+          }}
+        >
+          {text.lowerMortgage}
+          <small>{text.byPayment}</small>
         </button>
       </div>
 
       <div className="cards-grid">
         {sortedApartments.map((apartment) => (
-          <ApartmentCard apartment={apartment} key={apartment.id} />
+          <ApartmentCard apartment={apartment} locale={locale} key={apartment.id} />
         ))}
       </div>
     </div>
