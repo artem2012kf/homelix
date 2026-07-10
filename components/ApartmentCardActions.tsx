@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import type { Apartment, ApartmentStatus } from "@/types/apartment";
-
+import { siteText, type Locale } from "@/lib/i18n";
 
 function trackInterest(type: "view" | "favorite" | "reserve", apartmentId: string) {
   if (typeof window === "undefined") return;
@@ -22,11 +22,13 @@ function trackInterest(type: "view" | "favorite" | "reserve", apartmentId: strin
 export function ApartmentCardActions({
   apartment,
   effectiveStatus,
-  showPlanLink = true
+  showPlanLink = true,
+  locale = "ru"
 }: {
   apartment: Apartment;
   effectiveStatus?: ApartmentStatus;
   showPlanLink?: boolean;
+  locale?: Locale;
 }) {
   const {
     user,
@@ -39,6 +41,7 @@ export function ApartmentCardActions({
     getApartmentStatus
   } = useAuth();
   const [message, setMessage] = useState("");
+  const text = siteText[locale].card;
 
   const favorite = isFavorite(apartment.id);
   const reservedByUser = isReservedByUser(apartment.id);
@@ -46,7 +49,7 @@ export function ApartmentCardActions({
   const canReserve = status === "available";
 
   function requireAuth() {
-    setMessage("Сначала войдите или зарегистрируйтесь.");
+    setMessage(text.authRequired);
     window.setTimeout(() => {
       window.location.href = "/account";
     }, 650);
@@ -58,12 +61,12 @@ export function ApartmentCardActions({
       return;
     }
 
-    setMessage("Обновляем избранное...");
+    setMessage(text.updatingFavorites);
     const result = await toggleFavorite(apartment.id);
     if (result.ok && !favorite) {
       trackInterest("favorite", apartment.id);
     }
-    setMessage(result.ok ? (favorite ? "Удалено из избранного." : "Добавлено в избранное.") : result.error ?? "Не удалось обновить избранное.");
+    setMessage(result.ok ? (favorite ? text.removedFavorite : text.addedFavorite) : result.error ?? text.favoriteError);
   }
 
   async function handleReserve() {
@@ -73,32 +76,32 @@ export function ApartmentCardActions({
     }
 
     if (reservedByUser) {
-      setMessage("Отменяем бронь...");
+      setMessage(text.cancelling);
       const result = await cancelReservation(apartment.id);
-      setMessage(result.ok ? "Бронь отменена. Статус квартиры обновлен." : result.error ?? "Не удалось отменить бронь.");
+      setMessage(result.ok ? text.cancelled : result.error ?? text.cancelError);
       return;
     }
 
     if (!canReserve) {
-      setMessage(status === "reserved" ? "Эта квартира уже находится в брони." : "Эта квартира уже продана.");
+      setMessage(status === "reserved" ? text.occupied : text.alreadySold);
       return;
     }
 
-    setMessage("Создаем бронь...");
+    setMessage(text.reserving);
     const result = await reserveApartment(apartment.id, status);
     if (result.ok) {
       trackInterest("reserve", apartment.id);
     }
-    setMessage(result.ok ? "Квартира забронирована. Статус изменен на «Бронь»." : result.error ?? "Не удалось забронировать квартиру.");
+    setMessage(result.ok ? text.reserved : result.error ?? text.reserveError);
   }
 
   return (
     <div className="card-actions">
-      {reservedByUser ? <span className="local-reserve-badge">Ваша бронь</span> : null}
+      {reservedByUser ? <span className="local-reserve-badge">{text.yourReservation}</span> : null}
       <div className={`card-action-row ${showPlanLink ? "" : "card-action-row-single"}`}>
         {showPlanLink ? (
           <Link className="button button-primary" href={`/apartment/${apartment.id}`} onClick={() => trackInterest("view", apartment.id)}>
-            Смотреть планировку
+            {text.plan}
           </Link>
         ) : null}
         <button
@@ -107,7 +110,7 @@ export function ApartmentCardActions({
           onClick={handleFavorite}
           disabled={!isReady}
         >
-          {favorite ? "В избранном" : "В избранное"}
+          {favorite ? text.inFavorites : text.favorite}
         </button>
       </div>
       <button
@@ -116,7 +119,13 @@ export function ApartmentCardActions({
         onClick={handleReserve}
         disabled={!isReady || (!reservedByUser && status !== "available")}
       >
-        {reservedByUser ? "Отменить бронь" : status === "available" ? "Забронировать" : status === "reserved" ? "Уже в брони" : "Продана"}
+        {reservedByUser
+          ? text.cancelReservation
+          : status === "available"
+            ? text.reserve
+            : status === "reserved"
+              ? text.alreadyReserved
+              : text.sold}
       </button>
       {message ? <small className="card-action-message">{message}</small> : null}
     </div>
