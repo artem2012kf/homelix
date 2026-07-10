@@ -13,6 +13,9 @@ export function AccountPanel({ apartments }: { apartments: Apartment[] }) {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [website, setWebsite] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
   const favoriteApartments = useMemo(
@@ -27,13 +30,27 @@ export function AccountPanel({ apartments }: { apartments: Apartment[] }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     setMessage("Проверяем данные...");
 
-    const result = mode === "login" ? await login(email, password) : await register(email, password);
-    setMessage(result.ok ? (mode === "login" ? "Вы вошли в кабинет." : "Аккаунт создан. Вы вошли в кабинет.") : result.error ?? "Не удалось выполнить действие.");
+    try {
+      const result = mode === "login" ? await login(email, password) : await register(email, password, website);
+      setMessage(
+        result.ok
+          ? mode === "login"
+            ? "Вы вошли в кабинет."
+            : "Аккаунт создан. Вы вошли в кабинет."
+          : result.error ?? "Не удалось выполнить действие."
+      );
 
-    if (result.ok) {
-      setPassword("");
+      if (result.ok) {
+        setPassword("");
+        setWebsite("");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -44,7 +61,7 @@ export function AccountPanel({ apartments }: { apartments: Apartment[] }) {
           <span className="eyebrow">Личный кабинет</span>
           <h1>Здравствуйте</h1>
           <p>
-            Вы вошли как <strong>{user.email}</strong>. Здесь сохраняются избранные квартиры и демо-брони.
+            Вы вошли как <strong>{user.email}</strong>. Здесь сохраняются избранные квартиры и брони.
           </p>
           <div className="account-stats">
             <div>
@@ -60,13 +77,14 @@ export function AccountPanel({ apartments }: { apartments: Apartment[] }) {
             <Link className="button button-primary" href="/#apartments">
               Выбрать квартиру
             </Link>
-            <button className="button button-ghost" type="button" onClick={logout}>
+            <button className="button button-ghost" type="button" onClick={() => void logout()}>
               Выйти
             </button>
           </div>
-          <small className="demo-warning">
-            Это демо-авторизация через локальную JSON-базу проекта. Для промышленного сайта лучше подключить PostgreSQL/Supabase и защищенное хранение паролей.
-          </small>
+          <div className="demo-warning" role="note">
+            <strong>Демонстрационный режим</strong>
+            <span>Сессия защищена httpOnly-cookie, но без подключённой внешней БД данные serverless-инстанса могут быть сброшены.</span>
+          </div>
         </section>
 
         <section className="account-list-section">
@@ -109,9 +127,7 @@ export function AccountPanel({ apartments }: { apartments: Apartment[] }) {
       <div className="account-card auth-card">
         <span className="eyebrow">Аккаунт покупателя</span>
         <h1>{mode === "login" ? "Вход" : "Регистрация"}</h1>
-        <p>
-          Зарегистрируйтесь по почте и паролю, чтобы добавлять квартиры в избранное и бронировать свободные варианты.
-        </p>
+        <p>Войдите, чтобы сохранять квартиры в избранное и бронировать свободные варианты.</p>
 
         <div className="auth-tabs">
           <button className={mode === "login" ? "is-active" : ""} type="button" onClick={() => setMode("login")}>
@@ -122,24 +138,58 @@ export function AccountPanel({ apartments }: { apartments: Apartment[] }) {
           </button>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <label>
             <span>Почта</span>
-            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" required />
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="name@example.com"
+              autoComplete="email"
+              required
+            />
           </label>
           <label>
             <span>Пароль</span>
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Минимум 6 символов" required />
+            <div className="password-field">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder={mode === "register" ? "Минимум 10 символов" : "Введите пароль"}
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                minLength={mode === "register" ? 10 : undefined}
+                maxLength={128}
+                required
+              />
+              <button type="button" onClick={() => setShowPassword((value) => !value)} aria-pressed={showPassword}>
+                {showPassword ? "Скрыть" : "Показать"}
+              </button>
+            </div>
           </label>
-          <button className="button button-primary" type="submit">
-            {mode === "login" ? "Войти" : "Создать аккаунт"}
+          {mode === "register" ? (
+            <label className="honeypot-field" aria-hidden="true">
+              <span>Сайт</span>
+              <input
+                type="text"
+                value={website}
+                onChange={(event) => setWebsite(event.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </label>
+          ) : null}
+          <button className="button button-primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Подождите..." : mode === "login" ? "Войти" : "Создать аккаунт"}
           </button>
         </form>
 
-        {message ? <p className="auth-message">{message}</p> : null}
-        <small className="demo-warning">
-          Демо-режим: данные сохраняются в локальной JSON-базе проекта на компьютере, где запущен сервер.
-        </small>
+        {message ? <p className="auth-message" aria-live="polite">{message}</p> : null}
+        <div className="demo-warning" role="note">
+          <strong>Важно</strong>
+          <span>Это демонстрационный каталог. Не используйте пароль от других сервисов.</span>
+        </div>
       </div>
     </section>
   );
