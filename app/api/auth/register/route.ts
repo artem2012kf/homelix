@@ -11,6 +11,7 @@ import {
   withDatabaseWriteLock,
   writeDatabase
 } from "@/lib/server-db";
+import { verifyEmailChallenge } from "@/lib/email-verification";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -21,25 +22,27 @@ export async function POST(request: Request) {
   if (!limit.allowed) return rateLimitResponse(limit);
 
   try {
-    const { email, password, website } = await request.json().catch(() => ({ email: "", password: "", website: "" }));
-    const cleanEmail = normalizeEmail(String(email ?? ""));
-    const cleanPassword = String(password ?? "");
+    const body = await request.json().catch(() => ({}));
+    const cleanEmail = normalizeEmail(String(body?.email ?? ""));
+    const cleanPassword = String(body?.password ?? "");
+    const verificationCode = String(body?.verificationCode ?? "").trim();
+    const verificationToken = String(body?.verificationToken ?? "");
 
-    if (String(website ?? "").trim()) {
+    if (String(body?.website ?? "").trim()) {
       return Response.json({ error: "Не удалось создать аккаунт." }, { status: 400 });
     }
-
     if (!/^\S+@\S+\.\S+$/.test(cleanEmail) || cleanEmail.length > 254) {
       return Response.json({ error: "Укажите корректную почту." }, { status: 400 });
     }
-
     if (cleanPassword.length < 10 || cleanPassword.length > 128) {
       return Response.json({ error: "Пароль должен содержать от 10 до 128 символов." }, { status: 400 });
+    }
+    if (!/^\d{6}$/.test(verificationCode) || !verifyEmailChallenge(cleanEmail, verificationCode, verificationToken)) {
+      return Response.json({ error: "Код подтверждения неверный или истёк. Запросите новый код." }, { status: 400 });
     }
 
     return await withDatabaseWriteLock(() => {
       const database = readDatabase();
-
       if (database.users.some((user) => user.email === cleanEmail)) {
         return Response.json({ error: "Пользователь с такой почтой уже зарегистрирован." }, { status: 409 });
       }
@@ -66,6 +69,6 @@ export async function POST(request: Request) {
       );
     });
   } catch {
-    return Response.json({ error: "Регистрация временно недоступна. Попробуйте еще раз." }, { status: 500 });
+    return Response.json({ error: "Регистрация временно недоступна. Попробуйте ещё раз." }, { status: 500 });
   }
 }
