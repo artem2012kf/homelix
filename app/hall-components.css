@@ -1,0 +1,417 @@
+/* Полигональные планы: спокойная минималистичная палитра для большого и мини-плана. */
+.apartment-plan .room-group:nth-of-type(5n + 1) > polygon:first-child,
+.card-mini-plan svg > g:nth-of-type(5n + 1) > polygon:first-child {
+  fill: var(--hall-plan-1) !important;
+}
+
+.apartment-plan .room-group:nth-of-type(5n + 2) > polygon:first-child,
+.card-mini-plan svg > g:nth-of-type(5n + 2) > polygon:first-child {
+  fill: var(--hall-plan-2) !important;
+}
+
+.apartment-plan .room-group:nth-of-type(5n + 3) > polygon:first-child,
+.card-mini-plan svg > g:nth-of-type(5n + 3) > polygon:first-child {
+  fill: var(--hall-plan-3) !important;
+}
+
+.apartment-plan .room-group:nth-of-type(5n + 4) > polygon:first-child,
+.card-mini-plan svg > g:nth-of-type(5n + 4) > polygon:first-child {
+  fill: var(--hall-plan-4) !important;
+}
+
+.apartment-plan .room-group:nth-of-type(5n) > polygon:first-child,
+.card-mini-plan svg > g:nth-of-type(5n) > polygon:first-child {
+  fill: var(--hall-plan-5) !important;
+}
+
+.apartment-plan .room-group:hover > polygon:first-child,
+.apartment-plan .room-group:focus > polygon:first-child,
+.apartment-plan .room-group:focus-visible > polygon:first-child {
+  fill: #f4dcd6 !important;
+  stroke: var(--hall-accent) !important;
+}
+
+.apartment-plan text tspan:last-child {
+  fill: var(--hall-accent-dark) !important;
+}
+
+.plan-shell > svg,
+.card-mini-plan svg {
+  background: #fafaf6 !important;
+}
+
+/* Главный экран. */
+.hero-selected-location {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px 14px;
+  align-items: center;
+  max-width: 620px;
+  margin: 24px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--hall-line);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.hero-selected-location > span {
+  color: var(--hall-muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hero-selected-location > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hero-selected-location > button {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--hall-accent-dark);
+  background: #f8ece9;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.hall-mascot-card {
+  display: grid !important;
+  min-height: 470px !important;
+  place-items: center;
+  align-content: center;
+  gap: 18px;
+  padding: clamp(26px, 5vw, 52px);
+  border: 1px solid var(--hall-line);
+  border-radius: 28px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.hall-hero-mascot {
+  width: min(75%, 270px) !important;
+  height: auto !important;
+  filter: drop-shadow(0 22px 28px rgba(217, 75, 61, 0.16));
+}
+
+.hall-mascot-card > div {
+  display: grid;
+  max-width: 390px;
+  gap: 8px;
+}
+
+.hall-mascot-card strong {
+  font-size: clamp(24px, 3vw, 32px);
+  letter-spacing: -0.04em;
+}
+
+.hall-mascot-card span {
+  color: var(--hall-muted);
+  line-height: 1.55;
+}
+
+/* Карточки жилых комплексов. */
+.complex-card-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.complex-card-metrics span {
+  padding: 7px 10px;
+  border: 1px solid var(--hall-line);
+  border-radius: 10px;
+  color: var(--hall-muted);
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Каталог и покупка квартиры. */
+.purchase-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.buy-button,
+.reserve-button {
+  width: 100%;
+}
+
+.empty-catalog-state {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  align-content: center;
+  gap: 16px;
+  padding: 30px;
+  border: 1px dashed var(--hall-line);
+  border-radius: 20px;
+  color: var(--hall-muted);
+  background: #ffffff;
+  text-align: center;
+}
+
+/* Магазин мебели. */
+.hall-furniture-hero {
+  align-items: stretch !important;
+  padding-top: 54px !important;
+}
+
+.hall-cart-summary {
+  display: grid;
+  align-content: center;
+  gap: 9px;
+  min-width: min(100%, 330px);
+  border-color: var(--hall-line) !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.hall-cart-summary > span {
+  color: var(--hall-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hall-cart-summary > strong {
+  font-size: 56px;
+  letter-spacing: -0.06em;
+}
+
+.hall-cart-summary dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.hall-cart-summary dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.hall-cart-summary dt {
+  color: var(--hall-muted);
+}
+
+.hall-cart-summary dd {
+  margin: 0;
+  font-weight: 850;
+}
+
+.furniture-store-toolbar {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 18px;
+  border: 1px solid var(--hall-line);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.furniture-store-toolbar > label {
+  display: grid;
+  gap: 7px;
+}
+
+.furniture-store-toolbar > label span {
+  color: var(--hall-muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.furniture-store-toolbar input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--hall-line);
+  border-radius: 12px;
+  color: var(--hall-ink);
+  background: #ffffff;
+  font: inherit;
+}
+
+.furniture-category-nav button {
+  padding: 9px 12px;
+  border: 1px solid var(--hall-line);
+  border-radius: 10px;
+  color: var(--hall-ink);
+  background: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.furniture-category-nav button.is-active {
+  border-color: var(--hall-ink);
+  color: #ffffff;
+  background: var(--hall-ink);
+}
+
+.hall-furniture-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+}
+
+.hall-furniture-grid .furniture-card-body h3 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.035em;
+}
+
+/* Личный кабинет. */
+.hall-account-layout {
+  display: grid;
+  gap: 42px;
+}
+
+.hall-account-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(240px, 0.75fr);
+  gap: 26px;
+}
+
+.hall-account-hero .hall-account-stats,
+.hall-account-hero .hero-actions {
+  grid-column: 1 / -1;
+}
+
+.account-location-card {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 20px;
+  border: 1px solid var(--hall-line);
+  border-radius: 16px;
+  background: var(--hall-soft);
+}
+
+.account-location-card > span {
+  color: var(--hall-muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.account-location-card > strong {
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.account-location-card > small {
+  color: var(--hall-muted);
+}
+
+.account-location-card > button {
+  justify-self: start;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  color: var(--hall-accent-dark);
+  background: transparent;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.hall-account-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.hall-auth-section {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.9fr) minmax(340px, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.account-auth-aside {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  padding: clamp(26px, 5vw, 52px);
+  border-radius: 22px;
+  color: #ffffff;
+  background: var(--hall-ink);
+}
+
+.account-auth-aside .eyebrow {
+  color: #d8d8d0;
+}
+
+.account-auth-aside h2 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.account-auth-aside ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 20px;
+  color: #c5c5bd;
+  line-height: 1.5;
+}
+
+.email-verification-box {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--hall-line);
+  border-radius: 14px;
+  background: var(--hall-soft);
+}
+
+.email-verification-box > small {
+  color: var(--hall-muted);
+}
+
+.email-verification-box input {
+  letter-spacing: 0.22em;
+  font-size: 20px;
+  font-weight: 850;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .hall-account-hero,
+  .hall-auth-section {
+    grid-template-columns: 1fr !important;
+  }
+
+  .hall-account-hero .hall-account-stats,
+  .hall-account-hero .hero-actions {
+    grid-column: auto;
+  }
+
+  .hall-account-stats {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .hero-selected-location {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-selected-location > button {
+    justify-self: start;
+  }
+
+  .purchase-row {
+    grid-template-columns: 1fr;
+  }
+}
