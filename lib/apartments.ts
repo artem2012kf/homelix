@@ -24,7 +24,12 @@ type RawLayoutCommon = {
 };
 
 type RawRectLayoutRoom = RawLayoutCommon & RectRoomPlan;
-type RawPolygonLayoutRoom = RawLayoutCommon & PolygonRoomPlan;
+type RawPolygonLayoutRoom = RawLayoutCommon & {
+  kind: "polygon";
+  points: PlanPoint[];
+  labelX?: number;
+  labelY?: number;
+};
 type RawLayoutRoom = RawRectLayoutRoom | RawPolygonLayoutRoom;
 
 type RoomCopy = {
@@ -126,9 +131,19 @@ function roomPlan(rawRoom: RawLayoutRoom): RoomPlan {
       throw new Error(`Полигон комнаты ${rawRoom.roomId} должен содержать минимум три точки`);
     }
 
+    const points = normalizePoints(rawRoom.points);
+    const minX = Math.min(...points.map((point) => point.x));
+    const maxX = Math.max(...points.map((point) => point.x));
+    const minY = Math.min(...points.map((point) => point.y));
+    const maxY = Math.max(...points.map((point) => point.y));
+
     return {
       kind: "polygon",
-      points: normalizePoints(rawRoom.points),
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      points,
       labelX: rawRoom.labelX,
       labelY: rawRoom.labelY
     };
