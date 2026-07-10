@@ -25,6 +25,10 @@ export async function POST(request: Request) {
   const cleanEmail = normalizeEmail(String(email ?? ""));
   const cleanPassword = String(password ?? "");
 
+  if (!cleanEmail || cleanEmail.length > 254 || !cleanPassword || cleanPassword.length > 128) {
+    return Response.json({ error: "Почта или пароль указаны неверно." }, { status: 401 });
+  }
+
   return withDatabaseWriteLock(() => {
     const database = readDatabase();
     const user = database.users.find((item) => item.email === cleanEmail);
