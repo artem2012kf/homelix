@@ -94,10 +94,7 @@ function buildRoom(apartmentId: string, rawRoom: RawRoom, plan: RoomPlan): Room 
       "Не обещайте перепланировку, перенос мокрых зон или точное размещение без проверки размеров.",
       "При советах по мебели сохраняйте свободный проход и не перекрывайте двери и окна."
     ],
-    chatPrompts: [
-      `Как лучше использовать ${roomName} ${rawRoom.area} м²?`,
-      ...copy.prompts
-    ],
+    chatPrompts: [`Как лучше использовать ${roomName} ${rawRoom.area} м²?`, ...copy.prompts],
     polygon: polygonFromPlan(plan),
     labelX: Math.round(plan.x + plan.width / 2),
     labelY: Math.round(plan.y + plan.height / 2)
@@ -114,7 +111,7 @@ function buildApartment(rawApartment: RawApartment, layouts: Record<string, RawL
     throw new Error(`Для квартиры ${rawApartment.id} не найдена планировка ${rawApartment.layoutId}`);
   }
 
-  const planByRoomId = new Map(layout.map(({ roomId, ...plan }) => [roomId, plan]));
+  const planByRoomId = new Map(layout.map(({ roomId, ...plan }) => [roomId, plan] as const));
   const rooms = rawApartment.rooms.map((room) => {
     const plan = planByRoomId.get(room.id);
     if (!plan) throw new Error(`В планировке ${rawApartment.layoutId} отсутствует комната ${room.id}`);
