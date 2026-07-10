@@ -23,6 +23,10 @@ export type RectRoomPlan = {
 
 export type PolygonRoomPlan = {
   kind: "polygon";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   points: PlanPoint[];
   labelX?: number;
   labelY?: number;
