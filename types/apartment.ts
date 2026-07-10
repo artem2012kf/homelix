@@ -8,12 +8,31 @@ export type RoomType =
   | "balcony"
   | "wardrobe";
 
-export type RoomPlan = {
+export type PlanPoint = {
+  x: number;
+  y: number;
+};
+
+export type RectRoomPlan = {
+  kind?: "rect";
   x: number;
   y: number;
   width: number;
   height: number;
 };
+
+export type PolygonRoomPlan = {
+  kind: "polygon";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  points: PlanPoint[];
+  labelX?: number;
+  labelY?: number;
+};
+
+export type RoomPlan = RectRoomPlan | PolygonRoomPlan;
 
 export type Room = {
   id: string;

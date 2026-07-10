@@ -35,6 +35,26 @@
   cursor: pointer;
 }
 
+.auth-secondary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary-dark);
+  font: inherit;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.auth-secondary-action:hover {
+  text-decoration-thickness: 2px;
+}
+
 .honeypot-field {
   position: absolute !important;
   width: 1px !important;
