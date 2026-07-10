@@ -1,13 +1,17 @@
 import type { Apartment } from "@/types/apartment";
 import {
   getApartmentVisualRooms,
-  getPlanBounds,
   getVisualFixtures,
-  getVisualWindows,
   isBalcony,
   roomFill,
   type VisualFixture
 } from "@/lib/apartment-plan-visuals";
+import {
+  fixtureFitsPolygon,
+  getPolygonOutlineSegments,
+  getPolygonVisualRooms,
+  getPolygonWindows
+} from "@/lib/polygon-floor-plans";
 
 function MiniFixture({ fixture }: { fixture: VisualFixture }) {
   if (fixture.kind === "toilet") {
@@ -40,7 +44,6 @@ function MiniFixture({ fixture }: { fixture: VisualFixture }) {
   }
 
   const fill = fixture.kind === "column" || fixture.kind === "shaft" ? "#9a958c" : "rgba(180, 160, 128, 0.18)";
-
   return (
     <rect
       x={fixture.x}
@@ -56,10 +59,14 @@ function MiniFixture({ fixture }: { fixture: VisualFixture }) {
 }
 
 export function ApartmentMiniPlan({ apartment }: { apartment: Apartment }) {
-  const visualRooms = getApartmentVisualRooms(apartment.id, apartment.rooms);
-  const bounds = getPlanBounds(visualRooms);
-  const windows = getVisualWindows(visualRooms, apartment.id);
-  const fixtures = getVisualFixtures(apartment.id, visualRooms);
+  const baseRooms = getApartmentVisualRooms(apartment.id, apartment.rooms);
+  const visualRooms = getPolygonVisualRooms(apartment.id, baseRooms);
+  const windows = getPolygonWindows(visualRooms, apartment.id);
+  const outline = getPolygonOutlineSegments(visualRooms);
+  const fixtures = getVisualFixtures(apartment.id, baseRooms).filter((fixture) => {
+    const room = visualRooms.find((candidate) => candidate.id === fixture.roomId);
+    return !room || fixtureFitsPolygon(room, fixture);
+  });
 
   return (
     <div className="card-mini-plan" aria-label={`Мини-план квартиры ${apartment.title}`}>
@@ -74,24 +81,9 @@ export function ApartmentMiniPlan({ apartment }: { apartment: Apartment }) {
 
         {visualRooms.map((room) => (
           <g key={room.id}>
-            <rect
-              x={room.visualX}
-              y={room.visualY}
-              width={room.visualWidth}
-              height={room.visualHeight}
-              fill={roomFill(room)}
-              stroke="#c9ba9a"
-              strokeWidth="4"
-            />
+            <polygon points={room.visualPolygon} fill={roomFill(room)} stroke="#c9ba9a" strokeWidth="4" strokeLinejoin="round" />
             {isBalcony(room) ? (
-              <rect
-                x={room.visualX + 3}
-                y={room.visualY + 3}
-                width={Math.max(0, room.visualWidth - 6)}
-                height={Math.max(0, room.visualHeight - 6)}
-                fill={`url(#balcony-hatch-${apartment.id})`}
-                pointerEvents="none"
-              />
+              <polygon points={room.visualPolygon} fill={`url(#balcony-hatch-${apartment.id})`} pointerEvents="none" />
             ) : null}
           </g>
         ))}
@@ -102,16 +94,21 @@ export function ApartmentMiniPlan({ apartment }: { apartment: Apartment }) {
           ))}
         </g>
 
-        <rect
-          x={bounds.minX}
-          y={bounds.minY}
-          width={bounds.maxX - bounds.minX}
-          height={bounds.maxY - bounds.minY}
-          fill="none"
-          stroke="#3f362c"
-          strokeWidth="8"
-          strokeLinejoin="round"
-        />
+        <g pointerEvents="none">
+          {outline.map((segment) => (
+            <line
+              key={segment.id}
+              x1={segment.x1}
+              y1={segment.y1}
+              x2={segment.x2}
+              y2={segment.y2}
+              stroke="#3f362c"
+              strokeWidth="8"
+              strokeLinecap="square"
+              strokeLinejoin="round"
+            />
+          ))}
+        </g>
 
         <g pointerEvents="none">
           {windows.map((window) => (
