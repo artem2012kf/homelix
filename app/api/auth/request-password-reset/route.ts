@@ -25,20 +25,17 @@ function tokenHash(token: string) {
 
 async function sendResetEmail(email: string, resetUrl: string) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.PASSWORD_RESET_FROM;
+  const from = process.env.PASSWORD_RESET_FROM || process.env.EMAIL_FROM;
   if (!apiKey || !from) return false;
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from,
       to: [email],
-      subject: "Восстановление пароля Homelix",
-      html: `<p>Чтобы задать новый пароль, откройте ссылку:</p><p><a href="${resetUrl}">Восстановить пароль</a></p><p>Ссылка действует 20 минут. Если вы не запрашивали восстановление, проигнорируйте письмо.</p>`
+      subject: "Восстановление пароля ХОЛЛ",
+      html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:32px"><h1 style="letter-spacing:.12em">ХОЛЛ</h1><p>Чтобы задать новый пароль, откройте ссылку:</p><p><a href="${resetUrl}">Восстановить пароль</a></p><p>Ссылка действует 20 минут. Если вы не запрашивали восстановление, проигнорируйте письмо.</p></div>`
     })
   });
 
