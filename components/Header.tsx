@@ -19,6 +19,7 @@ export function Header() {
         <a href="/#complexes">ЖК Тюмени</a>
         <Link href="/ai">ИИ без комнат</Link>
         <Link href="/furniture">Магазин мебели</Link>
+        <Link href="/project">О проекте</Link>
         <a href="/#contacts">Контакты</a>
         <AuthHeaderActions />
       </nav>
