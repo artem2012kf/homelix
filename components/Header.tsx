@@ -29,12 +29,12 @@ export function Header() {
           <small>{text.brandSubtitle}</small>
         </span>
       </Link>
-      <nav className="header-nav" aria-label={text.brandSubtitle} style={{ flexWrap: "wrap" }}>
-        <a href={getHomeHref(locale, "#apartments")}>{text.nav.apartments}</a>
-        <a href={getHomeHref(locale, "#complexes")}>{text.nav.complexes}</a>
+      <nav className="header-nav" aria-label={text.brandSubtitle}>
+        <Link href={getHomeHref(locale, "#apartments")}>{text.nav.apartments}</Link>
+        <Link href={getHomeHref(locale, "#complexes")}>{text.nav.complexes}</Link>
         <Link href="/ai">{text.nav.ai}</Link>
         <Link href="/furniture">{text.nav.furniture}</Link>
-        <a href={getHomeHref(locale, "#contacts")}>{text.nav.contacts}</a>
+        <Link href={getHomeHref(locale, "#contacts")}>{text.nav.contacts}</Link>
         <AuthHeaderActions locale={locale} />
         <div className="language-switch" aria-label="Language selector">
           {languageOrder.map((language) => (
