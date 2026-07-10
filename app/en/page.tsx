@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LocalizedHomePage } from "@/components/LocalizedHomePage";
 
 export const metadata: Metadata = {
-  title: "Homelix — interactive apartment selection with AI",
-  description: "Browse apartments in Tyumen, explore interactive floor plans and use an AI assistant."
+  title: "HALL — apartments across Russia",
+  description: "Choose a city and residential project, compare apartments, explore irregular floor plans and order furniture with delivery. Prices are converted to USD using an updated rate."
 };
 
 export default function EnglishHomePage() {
