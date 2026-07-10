@@ -1,18 +1,31 @@
 import apartmentData from "@/data/apartments.json";
 import layoutData from "@/data/apartment-layouts.json";
-import type { Apartment, ApartmentStatus, Room, RoomPlan, RoomType } from "@/types/apartment";
+import type {
+  Apartment,
+  ApartmentStatus,
+  PlanPoint,
+  PolygonRoomPlan,
+  RectRoomPlan,
+  Room,
+  RoomPlan,
+  RoomType
+} from "@/types/apartment";
 
 type RawApartment = Omit<Apartment, "status" | "rooms"> & {
   status: string;
   layoutId: string;
 };
 
-type RawLayoutRoom = RoomPlan & {
+type RawLayoutCommon = {
   roomId: string;
   type: RoomType;
   name: string;
   areaShare: number;
 };
+
+type RawRectLayoutRoom = RawLayoutCommon & RectRoomPlan;
+type RawPolygonLayoutRoom = RawLayoutCommon & PolygonRoomPlan;
+type RawLayoutRoom = RawRectLayoutRoom | RawPolygonLayoutRoom;
 
 type RoomCopy = {
   description: string;
@@ -69,20 +82,71 @@ function isApartmentStatus(value: string): value is ApartmentStatus {
   return value === "available" || value === "reserved" || value === "sold";
 }
 
+function isPolygonPlan(plan: RawLayoutRoom | RoomPlan): plan is RawPolygonLayoutRoom | PolygonRoomPlan {
+  return "points" in plan && Array.isArray(plan.points);
+}
+
+function normalizePoints(points: PlanPoint[]) {
+  return points.map((point) => ({ x: Number(point.x), y: Number(point.y) }));
+}
+
+function planPoints(plan: RoomPlan): PlanPoint[] {
+  if (isPolygonPlan(plan)) return normalizePoints(plan.points);
+
+  return [
+    { x: plan.x, y: plan.y },
+    { x: plan.x + plan.width, y: plan.y },
+    { x: plan.x + plan.width, y: plan.y + plan.height },
+    { x: plan.x, y: plan.y + plan.height }
+  ];
+}
+
 function polygonFromPlan(plan: RoomPlan) {
-  const right = plan.x + plan.width;
-  const bottom = plan.y + plan.height;
-  return `${plan.x},${plan.y} ${right},${plan.y} ${right},${bottom} ${plan.x},${bottom}`;
+  return planPoints(plan)
+    .map((point) => `${point.x},${point.y}`)
+    .join(" ");
+}
+
+function planLabel(plan: RoomPlan) {
+  if (isPolygonPlan(plan) && typeof plan.labelX === "number" && typeof plan.labelY === "number") {
+    return { x: plan.labelX, y: plan.labelY };
+  }
+
+  const points = planPoints(plan);
+  const minX = Math.min(...points.map((point) => point.x));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxY = Math.max(...points.map((point) => point.y));
+  return { x: Math.round((minX + maxX) / 2), y: Math.round((minY + maxY) / 2) };
+}
+
+function roomPlan(rawRoom: RawLayoutRoom): RoomPlan {
+  if (isPolygonPlan(rawRoom)) {
+    if (rawRoom.points.length < 3) {
+      throw new Error(`Полигон комнаты ${rawRoom.roomId} должен содержать минимум три точки`);
+    }
+
+    return {
+      kind: "polygon",
+      points: normalizePoints(rawRoom.points),
+      labelX: rawRoom.labelX,
+      labelY: rawRoom.labelY
+    };
+  }
+
+  return {
+    kind: "rect",
+    x: Number(rawRoom.x),
+    y: Number(rawRoom.y),
+    width: Number(rawRoom.width),
+    height: Number(rawRoom.height)
+  };
 }
 
 function buildRoom(apartment: RawApartment, rawRoom: RawLayoutRoom, area: number): Room {
   const copy = ROOM_COPY[rawRoom.type];
-  const plan: RoomPlan = {
-    x: rawRoom.x,
-    y: rawRoom.y,
-    width: rawRoom.width,
-    height: rawRoom.height
-  };
+  const plan = roomPlan(rawRoom);
+  const label = planLabel(plan);
 
   return {
     id: rawRoom.roomId,
@@ -99,8 +163,8 @@ function buildRoom(apartment: RawApartment, rawRoom: RawLayoutRoom, area: number
     ],
     chatPrompts: [`Как лучше использовать ${rawRoom.name.toLowerCase()} ${area} м²?`, ...copy.prompts],
     polygon: polygonFromPlan(plan),
-    labelX: Math.round(plan.x + plan.width / 2),
-    labelY: Math.round(plan.y + plan.height / 2)
+    labelX: label.x,
+    labelY: label.y
   };
 }
 
@@ -117,6 +181,11 @@ function buildApartment(rawApartment: RawApartment, layouts: Record<string, RawL
   const shareTotal = layout.reduce((sum, room) => sum + room.areaShare, 0);
   if (Math.abs(shareTotal - 1) > 0.001) {
     throw new Error(`Сумма areaShare в планировке ${rawApartment.layoutId} должна быть равна 1`);
+  }
+
+  const roomIds = new Set(layout.map((room) => room.roomId));
+  if (roomIds.size !== layout.length) {
+    throw new Error(`В планировке ${rawApartment.layoutId} найдены повторяющиеся roomId`);
   }
 
   let allocatedArea = 0;
