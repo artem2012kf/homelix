@@ -12,7 +12,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { CartProvider } from "@/components/CartProvider";
 import { CartDrawer } from "@/components/CartDrawer";
 import { CurrencyProvider } from "@/components/CurrencyProvider";
-import { SmartRecommendationBell } from "@/components/SmartRecommendationBell";
+import { CityRecommendationBell } from "@/components/CityRecommendationBell";
 import { apartments } from "@/lib/apartments";
 
 export const metadata: Metadata = {
@@ -46,7 +46,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <SiteFooter />
                 <CityMap />
                 <CartDrawer />
-                <SmartRecommendationBell apartments={apartments} />
+                <CityRecommendationBell apartments={apartments} />
               </CartProvider>
             </CurrencyProvider>
           </CityProvider>
