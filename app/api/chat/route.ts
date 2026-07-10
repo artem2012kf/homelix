@@ -10,6 +10,8 @@ type ChatRequest = {
   message?: string;
   apartmentId?: string;
   roomId?: string | null;
+  apartment?: { id?: string };
+  room?: { id?: string } | null;
 };
 
 function shortText(value: string | undefined, max = 180) {
@@ -171,7 +173,8 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ChatRequest;
     const message = body.message?.trim();
-    const apartmentId = String(body.apartmentId ?? "");
+    const apartmentId = String(body.apartmentId ?? body.apartment?.id ?? "");
+    const roomId = body.roomId ?? body.room?.id ?? null;
     const apartment = getApartmentById(apartmentId);
 
     if (!message || message.length > 1200) {
@@ -182,8 +185,8 @@ export async function POST(request: Request) {
       return Response.json({ error: "Квартира не найдена в каталоге." }, { status: 404 });
     }
 
-    const room = body.roomId ? apartment.rooms.find((item) => item.id === body.roomId) ?? null : null;
-    if (body.roomId && !room) {
+    const room = roomId ? apartment.rooms.find((item) => item.id === roomId) ?? null : null;
+    if (roomId && !room) {
       return Response.json({ error: "Комната не найдена в планировке квартиры." }, { status: 400 });
     }
 
