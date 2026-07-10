@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./i18n.css";
+import "./security-ux.css";
 import { Header } from "@/components/Header";
 import { AuthProvider } from "@/components/AuthProvider";
 import { SmartRecommendationBell } from "@/components/SmartRecommendationBell";

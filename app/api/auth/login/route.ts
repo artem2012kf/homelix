@@ -1,41 +1,56 @@
 import {
+  createSession,
   getPublicUser,
   getUserFavorites,
   getUserReservations,
   hashPassword,
-  makeToken,
+  needsPasswordRehash,
   normalizeEmail,
   readDatabase,
+  sessionCookie,
+  verifyPassword,
+  withDatabaseWriteLock,
   writeDatabase
 } from "@/lib/server-db";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const limit = checkRateLimit(request, "auth-login", { limit: 8, windowMs: 10 * 60 * 1000 });
+  if (!limit.allowed) return rateLimitResponse(limit);
+
   const { email, password } = await request.json().catch(() => ({ email: "", password: "" }));
   const cleanEmail = normalizeEmail(String(email ?? ""));
-  const cleanPassword = String(password ?? "").trim();
-  const database = readDatabase();
-  const user = database.users.find((item) => item.email === cleanEmail && item.passwordHash === hashPassword(cleanPassword));
+  const cleanPassword = String(password ?? "");
 
-  if (!user) {
+  if (!cleanEmail || cleanEmail.length > 254 || !cleanPassword || cleanPassword.length > 128) {
     return Response.json({ error: "Почта или пароль указаны неверно." }, { status: 401 });
   }
 
-  const token = makeToken();
+  return withDatabaseWriteLock(() => {
+    const database = readDatabase();
+    const user = database.users.find((item) => item.email === cleanEmail);
 
-  database.sessions.push({
-    token,
-    userId: user.id,
-    createdAt: new Date().toISOString()
-  });
+    if (!user || !verifyPassword(cleanPassword, user.passwordHash)) {
+      return Response.json({ error: "Почта или пароль указаны неверно." }, { status: 401 });
+    }
 
-  writeDatabase(database);
+    if (needsPasswordRehash(user.passwordHash)) {
+      user.passwordHash = hashPassword(cleanPassword);
+    }
 
-  return Response.json({
-    token,
-    user: getPublicUser(user),
-    favorites: getUserFavorites(database, user.id),
-    reservations: getUserReservations(database, user.id)
+    const session = createSession(database, user.id);
+    writeDatabase(database);
+
+    return Response.json(
+      {
+        user: getPublicUser(user),
+        favorites: getUserFavorites(database, user.id),
+        reservations: getUserReservations(database, user.id)
+      },
+      { headers: { "Set-Cookie": sessionCookie(session.token), "Cache-Control": "no-store" } }
+    );
   });
 }

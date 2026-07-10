@@ -8,13 +8,8 @@ export function AuthHeaderActions({ locale = "ru" }: { locale?: Locale }) {
   const { user, isReady, logout, favorites, reservations } = useAuth();
   const text = siteText[locale].auth;
 
-  if (!isReady) {
-    return <Link href="/account">{text.account}</Link>;
-  }
-
-  if (!user) {
-    return <Link href="/account">{text.login}</Link>;
-  }
+  if (!isReady) return <Link href="/account">{text.account}</Link>;
+  if (!user) return <Link href="/account">{text.login}</Link>;
 
   return (
     <div className="header-user-box">
@@ -24,7 +19,7 @@ export function AuthHeaderActions({ locale = "ru" }: { locale?: Locale }) {
           {favorites.length} {text.favorites} · {reservations.length} {text.reservations}
         </small>
       </Link>
-      <button type="button" onClick={logout}>
+      <button type="button" onClick={() => void logout()}>
         {text.logout}
       </button>
     </div>

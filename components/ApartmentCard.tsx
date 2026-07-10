@@ -39,18 +39,7 @@ export function ApartmentCard({ apartment, locale = "ru" }: { apartment: Apartme
       </Link>
 
       <div>
-        <span
-          style={{
-            display: "inline-flex",
-            marginBottom: 10,
-            padding: "7px 11px",
-            borderRadius: 999,
-            color: "var(--primary-dark)",
-            background: "rgba(249, 62, 62, 0.08)",
-            fontSize: 13,
-            fontWeight: 900
-          }}
-        >
+        <span className="apartment-complex-badge">
           {city} · {complexName}
         </span>
         <h3>{displayApartment.title}</h3>

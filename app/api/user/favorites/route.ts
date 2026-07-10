@@ -1,20 +1,17 @@
 import {
-  getBearerToken,
+  getSessionToken,
   getUserByToken,
   getUserFavorites,
+  withDatabaseWriteLock,
   writeDatabase
 } from "@/lib/server-db";
 import { getApartmentById } from "@/lib/apartments";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const auth = getUserByToken(getBearerToken(request));
-
-  if (!auth) {
-    return Response.json({ error: "Необходимо войти в аккаунт." }, { status: 401 });
-  }
-
+  const token = getSessionToken(request);
   const { apartmentId } = await request.json().catch(() => ({ apartmentId: "" }));
   const id = String(apartmentId ?? "");
 
@@ -22,21 +19,27 @@ export async function POST(request: Request) {
     return Response.json({ error: "Квартира не найдена." }, { status: 404 });
   }
 
-  const exists = auth.database.favorites.some((item) => item.userId === auth.user.id && item.apartmentId === id);
+  return withDatabaseWriteLock(() => {
+    const auth = getUserByToken(token);
+    if (!auth) {
+      return Response.json({ error: "Необходимо войти в аккаунт." }, { status: 401 });
+    }
 
-  if (exists) {
-    auth.database.favorites = auth.database.favorites.filter((item) => !(item.userId === auth.user.id && item.apartmentId === id));
-  } else {
-    auth.database.favorites.push({
-      userId: auth.user.id,
-      apartmentId: id,
-      createdAt: new Date().toISOString()
-    });
-  }
+    const exists = auth.database.favorites.some((item) => item.userId === auth.user.id && item.apartmentId === id);
 
-  writeDatabase(auth.database);
+    if (exists) {
+      auth.database.favorites = auth.database.favorites.filter(
+        (item) => !(item.userId === auth.user.id && item.apartmentId === id)
+      );
+    } else {
+      auth.database.favorites.push({
+        userId: auth.user.id,
+        apartmentId: id,
+        createdAt: new Date().toISOString()
+      });
+    }
 
-  return Response.json({
-    favorites: getUserFavorites(auth.database, auth.user.id)
+    writeDatabase(auth.database);
+    return Response.json({ favorites: getUserFavorites(auth.database, auth.user.id) });
   });
 }

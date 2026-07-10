@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApartmentCard } from "@/components/ApartmentCard";
 import { useAuth } from "@/components/AuthProvider";
 import type { Apartment } from "@/types/apartment";
@@ -18,6 +18,8 @@ type SortOption =
   | "rooms-asc"
   | "rooms-desc"
   | "mortgage-asc";
+
+const PAGE_SIZE = 12;
 
 const statusWeight: Record<Apartment["status"], number> = {
   available: 0,
@@ -50,9 +52,16 @@ function sortApartments(items: Apartment[], sort: SortOption) {
   });
 }
 
+function loadMoreLabel(locale: Locale) {
+  if (locale === "en") return "Show more apartments";
+  if (locale === "zh") return "显示更多房源";
+  return "Показать ещё квартиры";
+}
+
 export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Apartment[]; locale?: Locale }) {
   const [sort, setSort] = useState<SortOption>("recommended");
   const [city, setCity] = useState("all");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const { getApartmentStatus, reservedApartmentIds } = useAuth();
   const text = siteText[locale].catalog;
   const sortLabels = text.sortLabels;
@@ -77,6 +86,13 @@ export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Ap
   );
 
   const sortedApartments = useMemo(() => sortApartments(filteredApartments, sort), [filteredApartments, sort]);
+  const visibleApartments = sortedApartments.slice(0, visibleCount);
+  const hasMore = visibleApartments.length < sortedApartments.length;
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [city, sort]);
+
   const availableApartments = useMemo(
     () => filteredApartments.filter((apartment) => apartment.status === "available"),
     [filteredApartments]
@@ -106,7 +122,7 @@ export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Ap
           </span>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        <div className="catalog-filter-group">
           <label className="sort-control">
             <span>{text.cityFilter}</span>
             <select value={city} onChange={(event) => setCity(event.target.value)}>
@@ -195,10 +211,18 @@ export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Ap
       </div>
 
       <div className="cards-grid">
-        {sortedApartments.map((apartment) => (
+        {visibleApartments.map((apartment) => (
           <ApartmentCard apartment={apartment} locale={locale} key={apartment.id} />
         ))}
       </div>
+
+      {hasMore ? (
+        <div className="catalog-load-more">
+          <button className="button button-ghost" type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>
+            {loadMoreLabel(locale)}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

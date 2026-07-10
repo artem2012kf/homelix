@@ -1,5 +1,6 @@
 import { apartments } from "@/lib/apartments";
 import { formatArea, formatPrice } from "@/lib/format";
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -112,7 +113,9 @@ function deterministicAnswer(message: string) {
       "- город, ЖК и цена указаны сразу для быстрого сравнения.",
       "",
       "**Еще можно рассмотреть:**",
-      ...best.slice(1).map(apartmentLine)
+      ...best.slice(1).map(apartmentLine),
+      "",
+      "Цена и наличие в демонстрационном каталоге требуют подтверждения менеджером."
     ].join("\n");
   }
 
@@ -144,15 +147,17 @@ function deterministicAnswer(message: string) {
 }
 
 export async function POST(request: Request) {
+  const limit = checkRateLimit(request, "general-ai", { limit: 25, windowMs: 60 * 1000 });
+  if (!limit.allowed) return rateLimitResponse(limit);
+
   try {
     const body = (await request.json()) as AiOnlyRequest;
     const message = body.message?.trim();
-    if (!message) return Response.json({ error: "Нет сообщения." }, { status: 400 });
+    if (!message || message.length > 1200) {
+      return Response.json({ error: "Введите сообщение длиной до 1200 символов." }, { status: 400 });
+    }
     return Response.json({ answer: deterministicAnswer(message) });
   } catch {
-    return Response.json(
-      { error: "Не удалось обработать запрос. Попробуйте отправить вопрос еще раз." },
-      { status: 500 }
-    );
+    return Response.json({ error: "Не удалось обработать запрос. Попробуйте отправить вопрос еще раз." }, { status: 500 });
   }
 }

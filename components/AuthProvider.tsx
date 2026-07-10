@@ -15,9 +15,9 @@ type AuthContextValue = {
   favorites: string[];
   reservations: string[];
   reservedApartmentIds: string[];
-  register: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  register: (email: string, password: string, website?: string) => Promise<{ ok: boolean; error?: string }>;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshStatuses: () => Promise<void>;
   getApartmentStatus: (apartmentId: string, baseStatus: ApartmentStatus) => ApartmentStatus;
   isFavorite: (apartmentId: string) => boolean;
@@ -28,39 +28,19 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const TOKEN_KEY = "sq-demo-token";
-
-function getSavedToken() {
-  if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(TOKEN_KEY) ?? "";
-}
-
-function saveToken(token: string) {
-  if (typeof window === "undefined") return;
-
-  if (token) {
-    window.localStorage.setItem(TOKEN_KEY, token);
-  } else {
-    window.localStorage.removeItem(TOKEN_KEY);
-  }
-}
 
 async function requestJson<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = new URL(endpoint, window.location.origin);
-  const token = getSavedToken();
   const headers = new Headers(options.headers);
 
   if (!headers.has("Content-Type") && options.body) {
     headers.set("Content-Type", "application/json");
   }
 
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
   const response = await fetch(url.toString(), {
     ...options,
     headers,
+    credentials: "same-origin",
     cache: "no-store"
   });
 
@@ -70,11 +50,14 @@ async function requestJson<T>(endpoint: string, options: RequestInit = {}): Prom
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    data = { error: text || "Сервер вернул пустой ответ." };
+    data = { error: "Сервер вернул некорректный ответ." };
   }
 
   if (!response.ok) {
-    const message = typeof data === "object" && data && "error" in data ? String((data as { error?: string }).error) : `Ошибка ${response.status}`;
+    const message =
+      typeof data === "object" && data && "error" in data
+        ? String((data as { error?: string }).error)
+        : "Не удалось выполнить запрос.";
     throw new Error(message);
   }
 
@@ -82,7 +65,6 @@ async function requestJson<T>(endpoint: string, options: RequestInit = {}): Prom
 }
 
 type SessionResponse = {
-  token?: string;
   user: PublicUser | null;
   favorites: string[];
   reservations: string[];
@@ -105,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await requestJson<StatusResponse>("/api/apartment-statuses");
       setReservedApartmentIds(data.reservedApartmentIds ?? []);
     } catch {
-      // Для демо-режима статус просто останется последним загруженным.
+      // Сохраняем последний успешно загруженный статус.
     }
   }, []);
 
@@ -115,60 +97,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function loadSession() {
       try {
         const data = await requestJson<SessionResponse>("/api/auth/me");
-
         if (cancelled) return;
-
         setUser(data.user ?? null);
         setFavorites(data.favorites ?? []);
         setReservations(data.reservations ?? []);
         setReservedApartmentIds(data.reservedApartmentIds ?? []);
       } catch {
         if (cancelled) return;
-
-        saveToken("");
         setUser(null);
         setFavorites([]);
         setReservations([]);
         await refreshStatuses();
       } finally {
-        if (!cancelled) {
-          setIsReady(true);
-        }
+        if (!cancelled) setIsReady(true);
       }
     }
 
     void loadSession();
-
     return () => {
       cancelled = true;
     };
   }, [refreshStatuses]);
 
-
   useEffect(() => {
     if (!isReady) return;
-
-    const interval = window.setInterval(() => {
-      void refreshStatuses();
-    }, 15000);
-
+    const interval = window.setInterval(() => void refreshStatuses(), 15000);
     return () => window.clearInterval(interval);
   }, [isReady, refreshStatuses]);
 
   const register = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, website = "") => {
       try {
         const data = await requestJson<SessionResponse>("/api/auth/register", {
           method: "POST",
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password, website })
         });
 
-        saveToken(data.token ?? "");
         setUser(data.user);
         setFavorites(data.favorites ?? []);
         setReservations(data.reservations ?? []);
         await refreshStatuses();
-
         return { ok: true };
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : "Не удалось зарегистрироваться." };
@@ -185,12 +153,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({ email, password })
         });
 
-        saveToken(data.token ?? "");
         setUser(data.user);
         setFavorites(data.favorites ?? []);
         setReservations(data.reservations ?? []);
         await refreshStatuses();
-
         return { ok: true };
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : "Не удалось войти." };
@@ -199,24 +165,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refreshStatuses]
   );
 
-  const logout = useCallback(() => {
-    saveToken("");
-    setUser(null);
-    setFavorites([]);
-    setReservations([]);
-    void refreshStatuses();
+  const logout = useCallback(async () => {
+    try {
+      await requestJson<{ ok: boolean }>("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Локальное состояние очищается даже при временной сетевой ошибке.
+    } finally {
+      setUser(null);
+      setFavorites([]);
+      setReservations([]);
+      await refreshStatuses();
+    }
   }, [refreshStatuses]);
 
   const toggleFavorite = useCallback(
     async (apartmentId: string) => {
       if (!user) return { ok: false, error: "Для добавления в избранное необходимо войти." };
-
       try {
         const data = await requestJson<{ favorites: string[] }>("/api/user/favorites", {
           method: "POST",
           body: JSON.stringify({ apartmentId })
         });
-
         setFavorites(data.favorites ?? []);
         return { ok: true };
       } catch (error) {
@@ -229,20 +198,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const reserveApartment = useCallback(
     async (apartmentId: string, baseStatus: ApartmentStatus = "available") => {
       if (!user) return { ok: false, error: "Для бронирования необходимо войти." };
-
-      if (baseStatus === "sold") {
-        return { ok: false, error: "Эта квартира уже продана." };
-      }
+      if (baseStatus === "sold") return { ok: false, error: "Эта квартира уже продана." };
 
       try {
-        const data = await requestJson<{ reservations: string[]; reservedApartmentIds: string[] }>("/api/user/reservations", {
-          method: "POST",
-          body: JSON.stringify({ apartmentId, action: "reserve" })
-        });
-
+        const data = await requestJson<{ reservations: string[]; reservedApartmentIds: string[] }>(
+          "/api/user/reservations",
+          { method: "POST", body: JSON.stringify({ apartmentId, action: "reserve" }) }
+        );
         setReservations(data.reservations ?? []);
         setReservedApartmentIds(data.reservedApartmentIds ?? []);
-
         return { ok: true };
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : "Не удалось забронировать квартиру." };
@@ -254,16 +218,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const cancelReservation = useCallback(
     async (apartmentId: string) => {
       if (!user) return { ok: false, error: "Для отмены брони необходимо войти." };
-
       try {
-        const data = await requestJson<{ reservations: string[]; reservedApartmentIds: string[] }>("/api/user/reservations", {
-          method: "POST",
-          body: JSON.stringify({ apartmentId, action: "cancel" })
-        });
-
+        const data = await requestJson<{ reservations: string[]; reservedApartmentIds: string[] }>(
+          "/api/user/reservations",
+          { method: "POST", body: JSON.stringify({ apartmentId, action: "cancel" }) }
+        );
         setReservations(data.reservations ?? []);
         setReservedApartmentIds(data.reservedApartmentIds ?? []);
-
         return { ok: true };
       } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : "Не удалось отменить бронь." };
@@ -315,10 +276,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-
+  if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
 }
