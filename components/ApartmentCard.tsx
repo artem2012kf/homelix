@@ -4,8 +4,9 @@ import Link from "next/link";
 import type { Apartment } from "@/types/apartment";
 import { ApartmentCardActions } from "@/components/ApartmentCardActions";
 import { ApartmentMiniPlan } from "@/components/ApartmentMiniPlan";
+import { CurrencyPrice } from "@/components/CurrencyProvider";
 import { useAuth } from "@/components/AuthProvider";
-import { formatArea, formatPrice, statusLabel } from "@/lib/format";
+import { formatArea, statusLabel } from "@/lib/format";
 import { getResidentialComplexByApartmentId } from "@/lib/residential-complexes";
 import {
   localizeApartment,
@@ -29,9 +30,7 @@ export function ApartmentCard({ apartment, locale = "ru" }: { apartment: Apartme
     <article className="apartment-card">
       <div className="card-topline">
         <span className={`status status-${effectiveStatus}`}>{statusLabel(effectiveStatus, locale)}</span>
-        <span>
-          {city} · {apartment.floor} {text.floor}
-        </span>
+        <span>{city} · {apartment.floor} {text.floor}</span>
       </div>
 
       <Link href={`/apartment/${apartment.id}`} aria-label={`${text.openPlanAria}: ${displayApartment.title}`}>
@@ -39,25 +38,15 @@ export function ApartmentCard({ apartment, locale = "ru" }: { apartment: Apartme
       </Link>
 
       <div>
-        <span className="apartment-complex-badge">
-          {city} · {complexName}
-        </span>
+        <span className="apartment-complex-badge">{city} · {complexName}</span>
         <h3>{displayApartment.title}</h3>
       </div>
 
-      <p className="muted">
-        {district}, {displayApartment.building}, {displayApartment.section}. {text.view}: {displayApartment.windowView}.
-      </p>
+      <p className="muted">{district}, {displayApartment.building}, {displayApartment.section}. {text.view}: {displayApartment.windowView}.</p>
 
       <div className="card-metrics">
-        <div>
-          <small>{text.area}</small>
-          <strong>{formatArea(apartment.totalArea, locale)}</strong>
-        </div>
-        <div>
-          <small>{text.price}</small>
-          <strong>{formatPrice(apartment.price, locale)}</strong>
-        </div>
+        <div><small>{text.area}</small><strong>{formatArea(apartment.totalArea, locale)}</strong></div>
+        <div><small>{text.price}</small><strong><CurrencyPrice value={apartment.price} /></strong></div>
       </div>
 
       <ApartmentCardActions apartment={apartment} effectiveStatus={effectiveStatus} locale={locale} />
