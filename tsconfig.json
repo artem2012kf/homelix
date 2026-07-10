@@ -23,6 +23,9 @@
       }
     ],
     "paths": {
+      "@/lib/apartments": [
+        "./lib/catalog-apartments.ts"
+      ],
       "@/*": [
         "./*"
       ]
