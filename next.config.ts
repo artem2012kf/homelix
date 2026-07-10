@@ -13,6 +13,7 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "connect-src 'self' https:",
+  "frame-src 'self' https://www.openstreetmap.org",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -23,6 +24,9 @@ const contentSecurityPolicy = [
 const nextConfig: NextConfig & { allowedDevOrigins?: string[] } = {
   reactStrictMode: true,
   allowedDevOrigins: configuredDevOrigins,
+  images: {
+    formats: ["image/avif", "image/webp"]
+  },
   async headers() {
     return [
       {
