@@ -1,11 +1,32 @@
--- PostgreSQL schema для полноценной версии сайта застройщика.
--- В текущем MVP эти же сущности имитируются локальной JSON-базой: data/database.json.
+-- PostgreSQL schema для production-версии Homelix.
+-- Выполняйте миграции через отдельного пользователя БД и не выдавайте service-role ключ клиенту.
+
+create extension if not exists pgcrypto;
 
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   email text not null unique,
   password_hash text not null,
   created_at timestamptz not null default now()
+);
+
+create table if not exists sessions (
+  token_hash text primary key,
+  user_id uuid not null references users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz
+);
+
+create index if not exists sessions_user_id_idx on sessions(user_id);
+create index if not exists sessions_expires_at_idx on sessions(expires_at);
+
+create table if not exists password_reset_tokens (
+  token_hash text primary key,
+  user_id uuid not null references users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  used_at timestamptz
 );
 
 create table if not exists projects (
@@ -33,12 +54,13 @@ create table if not exists apartments (
   project_id uuid references projects(id) on delete set null,
   building_id uuid references buildings(id) on delete set null,
   section_id uuid references sections(id) on delete set null,
+  city text not null,
   title text not null,
   floor integer not null,
   rooms_count integer not null,
   total_area numeric(8, 2) not null,
-  price integer not null,
-  mortgage_payment integer not null,
+  price bigint not null check (price >= 0),
+  mortgage_payment bigint not null check (mortgage_payment >= 0),
   status text not null check (status in ('available', 'reserved', 'sold')),
   window_view text not null,
   ceiling_height numeric(4, 2) not null,
@@ -89,8 +111,8 @@ create table if not exists furniture_items (
   title text not null,
   category text not null,
   room text not null,
-  price integer not null,
-  old_price integer,
+  price bigint not null check (price >= 0),
+  old_price bigint,
   dimensions text not null,
   material text not null,
   color text not null,
