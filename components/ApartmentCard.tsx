@@ -21,7 +21,8 @@ export function ApartmentCard({ apartment, locale = "ru" }: { apartment: Apartme
   const complex = getResidentialComplexByApartmentId(apartment.id, apartment.project);
   const displayApartment = localizeApartment(apartment, locale);
   const complexName = translateComplexName(complex.name, locale);
-  const district = translatePlace(complex.district, locale);
+  const district = translatePlace(complex.microdistrict ?? complex.district, locale);
+  const city = translatePlace(apartment.city, locale);
   const text = siteText[locale].card;
 
   return (
@@ -29,7 +30,7 @@ export function ApartmentCard({ apartment, locale = "ru" }: { apartment: Apartme
       <div className="card-topline">
         <span className={`status status-${effectiveStatus}`}>{statusLabel(effectiveStatus, locale)}</span>
         <span>
-          {apartment.floor} {text.floor}
+          {city} · {apartment.floor} {text.floor}
         </span>
       </div>
 
@@ -50,13 +51,13 @@ export function ApartmentCard({ apartment, locale = "ru" }: { apartment: Apartme
             fontWeight: 900
           }}
         >
-          {complexName}
+          {city} · {complexName}
         </span>
         <h3>{displayApartment.title}</h3>
       </div>
 
       <p className="muted">
-        {complexName}, {district}, {displayApartment.building}, {displayApartment.section}. {text.view}: {displayApartment.windowView}.
+        {district}, {displayApartment.building}, {displayApartment.section}. {text.view}: {displayApartment.windowView}.
       </p>
 
       <div className="card-metrics">
