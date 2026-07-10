@@ -6,11 +6,11 @@ import { SmartRecommendationBell } from "@/components/SmartRecommendationBell";
 import { apartments } from "@/lib/apartments";
 
 export const metadata: Metadata = {
-  title: "ЖК Солнечный квартал — выбор квартиры с ИИ",
-  description: "Интерактивный сайт застройщика с планировками квартир и ИИ-консультантом.",
+  title: "Homelix — выбор квартиры с интерактивным планом",
+  description: "Интерактивный сайт застройщика с планировками квартир, подбором мебели и цифровым консультантом.",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/images/mascot-user.svg",
+    shortcut: "/images/mascot-user.svg",
     apple: "/images/mascot.png"
   }
 };
