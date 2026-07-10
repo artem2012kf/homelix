@@ -2,21 +2,16 @@ import apartmentData from "@/data/apartments.json";
 import layoutData from "@/data/apartment-layouts.json";
 import type { Apartment, ApartmentStatus, Room, RoomPlan, RoomType } from "@/types/apartment";
 
-type RawRoom = {
-  id: string;
-  type: RoomType;
-  name: string;
-  area: number;
-};
-
 type RawApartment = Omit<Apartment, "status" | "rooms"> & {
   status: string;
   layoutId: string;
-  rooms: RawRoom[];
 };
 
 type RawLayoutRoom = RoomPlan & {
   roomId: string;
+  type: RoomType;
+  name: string;
+  areaShare: number;
 };
 
 type RoomCopy = {
@@ -25,7 +20,7 @@ type RoomCopy = {
   prompts: string[];
 };
 
-const EXPECTED_APARTMENT_COUNT = 15;
+const EXPECTED_APARTMENT_COUNT = 30;
 
 const ROOM_COPY: Record<RoomType, RoomCopy> = {
   hall: {
@@ -80,21 +75,29 @@ function polygonFromPlan(plan: RoomPlan) {
   return `${plan.x},${plan.y} ${right},${plan.y} ${right},${bottom} ${plan.x},${bottom}`;
 }
 
-function buildRoom(apartmentId: string, rawRoom: RawRoom, plan: RoomPlan): Room {
+function buildRoom(apartment: RawApartment, rawRoom: RawLayoutRoom, area: number): Room {
   const copy = ROOM_COPY[rawRoom.type];
-  const roomName = rawRoom.name.toLowerCase();
+  const plan: RoomPlan = {
+    x: rawRoom.x,
+    y: rawRoom.y,
+    width: rawRoom.width,
+    height: rawRoom.height
+  };
 
   return {
-    ...rawRoom,
+    id: rawRoom.roomId,
+    type: rawRoom.type,
+    name: rawRoom.name,
+    area,
     plan,
-    description: `${copy.description} Площадь помещения — ${rawRoom.area} м².`,
+    description: `${copy.description} Площадь помещения — ${area} м².`,
     furnitureTips: [...copy.furnitureTips],
     aiHints: [
-      `Отвечайте по помещению «${rawRoom.name}» площадью ${rawRoom.area} м² в квартире ${apartmentId}.`,
+      `Отвечайте по помещению «${rawRoom.name}» площадью ${area} м² в квартире ${apartment.id}, город ${apartment.city}.`,
       "Не обещайте перепланировку, перенос мокрых зон или точное размещение без проверки размеров.",
       "При советах по мебели сохраняйте свободный проход и не перекрывайте двери и окна."
     ],
-    chatPrompts: [`Как лучше использовать ${roomName} ${rawRoom.area} м²?`, ...copy.prompts],
+    chatPrompts: [`Как лучше использовать ${rawRoom.name.toLowerCase()} ${area} м²?`, ...copy.prompts],
     polygon: polygonFromPlan(plan),
     labelX: Math.round(plan.x + plan.width / 2),
     labelY: Math.round(plan.y + plan.height / 2)
@@ -107,20 +110,24 @@ function buildApartment(rawApartment: RawApartment, layouts: Record<string, RawL
   }
 
   const layout = layouts[rawApartment.layoutId];
-  if (!layout) {
+  if (!layout?.length) {
     throw new Error(`Для квартиры ${rawApartment.id} не найдена планировка ${rawApartment.layoutId}`);
   }
 
-  const planByRoomId = new Map(layout.map(({ roomId, ...plan }) => [roomId, plan] as const));
-  const rooms = rawApartment.rooms.map((room) => {
-    const plan = planByRoomId.get(room.id);
-    if (!plan) throw new Error(`В планировке ${rawApartment.layoutId} отсутствует комната ${room.id}`);
-    return buildRoom(rawApartment.id, room, plan);
-  });
-
-  if (planByRoomId.size !== rooms.length) {
-    throw new Error(`Планировка ${rawApartment.layoutId} содержит лишние или повторяющиеся комнаты`);
+  const shareTotal = layout.reduce((sum, room) => sum + room.areaShare, 0);
+  if (Math.abs(shareTotal - 1) > 0.001) {
+    throw new Error(`Сумма areaShare в планировке ${rawApartment.layoutId} должна быть равна 1`);
   }
+
+  let allocatedArea = 0;
+  const rooms = layout.map((room, index) => {
+    const area =
+      index === layout.length - 1
+        ? Math.round((rawApartment.totalArea - allocatedArea) * 10) / 10
+        : Math.round(rawApartment.totalArea * room.areaShare * 10) / 10;
+    allocatedArea += area;
+    return buildRoom(rawApartment, room, area);
+  });
 
   const { layoutId: _layoutId, ...apartment } = rawApartment;
   return {

@@ -22,20 +22,8 @@ export type Room = {
   area: number;
   description: string;
   furnitureTips: string[];
-  /**
-   * Внутренние подсказки для ИИ-консультанта.
-   * Они не обязаны отображаться пользователю, но передаются модели как контекст комнаты.
-   */
   aiHints: string[];
-  /**
-   * Видимые быстрые вопросы для пользователя. Если поле не заполнено,
-   * чат автоматически создаст разные подсказки по типу комнаты.
-   */
   chatPrompts?: string[];
-  /**
-   * Координаты помещения берутся из data/apartment-layouts.json.
-   * Поле опционально только для обратной совместимости со старыми данными.
-   */
   plan?: RoomPlan;
   polygon: string;
   labelX: number;
@@ -47,6 +35,7 @@ export type ApartmentStatus = "available" | "reserved" | "sold";
 export type Apartment = {
   id: string;
   title: string;
+  city: string;
   project: string;
   building: string;
   section: string;

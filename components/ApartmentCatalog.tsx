@@ -5,7 +5,7 @@ import { ApartmentCard } from "@/components/ApartmentCard";
 import { useAuth } from "@/components/AuthProvider";
 import type { Apartment } from "@/types/apartment";
 import { formatArea, formatPrice } from "@/lib/format";
-import { siteText, type Locale } from "@/lib/i18n";
+import { siteText, translatePlace, type Locale } from "@/lib/i18n";
 
 type SortOption =
   | "recommended"
@@ -35,40 +35,32 @@ function compareInsideStatus(a: Apartment, b: Apartment, sort: SortOption) {
   if (sort === "rooms-asc") return a.roomsCount - b.roomsCount || a.totalArea - b.totalArea;
   if (sort === "rooms-desc") return b.roomsCount - a.roomsCount || b.totalArea - a.totalArea;
   if (sort === "mortgage-asc") return a.mortgagePayment - b.mortgagePayment || a.price - b.price;
-
   return a.price - b.price;
 }
 
 function trackSortInterest(sort: SortOption) {
   if (typeof window === "undefined") return;
-
-  window.dispatchEvent(
-    new CustomEvent("sq-track-interest", {
-      detail: {
-        type: "sort",
-        sort
-      }
-    })
-  );
+  window.dispatchEvent(new CustomEvent("sq-track-interest", { detail: { type: "sort", sort } }));
 }
 
 function sortApartments(items: Apartment[], sort: SortOption) {
   return [...items].sort((a, b) => {
     const statusCompare = statusWeight[a.status] - statusWeight[b.status];
-
-    if (statusCompare !== 0) {
-      return statusCompare;
-    }
-
-    return compareInsideStatus(a, b, sort);
+    return statusCompare !== 0 ? statusCompare : compareInsideStatus(a, b, sort);
   });
 }
 
 export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Apartment[]; locale?: Locale }) {
   const [sort, setSort] = useState<SortOption>("recommended");
+  const [city, setCity] = useState("all");
   const { getApartmentStatus, reservedApartmentIds } = useAuth();
   const text = siteText[locale].catalog;
   const sortLabels = text.sortLabels;
+
+  const cities = useMemo(
+    () => [...new Set(apartments.map((apartment) => apartment.city))].sort((a, b) => a.localeCompare(b, "ru")),
+    [apartments]
+  );
 
   const effectiveApartments = useMemo(
     () =>
@@ -79,23 +71,24 @@ export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Ap
     [apartments, getApartmentStatus, reservedApartmentIds]
   );
 
-  const sortedApartments = useMemo(() => sortApartments(effectiveApartments, sort), [effectiveApartments, sort]);
-
-  const availableApartments = useMemo(
-    () => effectiveApartments.filter((apartment) => apartment.status === "available"),
-    [effectiveApartments]
+  const filteredApartments = useMemo(
+    () => (city === "all" ? effectiveApartments : effectiveApartments.filter((apartment) => apartment.city === city)),
+    [city, effectiveApartments]
   );
 
+  const sortedApartments = useMemo(() => sortApartments(filteredApartments, sort), [filteredApartments, sort]);
+  const availableApartments = useMemo(
+    () => filteredApartments.filter((apartment) => apartment.status === "available"),
+    [filteredApartments]
+  );
   const cheapestApartment = useMemo(
     () => [...availableApartments].sort((a, b) => a.price - b.price)[0],
     [availableApartments]
   );
-
   const largestApartment = useMemo(
     () => [...availableApartments].sort((a, b) => b.totalArea - a.totalArea)[0],
     [availableApartments]
   );
-
   const highestFloorApartment = useMemo(
     () => [...availableApartments].sort((a, b) => b.floor - a.floor)[0],
     [availableApartments]
@@ -113,23 +106,37 @@ export function ApartmentCatalog({ apartments, locale = "ru" }: { apartments: Ap
           </span>
         </div>
 
-        <label className="sort-control">
-          <span>{text.sortControl}</span>
-          <select
-            value={sort}
-            onChange={(event) => {
-              const nextSort = event.target.value as SortOption;
-              setSort(nextSort);
-              trackSortInterest(nextSort);
-            }}
-          >
-            {(Object.entries(sortLabels) as [SortOption, string][]).map(([value, label]) => (
-              <option value={value} key={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <label className="sort-control">
+            <span>{text.cityFilter}</span>
+            <select value={city} onChange={(event) => setCity(event.target.value)}>
+              <option value="all">{text.allCities}</option>
+              {cities.map((cityName) => (
+                <option value={cityName} key={cityName}>
+                  {translatePlace(cityName, locale)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="sort-control">
+            <span>{text.sortControl}</span>
+            <select
+              value={sort}
+              onChange={(event) => {
+                const nextSort = event.target.value as SortOption;
+                setSort(nextSort);
+                trackSortInterest(nextSort);
+              }}
+            >
+              {(Object.entries(sortLabels) as [SortOption, string][]).map(([value, label]) => (
+                <option value={value} key={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="quick-sort-row" aria-label={text.quickSortAria}>

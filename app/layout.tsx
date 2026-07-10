@@ -7,8 +7,9 @@ import { SmartRecommendationBell } from "@/components/SmartRecommendationBell";
 import { apartments } from "@/lib/apartments";
 
 export const metadata: Metadata = {
-  title: "Homelix — выбор квартиры с интерактивным планом",
-  description: "Интерактивный сайт застройщика с планировками квартир, подбором мебели и цифровым консультантом.",
+  title: "Homelix — квартиры в новостройках по всей России",
+  description:
+    "Федеральный каталог квартир с интерактивными планировками, фильтром по городам, подбором мебели и цифровым консультантом.",
   alternates: {
     languages: {
       "ru-RU": "/",
