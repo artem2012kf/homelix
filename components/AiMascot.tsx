@@ -1,13 +1,21 @@
+import { MascotImage } from "@/components/MascotImage";
 import type { Room } from "@/types/apartment";
 
 export function AiMascot({ room, isThinking }: { room?: Room; isThinking?: boolean }) {
   return (
     <div className="mascot-wrap" aria-live="polite">
-      <div className={`mascot ${isThinking ? "mascot-thinking" : ""}`}>
-        <div className="mascot-face">
-          <span className="eye" />
-          <span className="eye" />
-        </div>
+      <div
+        aria-hidden="true"
+        style={{
+          display: "grid",
+          width: 74,
+          minHeight: 92,
+          placeItems: "center",
+          filter: isThinking ? "drop-shadow(0 18px 26px rgba(249, 62, 62, 0.28))" : "drop-shadow(0 14px 22px rgba(0, 59, 166, 0.18))",
+          animation: "mascotFloat 3.2s ease-in-out infinite"
+        }}
+      >
+        <MascotImage width={68} style={{ width: 68, height: "auto" }} />
       </div>
       <div className="mascot-bubble">
         {isThinking ? (

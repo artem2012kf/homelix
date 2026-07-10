@@ -1,4 +1,4 @@
-import type { Room } from "@/types/apartment";
+import type { Room, RoomPlan } from "@/types/apartment";
 
 export type VisualRoom = Room & {
   visualX: number;
@@ -38,18 +38,6 @@ export type VisualWindow = {
   y2: number;
 };
 
-type LayoutRect = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-type RoomGroup = {
-  room: Room;
-  weight: number;
-};
-
 export const PLAN_FRAME = {
   x: 58,
   y: 58,
@@ -87,12 +75,11 @@ export function isBalcony(room: Room) {
 
 export function isStorage(room: Room) {
   const name = normalizedName(room);
-  return room.type === "wardrobe" || name.includes("гардер") || name.includes("клад") || name.includes("постироч");
+  return room.type === "wardrobe" || name.includes("гардер") || name.includes("клад") || name.includes("постироч") || name.includes("шкаф-ниша");
 }
 
 export function isKitchen(room: Room) {
-  const name = normalizedName(room);
-  return room.type === "kitchen" || name.includes("кухн");
+  return room.type === "kitchen" || normalizedName(room).includes("кухн");
 }
 
 export function isLiving(room: Room) {
@@ -102,22 +89,14 @@ export function isLiving(room: Room) {
 
 export function isBedroom(room: Room) {
   const name = normalizedName(room);
-  return room.type === "bedroom" || room.type === "children" || name.includes("спаль") || name.includes("детск");
+  return room.type === "bedroom" || room.type === "children" || name.includes("спаль") || name.includes("детск") || name.includes("кабинет");
 }
 
-function isServiceRoom(room: Room) {
-  return isHall(room) || isBathroom(room) || isStorage(room);
-}
-
-function roomWeight(room: Room) {
-  return Math.max(room.area, 2.5);
-}
-
-function rect(room: Room, area: LayoutRect): VisualRoom {
-  const x = Math.round(area.x);
-  const y = Math.round(area.y);
-  const width = Math.max(1, Math.round(area.width));
-  const height = Math.max(1, Math.round(area.height));
+function visualRoom(room: Room, plan: RoomPlan): VisualRoom {
+  const x = Math.round(plan.x);
+  const y = Math.round(plan.y);
+  const width = Math.max(1, Math.round(plan.width));
+  const height = Math.max(1, Math.round(plan.height));
 
   return {
     ...room,
@@ -130,223 +109,34 @@ function rect(room: Room, area: LayoutRect): VisualRoom {
   };
 }
 
-function hashId(apartmentId: string | undefined) {
-  const value = apartmentId || "default";
-  let hash = 2166136261;
+function fallbackPlan(rooms: Room[]) {
+  const columns = Math.max(1, Math.ceil(Math.sqrt(rooms.length)));
+  const rows = Math.max(1, Math.ceil(rooms.length / columns));
+  const cellWidth = PLAN_FRAME.width / columns;
+  const cellHeight = PLAN_FRAME.height / rows;
 
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
+  return rooms.map((room, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const isLastColumn = column === columns - 1;
+    const isLastRow = row === rows - 1;
 
-  return hash >>> 0;
-}
-
-function totalWeight(items: RoomGroup[]) {
-  return items.reduce((sum, item) => sum + item.weight, 0);
-}
-
-function balancedSplit(items: RoomGroup[]): [RoomGroup[], RoomGroup[]] {
-  if (items.length <= 1) return [items, []];
-
-  const total = totalWeight(items);
-  let running = 0;
-  let splitIndex = 1;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (let index = 1; index < items.length; index += 1) {
-    running += items[index - 1].weight;
-    const distance = Math.abs(total / 2 - running);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      splitIndex = index;
-    }
-  }
-
-  return [items.slice(0, splitIndex), items.slice(splitIndex)];
-}
-
-function weightedLayout(items: RoomGroup[], area: LayoutRect, depth = 0): VisualRoom[] {
-  if (items.length === 0) return [];
-  if (items.length === 1) return [rect(items[0].room, area)];
-
-  const sorted = [...items].sort((a, b) => b.weight - a.weight || a.room.id.localeCompare(b.room.id));
-  const [first, second] = balancedSplit(sorted);
-  const firstWeight = totalWeight(first);
-  const ratio = firstWeight / Math.max(totalWeight(sorted), 1);
-  const splitVertically = area.width / Math.max(area.height, 1) > 1.15 || (depth % 2 === 0 && area.width >= area.height);
-
-  if (splitVertically) {
-    const minimumWidth = Math.min(96, area.width / 2);
-    const firstWidth = clamp(Math.round(area.width * ratio), minimumWidth, area.width - minimumWidth);
-    return [
-      ...weightedLayout(first, { ...area, width: firstWidth }, depth + 1),
-      ...weightedLayout(second, { x: area.x + firstWidth, y: area.y, width: area.width - firstWidth, height: area.height }, depth + 1)
-    ];
-  }
-
-  const minimumHeight = Math.min(82, area.height / 2);
-  const firstHeight = clamp(Math.round(area.height * ratio), minimumHeight, area.height - minimumHeight);
-  return [
-    ...weightedLayout(first, { ...area, height: firstHeight }, depth + 1),
-    ...weightedLayout(second, { x: area.x, y: area.y + firstHeight, width: area.width, height: area.height - firstHeight }, depth + 1)
-  ];
-}
-
-function stackRooms(rooms: Room[], area: LayoutRect, hall: Room | undefined, reverse: boolean) {
-  if (rooms.length === 0) return [];
-
-  const ordered = [...rooms].sort((a, b) => {
-    if (a.id === hall?.id) return -1;
-    if (b.id === hall?.id) return 1;
-    if (isBathroom(a) !== isBathroom(b)) return isBathroom(a) ? -1 : 1;
-    return b.area - a.area;
-  });
-
-  const hallHeight = hall ? clamp(area.height * 0.34, 122, 172) : 0;
-  const otherRooms = ordered.filter((room) => room.id !== hall?.id);
-  const otherWeight = otherRooms.reduce((sum, room) => sum + roomWeight(room), 0);
-  const remainingHeight = area.height - hallHeight;
-  const result: VisualRoom[] = [];
-  let cursorY = reverse ? area.y + area.height : area.y;
-
-  const add = (room: Room, height: number) => {
-    const roundedHeight = Math.max(1, Math.round(height));
-    const y = reverse ? cursorY - roundedHeight : cursorY;
-    result.push(rect(room, { x: area.x, y, width: area.width, height: roundedHeight }));
-    cursorY = reverse ? y : y + roundedHeight;
-  };
-
-  if (hall) add(hall, hallHeight);
-
-  otherRooms.forEach((room, index) => {
-    const usedHeight = Math.abs(cursorY - (reverse ? area.y + area.height : area.y));
-    const available = area.height - usedHeight;
-    const height = index === otherRooms.length - 1 ? available : remainingHeight * (roomWeight(room) / Math.max(otherWeight, 1));
-    add(room, height);
-  });
-
-  return result;
-}
-
-function layoutMainRooms(rooms: Room[], area: LayoutRect, commonAtTop: boolean) {
-  if (rooms.length === 0) return [];
-
-  const commonRooms = rooms.filter((room) => isKitchen(room) || isLiving(room));
-  const privateRooms = rooms.filter((room) => !commonRooms.some((candidate) => candidate.id === room.id));
-
-  if (commonRooms.length === 0 || privateRooms.length === 0) {
-    return weightedLayout(rooms.map((room) => ({ room, weight: roomWeight(room) })), area);
-  }
-
-  const commonShare = clamp(
-    commonRooms.reduce((sum, room) => sum + roomWeight(room), 0) /
-      rooms.reduce((sum, room) => sum + roomWeight(room), 0),
-    0.3,
-    0.48
-  );
-  const commonHeight = Math.round(area.height * commonShare);
-  const commonArea = commonAtTop
-    ? { x: area.x, y: area.y, width: area.width, height: commonHeight }
-    : { x: area.x, y: area.y + area.height - commonHeight, width: area.width, height: commonHeight };
-  const privateArea = commonAtTop
-    ? { x: area.x, y: area.y + commonHeight, width: area.width, height: area.height - commonHeight }
-    : { x: area.x, y: area.y, width: area.width, height: area.height - commonHeight };
-
-  return [
-    ...weightedLayout(commonRooms.map((room) => ({ room, weight: roomWeight(room) })), commonArea),
-    ...weightedLayout(privateRooms.map((room) => ({ room, weight: roomWeight(room) })), privateArea)
-  ];
-}
-
-function mirrorRoom(room: VisualRoom, horizontal: boolean, vertical: boolean): VisualRoom {
-  const mirroredX = horizontal
-    ? PLAN_FRAME.x + PLAN_FRAME.width - (room.visualX - PLAN_FRAME.x) - room.visualWidth
-    : room.visualX;
-  const mirroredY = vertical
-    ? PLAN_FRAME.y + PLAN_FRAME.height - (room.visualY - PLAN_FRAME.y) - room.visualHeight
-    : room.visualY;
-
-  return rect(room, {
-    x: mirroredX,
-    y: mirroredY,
-    width: room.visualWidth,
-    height: room.visualHeight
+    return visualRoom(room, {
+      x: PLAN_FRAME.x + column * cellWidth,
+      y: PLAN_FRAME.y + row * cellHeight,
+      width: isLastColumn ? PLAN_FRAME.width - column * cellWidth : cellWidth,
+      height: isLastRow ? PLAN_FRAME.height - row * cellHeight : cellHeight
+    });
   });
 }
 
-function buildLayout(apartmentId: string | undefined, rooms: Room[]) {
+export function getApartmentVisualRooms(_apartmentId: string | undefined, rooms: Room[]) {
   if (rooms.length === 0) return [];
-
-  const variant = hashId(apartmentId) % 4;
-  const mirrorHorizontal = variant === 1 || variant === 3;
-  const mirrorVertical = variant === 2 || variant === 3;
-  const hall = rooms.find(isHall);
-  const serviceRooms = rooms.filter(isServiceRoom);
-  const balconies = rooms.filter(isBalcony);
-  const mainRooms = rooms.filter((room) => !isServiceRoom(room) && !isBalcony(room));
-  const hasServiceZone = serviceRooms.length > 0;
-  const serviceWidth = hasServiceZone ? clamp(142 + serviceRooms.length * 9, 154, 194) : 0;
-  const balconyHeight = balconies.length > 0 ? clamp(82 + balconies.length * 8, 88, 112) : 0;
-  const mainX = PLAN_FRAME.x + serviceWidth;
-  const mainWidth = PLAN_FRAME.width - serviceWidth;
-  const mainHeight = PLAN_FRAME.height - balconyHeight;
-  const visualRooms: VisualRoom[] = [];
-
-  if (hasServiceZone) {
-    visualRooms.push(
-      ...stackRooms(
-        serviceRooms,
-        { x: PLAN_FRAME.x, y: PLAN_FRAME.y, width: serviceWidth, height: PLAN_FRAME.height },
-        hall,
-        mirrorVertical
-      )
-    );
+  if (rooms.every((room) => room.plan)) {
+    return rooms.map((room) => visualRoom(room, room.plan as RoomPlan));
   }
 
-  visualRooms.push(
-    ...layoutMainRooms(
-      mainRooms,
-      {
-        x: mainX,
-        y: PLAN_FRAME.y + (mirrorVertical ? balconyHeight : 0),
-        width: mainWidth,
-        height: mainHeight
-      },
-      !mirrorVertical
-    )
-  );
-
-  if (balconies.length > 0) {
-    visualRooms.push(
-      ...weightedLayout(
-        balconies.map((room) => ({ room, weight: roomWeight(room) })),
-        {
-          x: mainX,
-          y: mirrorVertical ? PLAN_FRAME.y : PLAN_FRAME.y + PLAN_FRAME.height - balconyHeight,
-          width: mainWidth,
-          height: balconyHeight
-        }
-      )
-    );
-  }
-
-  const placedIds = new Set(visualRooms.map((room) => room.id));
-  const missingRooms = rooms.filter((room) => !placedIds.has(room.id));
-  if (missingRooms.length > 0) {
-    visualRooms.push(
-      ...weightedLayout(
-        missingRooms.map((room) => ({ room, weight: roomWeight(room) })),
-        { x: mainX, y: PLAN_FRAME.y, width: mainWidth, height: PLAN_FRAME.height }
-      )
-    );
-  }
-
-  return visualRooms.map((room) => mirrorRoom(room, mirrorHorizontal, false));
-}
-
-export function getApartmentVisualRooms(apartmentId: string | undefined, rooms: Room[]) {
-  return buildLayout(apartmentId, rooms);
+  return fallbackPlan(rooms);
 }
 
 export function roomFill(room: Room) {
@@ -458,7 +248,7 @@ function entryDoor(hall: VisualRoom, bounds: VisualBounds): VisualDoor {
   };
 }
 
-function neighborScore(room: VisualRoom, neighbor: VisualRoom) {
+function neighborScore(neighbor: VisualRoom) {
   if (isHall(neighbor)) return 100;
   if (isKitchen(neighbor) || isLiving(neighbor)) return 70;
   if (isBedroom(neighbor)) return 45;
@@ -486,7 +276,7 @@ export function getVisualDoors(visualRooms: VisualRoom[]) {
         door: doorBetween(room, candidate, isKitchen(room) || isLiving(room) ? 54 : DEFAULT_DOOR_SIZE)
       }))
       .filter((item): item is { candidate: VisualRoom; door: Omit<VisualDoor, "id" | "roomId"> } => Boolean(item.door))
-      .sort((a, b) => neighborScore(room, b.candidate) - neighborScore(room, a.candidate))[0];
+      .sort((a, b) => neighborScore(b.candidate) - neighborScore(a.candidate))[0];
 
     if (neighbor) {
       doors.push({
@@ -502,7 +292,7 @@ export function getVisualDoors(visualRooms: VisualRoom[]) {
       .filter((candidate) => candidate.id !== balcony.id)
       .map((candidate) => ({ candidate, door: doorBetween(balcony, candidate, 58) }))
       .filter((item): item is { candidate: VisualRoom; door: Omit<VisualDoor, "id" | "roomId"> } => Boolean(item.door))
-      .sort((a, b) => neighborScore(balcony, b.candidate) - neighborScore(balcony, a.candidate))[0];
+      .sort((a, b) => neighborScore(b.candidate) - neighborScore(a.candidate))[0];
 
     if (neighbor) {
       doors.push({

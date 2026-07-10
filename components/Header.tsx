@@ -14,11 +14,12 @@ export function Header() {
           <small>Интерактивный выбор квартир</small>
         </span>
       </Link>
-      <nav className="header-nav" aria-label="Главная навигация">
+      <nav className="header-nav" aria-label="Главная навигация" style={{ flexWrap: "wrap" }}>
         <a href="/#apartments">Квартиры</a>
         <a href="/#complexes">ЖК Тюмени</a>
         <Link href="/ai">ИИ без комнат</Link>
         <Link href="/furniture">Магазин мебели</Link>
+        <Link href="/project">О проекте</Link>
         <a href="/#contacts">Контакты</a>
         <AuthHeaderActions />
       </nav>

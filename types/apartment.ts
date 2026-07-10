@@ -8,6 +8,13 @@ export type RoomType =
   | "balcony"
   | "wardrobe";
 
+export type RoomPlan = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export type Room = {
   id: string;
   type: RoomType;
@@ -25,6 +32,11 @@ export type Room = {
    * чат автоматически создаст разные подсказки по типу комнаты.
    */
   chatPrompts?: string[];
+  /**
+   * Координаты помещения берутся из data/apartment-layouts.json.
+   * Поле опционально только для обратной совместимости со старыми данными.
+   */
+  plan?: RoomPlan;
   polygon: string;
   labelX: number;
   labelY: number;

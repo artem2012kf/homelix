@@ -1,5 +1,6 @@
-import Image from "next/image";
+import Link from "next/link";
 import { ApartmentCatalog } from "@/components/ApartmentCatalog";
+import { MascotImage } from "@/components/MascotImage";
 import { apartments } from "@/lib/apartments";
 import { formatPrice } from "@/lib/format";
 import { residentialComplexes } from "@/lib/residential-complexes";
@@ -23,6 +24,9 @@ export default function HomePage() {
             <a className="button button-primary" href="#apartments">
               Смотреть квартиры
             </a>
+            <Link className="button button-ghost" href="/project">
+              Что нужно доделать
+            </Link>
             <a className="button button-ghost" href="#complexes">
               ЖК Тюмени
             </a>
@@ -56,7 +60,7 @@ export default function HomePage() {
           <div
             style={{
               width: "min(100%, 430px)",
-              minHeight: 430,
+              minHeight: 470,
               display: "grid",
               placeItems: "center",
               padding: 34,
@@ -68,13 +72,15 @@ export default function HomePage() {
               textAlign: "center"
             }}
           >
-            <Image
-              src="/images/mascot.png"
-              alt="Маскот ЖК Солнечный квартал"
-              width={270}
-              height={270}
+            <MascotImage
+              width={255}
               priority
-              style={{ width: "min(78%, 270px)", height: "auto", objectFit: "contain" }}
+              alt="Маскот Homelix"
+              style={{
+                width: "min(76%, 255px)",
+                height: "auto",
+                filter: "drop-shadow(0 26px 36px rgba(249, 62, 62, 0.24))"
+              }}
             />
             <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
               <strong style={{ fontSize: 30, lineHeight: 1, color: "var(--text)" }}>ЖК Тюмени в одном каталоге</strong>
@@ -227,6 +233,47 @@ export default function HomePage() {
             <h3>Личный кабинет</h3>
             <p>После регистрации клиент сохраняет избранное и бронирует свободные квартиры.</p>
           </article>
+        </div>
+      </section>
+
+      <section className="section" id="project-gaps">
+        <div className="section-heading wide-heading">
+          <span className="eyebrow">Недостатки проекта</span>
+          <h2>Что еще необходимо подтвердить и разработать</h2>
+          <p>
+            Отдельная страница содержит только пробелы проекта и план действий: без баллов и самооценки. Главные задачи —
+            доказать спрос, подтвердить экономику, подготовить технические материалы и провести реальный пилот.
+          </p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          {[
+            ["Рынок", "Нет CustDev, письма заинтересованности и подтвержденного спроса от застройщика."],
+            ["Экономика", "Нет фактических затрат, подтвержденной цены, TAM/SAM/SOM и реальной готовности платить."],
+            ["Внедрение", "Нет CRM, промышленной базы данных, панели менеджера, аналитики и мониторинга."],
+            ["Защита", "Нужны презентация, видео, QR-раздатка, конкурентная таблица и репетиции команды."]
+          ].map(([title, text]) => (
+            <article
+              key={title}
+              style={{
+                padding: 22,
+                border: "1px solid var(--line)",
+                borderRadius: 26,
+                background: "rgba(255, 255, 255, 0.9)",
+                boxShadow: "0 18px 48px rgba(0, 59, 166, 0.08)"
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 24 }}>{title}</h3>
+              <p style={{ margin: "10px 0 0", color: "var(--muted)", lineHeight: 1.5 }}>{text}</p>
+            </article>
+          ))}
+        </div>
+        <div className="hero-actions">
+          <Link href="/project" className="button button-primary">
+            Открыть список недостатков
+          </Link>
+          <a href="/project#priorities" className="button button-ghost">
+            Приоритеты доработок
+          </a>
         </div>
       </section>
 

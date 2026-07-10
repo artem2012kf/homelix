@@ -1,18 +1,13 @@
-import Image from "next/image";
+import { MascotImage } from "@/components/MascotImage";
 
 export function MascotLogo() {
   return (
-    <Image
-      src="/images/mascot.png"
-      alt=""
+    <MascotImage
       width={44}
-      height={44}
       priority
       style={{
-        display: "block",
         width: "100%",
-        height: "100%",
-        objectFit: "contain"
+        height: "100%"
       }}
     />
   );

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { MarkdownText } from "@/components/MarkdownText";
+import { MascotImage } from "@/components/MascotImage";
 import { postJson } from "@/lib/client-api";
 import {
   clearChatHistory,
@@ -110,11 +111,17 @@ export function AiOnlyChat() {
   return (
     <section className="chat-card ai-only-chat" id="ai-only-chat">
       <div className="ai-only-header">
-        <div className="mascot small-mascot" aria-hidden="true">
-          <div className="mascot-face">
-            <span className="eye" />
-            <span className="eye" />
-          </div>
+        <div
+          aria-hidden="true"
+          style={{
+            display: "grid",
+            width: 82,
+            minHeight: 104,
+            placeItems: "center",
+            filter: "drop-shadow(0 16px 24px rgba(249, 62, 62, 0.22))"
+          }}
+        >
+          <MascotImage width={76} style={{ width: 76, height: "auto" }} />
         </div>
         <div>
           <span className="eyebrow">ИИ-консультант</span>

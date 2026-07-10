@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 672" role="img" aria-labelledby="title desc">
+  <title id="title">Маскот Homelix</title>
+  <desc id="desc">Оранжево-красный круглый персонаж в форме дома с большими глазами и улыбкой.</desc>
+  <defs>
+    <linearGradient id="body-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff984d" />
+      <stop offset="0.52" stop-color="#ff704d" />
+      <stop offset="1" stop-color="#ff3f47" />
+    </linearGradient>
+  </defs>
+  <circle cx="256" cy="416" r="256" fill="url(#body-gradient)" />
+  <path
+    d="M256 0 371 126c9 10 13 20 13 34v40c0 19-15 34-34 34H162c-19 0-34-15-34-34v-40c0-14 4-24 13-34L256 0Z"
+    fill="#3d362d"
+  />
+  <g aria-hidden="true">
+    <circle cx="144" cy="396" r="48" fill="#fff" />
+    <circle cx="144" cy="396" r="39" fill="#000" />
+    <circle cx="128" cy="378" r="22" fill="#fff" />
+    <circle cx="368" cy="396" r="48" fill="#fff" />
+    <circle cx="368" cy="396" r="39" fill="#000" />
+    <circle cx="352" cy="378" r="22" fill="#fff" />
+    <path d="M168 522c61 43 115 43 176 0" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round" />
+  </g>
+</svg>
