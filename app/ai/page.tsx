@@ -10,11 +10,11 @@ export default function AiPage() {
         <Link href="/" className="back-link">
           ← На главную
         </Link>
-        <span className="eyebrow">Отдельный ИИ-консультант</span>
-        <h1>Задайте вопрос без выбора комнаты на планировке</h1>
+        <span className="eyebrow">ИИ-консультант по новостройкам России</span>
+        <h1>Назовите город, бюджет и требования к квартире</h1>
         <p>
-          Эта страница подходит для общей консультации: подбор квартиры, сравнение вариантов, вопросы по площади,
-          стоимости, этажу, отделке и преимуществам жилого комплекса.
+          Консультант сравнивает предложения из 15 городов, учитывает стоимость, площадь, этаж, комнатность и цель
+          покупки. Например: «Подбери двухкомнатную квартиру в Казани до 12 млн ₽».
         </p>
       </section>
 
@@ -22,16 +22,16 @@ export default function AiPage() {
         <AiOnlyChat />
 
         <aside className="available-list-card">
-          <span className="eyebrow">Демо-каталог</span>
-          <h2>Квартиры для консультации</h2>
+          <span className="eyebrow">30 демонстрационных предложений</span>
+          <h2>Квартиры по городам России</h2>
           <div className="available-list">
             {apartments.map((apartment) => (
               <article key={apartment.id}>
                 <div>
                   <span className={`status status-${apartment.status}`}>{statusLabel(apartment.status)}</span>
-                  <h3>{apartment.title}</h3>
+                  <h3>{apartment.city} · {apartment.title}</h3>
                   <p>
-                    {apartment.building}, {apartment.floor} этаж · {formatArea(apartment.totalArea)}
+                    {apartment.project}, {apartment.building}, {apartment.floor} этаж · {formatArea(apartment.totalArea)}
                   </p>
                 </div>
                 <strong>{formatPrice(apartment.price)}</strong>
