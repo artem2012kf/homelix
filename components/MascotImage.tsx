@@ -9,7 +9,7 @@ type MascotImageProps = {
   style?: CSSProperties;
 };
 
-const MASCOT_RATIO = 672 / 512;
+const MASCOT_RATIO = 996 / 913;
 
 export function MascotImage({
   alt = "",
@@ -20,7 +20,7 @@ export function MascotImage({
 }: MascotImageProps) {
   return (
     <Image
-      src="/images/mascot-user.svg"
+      src="/images/mascot-user-new.svg"
       alt={alt}
       width={width}
       height={Math.round(width * MASCOT_RATIO)}
