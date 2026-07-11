@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ApartmentCard } from "@/components/ApartmentCard";
 import { useAuth } from "@/components/AuthProvider";
 import { useCity } from "@/components/CityProvider";
 import { useCart } from "@/components/CartProvider";
 import type { Apartment } from "@/types/apartment";
 
-type Mode = "login" | "register" | "request-reset" | "reset-password";
+type Mode = "login" | "register" | "reset-password";
 type ApiMessage = { message?: string; error?: string; previewResetUrl?: string; previewCode?: string; verificationToken?: string };
 
 export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apartment[]; resetToken?: string }) {
@@ -28,6 +28,10 @@ export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apar
   const [message, setMessage] = useState("");
   const [previewResetUrl, setPreviewResetUrl] = useState("");
   const [previewCode, setPreviewCode] = useState("");
+  const [isMissingAccountOpen, setIsMissingAccountOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isResetSubmitting, setIsResetSubmitting] = useState(false);
+  const [resetMessage, setResetMessage] = useState("");
 
   const favoriteApartments = useMemo(() => apartments.filter((apartment) => favorites.includes(apartment.id)), [apartments, favorites]);
   const reservedApartments = useMemo(() => apartments.filter((apartment) => reservations.includes(apartment.id)), [apartments, reservations]);
@@ -42,6 +46,15 @@ export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apar
     setPassword("");
     setConfirmPassword("");
   }
+
+  useEffect(() => {
+    if (!isMissingAccountOpen) return;
+    const timerId = window.setTimeout(() => {
+      setIsMissingAccountOpen(false);
+      chooseMode("register");
+    }, 2000);
+    return () => window.clearTimeout(timerId);
+  }, [isMissingAccountOpen]);
 
   async function requestVerificationCode() {
     if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -82,6 +95,24 @@ export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apar
     return { ok: true, message: data.message ?? "Инструкция отправлена." };
   }
 
+  async function handlePasswordResetRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isResetSubmitting) return;
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setResetMessage("Укажите корректную почту аккаунта.");
+      return;
+    }
+
+    setIsResetSubmitting(true);
+    setResetMessage("Отправляем ссылку восстановления...");
+    try {
+      const result = await requestPasswordReset();
+      setResetMessage(result.ok ? result.message ?? "Инструкция отправлена." : result.error ?? "Не удалось отправить инструкцию.");
+    } finally {
+      setIsResetSubmitting(false);
+    }
+  }
+
   async function completePasswordReset() {
     if (password !== confirmPassword) return { ok: false, error: "Пароли не совпадают." };
     const response = await fetch("/api/auth/reset-password", {
@@ -113,11 +144,6 @@ export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apar
     setIsSubmitting(true);
     setMessage("Проверяем данные...");
     try {
-      if (mode === "request-reset") {
-        const result = await requestPasswordReset();
-        setMessage(result.ok ? result.message ?? "Инструкция отправлена." : result.error ?? "Не удалось выполнить действие.");
-        return;
-      }
       if (mode === "reset-password") {
         const result = await completePasswordReset();
         setMessage(result.ok ? result.message ?? "Пароль обновлён." : result.error ?? "Не удалось выполнить действие.");
@@ -135,12 +161,32 @@ export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apar
         if (result.ok) window.location.reload();
         return;
       }
+
       const result = await login(email, password);
+      if (!result.ok && result.error === "Такого аккаунта не существует.") {
+        setMessage("");
+        setIsMissingAccountOpen(true);
+        return;
+      }
+
       setMessage(result.ok ? "Вы вошли в кабинет." : result.error ?? "Не удалось войти.");
       if (result.ok) setPassword("");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function openResetModal() {
+    setResetMessage("");
+    setPreviewResetUrl("");
+    setIsResetModalOpen(true);
+  }
+
+  function closeResetModal() {
+    if (isResetSubmitting) return;
+    setIsResetModalOpen(false);
+    setResetMessage("");
+    setPreviewResetUrl("");
   }
 
   if (user) {
@@ -183,50 +229,48 @@ export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apar
     );
   }
 
-  const title = mode === "login" ? "Вход" : mode === "register" ? "Регистрация" : mode === "request-reset" ? "Восстановление пароля" : "Новый пароль";
+  const title = mode === "login" ? "Вход" : mode === "register" ? "Регистрация" : "Новый пароль";
   const description = mode === "register"
     ? "Мы отправим код на почту. Аккаунт создаётся только после подтверждения, поэтому случайный или несуществующий адрес использовать нельзя."
-    : mode === "request-reset"
-      ? "Введите почту аккаунта. Ссылка восстановления действует 20 минут."
-      : mode === "reset-password"
-        ? "Придумайте новый пароль длиной не менее 10 символов."
-        : "Войдите, чтобы сохранять квартиры, покупать и заказывать мебель с доставкой.";
+    : mode === "reset-password"
+      ? "Придумайте новый пароль длиной не менее 10 символов."
+      : "Войдите, чтобы сохранять квартиры, покупать и заказывать мебель с доставкой.";
 
   return (
-    <section className="account-auth-section hall-auth-section">
-      <div className="account-auth-aside">
-        <span className="eyebrow">ХОЛЛ</span>
-        <h2>Квартира, мебель и покупка — в одном кабинете</h2>
-        <ul><li>Подтверждённая почта</li><li>Избранные квартиры</li><li>Бронь и заявка на покупку</li><li>Корзина и доставка мебели</li></ul>
-      </div>
-      <div className="account-card auth-card">
-        <span className="eyebrow">Аккаунт покупателя</span>
-        <h1>{title}</h1>
-        <p>{description}</p>
+    <>
+      <section className="account-auth-section hall-auth-section">
+        <div className="account-auth-aside">
+          <span className="eyebrow">ХОЛЛ</span>
+          <h2>Квартира, мебель и покупка — в одном кабинете</h2>
+          <ul><li>Подтверждённая почта</li><li>Избранные квартиры</li><li>Бронь и заявка на покупку</li><li>Корзина и доставка мебели</li></ul>
+        </div>
+        <div className="account-card auth-card">
+          <span className="eyebrow">Аккаунт покупателя</span>
+          <h1>{title}</h1>
+          <p>{description}</p>
 
-        {mode === "login" || mode === "register" ? (
-          <div className="auth-tabs">
-            <button className={mode === "login" ? "is-active" : ""} type="button" onClick={() => chooseMode("login")}>Войти</button>
-            <button className={mode === "register" ? "is-active" : ""} type="button" onClick={() => chooseMode("register")}>Регистрация</button>
-          </div>
-        ) : null}
-
-        <form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
-          {mode !== "reset-password" ? (
-            <label><span>Почта</span><input type="email" value={email} onChange={(event) => { setEmail(event.target.value); if (mode === "register") { setVerificationToken(""); setVerificationCode(""); } }} placeholder="name@example.com" autoComplete="email" maxLength={254} required /></label>
-          ) : null}
-
-          {mode === "register" ? (
-            <div className="email-verification-box">
-              <button className="button button-ghost" type="button" onClick={requestVerificationCode} disabled={isSendingCode}>
-                {isSendingCode ? "Отправляем..." : verificationToken ? "Отправить новый код" : "Проверить почту и отправить код"}
-              </button>
-              {verificationToken ? <label><span>Код из письма</span><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" required /></label> : null}
-              {previewCode ? <small>Демо-код: <strong>{previewCode}</strong></small> : null}
+          {mode === "login" || mode === "register" ? (
+            <div className="auth-tabs">
+              <button className={mode === "login" ? "is-active" : ""} type="button" onClick={() => chooseMode("login")}>Войти</button>
+              <button className={mode === "register" ? "is-active" : ""} type="button" onClick={() => chooseMode("register")}>Регистрация</button>
             </div>
           ) : null}
 
-          {mode !== "request-reset" ? (
+          <form className="auth-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
+            {mode !== "reset-password" ? (
+              <label><span>Почта</span><input type="email" value={email} onChange={(event) => { setEmail(event.target.value); if (mode === "register") { setVerificationToken(""); setVerificationCode(""); } }} placeholder="name@example.com" autoComplete="email" maxLength={254} required /></label>
+            ) : null}
+
+            {mode === "register" ? (
+              <div className="email-verification-box">
+                <button className="button button-ghost" type="button" onClick={requestVerificationCode} disabled={isSendingCode}>
+                  {isSendingCode ? "Отправляем..." : verificationToken ? "Отправить новый код" : "Проверить почту и отправить код"}
+                </button>
+                {verificationToken ? <label><span>Код из письма</span><input inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={verificationCode} onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" required /></label> : null}
+                {previewCode ? <small>Демо-код: <strong>{previewCode}</strong></small> : null}
+              </div>
+            ) : null}
+
             <label>
               <span>{mode === "reset-password" ? "Новый пароль" : "Пароль"}</span>
               <div className="password-field">
@@ -234,21 +278,49 @@ export function AccountPanel({ apartments, resetToken = "" }: { apartments: Apar
                 <button type="button" onClick={() => setShowPassword((value) => !value)} aria-pressed={showPassword}>{showPassword ? "Скрыть" : "Показать"}</button>
               </div>
             </label>
-          ) : null}
 
-          {mode === "reset-password" ? <label><span>Повторите пароль</span><input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={10} maxLength={128} required /></label> : null}
-          {mode === "register" ? <label className="honeypot-field" aria-hidden="true"><span>Сайт</span><input type="text" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" /></label> : null}
+            {mode === "reset-password" ? <label><span>Повторите пароль</span><input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={10} maxLength={128} required /></label> : null}
+            {mode === "register" ? <label className="honeypot-field" aria-hidden="true"><span>Сайт</span><input type="text" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" /></label> : null}
 
-          <button className="button button-primary" type="submit" disabled={isSubmitting || (mode === "register" && !verificationToken)}>
-            {isSubmitting ? "Подождите..." : mode === "login" ? "Войти" : mode === "register" ? "Подтвердить код и создать аккаунт" : mode === "request-reset" ? "Отправить инструкцию" : "Сохранить новый пароль"}
-          </button>
-        </form>
+            <button className="button button-primary" type="submit" disabled={isSubmitting || (mode === "register" && !verificationToken)}>
+              {isSubmitting ? "Подождите..." : mode === "login" ? "Войти" : mode === "register" ? "Подтвердить код и создать аккаунт" : "Сохранить новый пароль"}
+            </button>
+          </form>
 
-        {mode === "login" ? <button className="auth-secondary-action" type="button" onClick={() => chooseMode("request-reset")}>Забыли пароль?</button> : null}
-        {mode === "request-reset" || mode === "reset-password" ? <button className="auth-secondary-action" type="button" onClick={() => chooseMode("login")}>Вернуться ко входу</button> : null}
-        {message ? <p className="auth-message" aria-live="polite">{message}</p> : null}
-        {previewResetUrl ? <p className="auth-message" role="note">Демо-ссылка: <Link href={previewResetUrl}>открыть восстановление пароля</Link></p> : null}
-      </div>
-    </section>
+          {mode === "login" ? <button className="auth-secondary-action" type="button" onClick={openResetModal}>Забыли пароль?</button> : null}
+          {mode === "reset-password" ? <button className="auth-secondary-action" type="button" onClick={() => chooseMode("login")}>Вернуться ко входу</button> : null}
+          {message ? <p className="auth-message" aria-live="polite">{message}</p> : null}
+        </div>
+      </section>
+
+      {isMissingAccountOpen ? (
+        <div className="auth-dialog-backdrop">
+          <section className="auth-dialog auth-dialog-status" role="alertdialog" aria-modal="true" aria-labelledby="missing-account-title">
+            <span className="eyebrow">Вход в кабинет</span>
+            <h2 id="missing-account-title">Такого аккаунта не существует</h2>
+            <p>Через 2 секунды откроется регистрация. Введённая почта останется в форме.</p>
+            <div className="auth-dialog-progress" aria-hidden="true" />
+            <button className="button button-primary" type="button" onClick={() => { setIsMissingAccountOpen(false); chooseMode("register"); }}>Перейти к регистрации сейчас</button>
+          </section>
+        </div>
+      ) : null}
+
+      {isResetModalOpen ? (
+        <div className="auth-dialog-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeResetModal(); }}>
+          <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="password-reset-title">
+            <button className="auth-dialog-close" type="button" aria-label="Закрыть восстановление пароля" onClick={closeResetModal}>×</button>
+            <span className="eyebrow">Безопасность аккаунта</span>
+            <h2 id="password-reset-title">Восстановление пароля</h2>
+            <p>Укажите почту аккаунта. Если аккаунт существует, мы отправим ссылку, действующую 20 минут.</p>
+            <form className="auth-form auth-dialog-form" onSubmit={handlePasswordResetRequest} aria-busy={isResetSubmitting}>
+              <label><span>Почта аккаунта</span><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" autoComplete="email" maxLength={254} required autoFocus /></label>
+              <button className="button button-primary" type="submit" disabled={isResetSubmitting}>{isResetSubmitting ? "Отправляем..." : "Отправить ссылку восстановления"}</button>
+            </form>
+            {resetMessage ? <p className="auth-message" aria-live="polite">{resetMessage}</p> : null}
+            {previewResetUrl ? <p className="auth-message" role="note">Демо-ссылка: <Link href={previewResetUrl}>открыть восстановление пароля</Link></p> : null}
+          </section>
+        </div>
+      ) : null}
+    </>
   );
 }
