@@ -20,7 +20,7 @@ export function SiteFooter() {
           <span>Офис продаж · {selectedCity}</span>
           <strong>{city.officeAddress}</strong>
           <a href={`tel:${city.phone.replace(/[^+\d]/g, "")}`}>{city.phone}</a>
-          <small>{selectedProject || "Выбранный жилой комплекс"}</small>
+          <small>{selectedProject || "Любой ЖК города"}</small>
         </div>
 
         <div className="footer-column">
