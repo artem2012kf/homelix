@@ -38,7 +38,7 @@ type RoomCopy = {
   prompts: string[];
 };
 
-const EXPECTED_APARTMENT_COUNT = 30;
+const EXPECTED_APARTMENT_COUNT = 75;
 
 const ROOM_COPY: Record<RoomType, RoomCopy> = {
   hall: {
@@ -231,6 +231,11 @@ if (rawApartments.length !== EXPECTED_APARTMENT_COUNT) {
 const apartmentIds = new Set(rawApartments.map((apartment) => apartment.id));
 if (apartmentIds.size !== rawApartments.length) {
   throw new Error("В data/apartments.json найдены повторяющиеся id квартир");
+}
+
+const projectNames = new Set(rawApartments.map((apartment) => apartment.project));
+if (projectNames.size < 30) {
+  throw new Error(`В каталоге должно быть не меньше 30 ЖК, сейчас: ${projectNames.size}`);
 }
 
 export const apartments: Apartment[] = rawApartments.map((apartment) => buildApartment(apartment, rawLayouts));

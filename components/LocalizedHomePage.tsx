@@ -31,6 +31,10 @@ export function LocalizedHomePage({ locale }: { locale: Locale }) {
   );
   const availableCount = cityApartments.filter((item) => item.status === "available").length;
   const minPrice = Math.min(...cityApartments.map((item) => item.price));
+  const catalogSummary =
+    locale === "en"
+      ? `${apartments.length} demonstration apartments in ${residentialComplexes.length} residential projects across 15 Russian cities. Prices and availability must be confirmed by a manager.`
+      : `${apartments.length} демонстрационных квартир в ${residentialComplexes.length} жилых комплексах 15 городов России. Цены и наличие необходимо подтвердить у менеджера.`;
 
   return (
     <main>
@@ -71,7 +75,7 @@ export function LocalizedHomePage({ locale }: { locale: Locale }) {
         <div className="section-heading">
           <span className="eyebrow">{text.catalogEyebrow}</span>
           <h2>{text.catalogTitle}</h2>
-          <p>{text.catalogBody}</p>
+          <p>{catalogSummary}</p>
         </div>
         <ApartmentCatalog apartments={apartments} locale={locale} />
       </section>
