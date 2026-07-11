@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { MarkdownText } from "@/components/MarkdownText";
 import { MascotImage } from "@/components/MascotImage";
+import { useCity } from "@/components/CityProvider";
 import { postJson } from "@/lib/client-api";
 import {
   clearChatHistory,
@@ -16,27 +17,28 @@ import {
 
 type Message = StoredChatMessage;
 
-const starterPrompts = [
-  "Подберите квартиру для семьи из 3 человек",
-  "Какая квартира лучше для сдачи в аренду?",
-  "Сравните доступные варианты",
-  "Какие квартиры сейчас доступны?"
-];
-
 const initialMessages: Message[] = [
   {
     role: "assistant",
     content:
-      "Здравствуйте. Я ИИ-консультант жилого комплекса. Помогу подобрать квартиру, сравнить варианты и обязательно покажу цену подходящего варианта."
+      "Здравствуйте. Я ИИ-консультант ХОЛЛ. Учитываю город и жилой комплекс, выбранные в шапке, и помогу подобрать подходящую квартиру."
   }
 ];
 
 export function AiOnlyChat() {
+  const { selectedCity, selectedProject, isReady } = useCity();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [pendingCount, setPendingCount] = useState(0);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesRef = useRef<Message[]>(initialMessages);
+
+  const starterPrompts = [
+    selectedProject ? `Что доступно в ${selectedProject}?` : `Что доступно в ${selectedCity}?`,
+    `Подберите квартиру для семьи в ${selectedCity}`,
+    "Какая квартира лучше для сдачи в аренду?",
+    "Сравните подходящие варианты"
+  ];
 
   useEffect(() => {
     const next = loadChatHistory(generalChatHistoryKey, initialMessages);
@@ -53,7 +55,7 @@ export function AiOnlyChat() {
 
   async function sendMessage(text: string) {
     const cleaned = text.trim();
-    if (!cleaned) return;
+    if (!cleaned || !isReady) return;
 
     const userMessage: Message = { role: "user", content: cleaned };
     const historySnapshot = messagesRef.current.slice(-6);
@@ -65,7 +67,9 @@ export function AiOnlyChat() {
     try {
       const data = await postJson("/api/ai", {
         message: cleaned,
-        history: historySnapshot
+        history: historySnapshot,
+        city: selectedCity,
+        project: selectedProject
       });
 
       setMessages((current) => [
@@ -74,7 +78,7 @@ export function AiOnlyChat() {
           role: "assistant",
           content: sanitizeAssistantContent(
             data.answer ?? data.error,
-            "**Краткая консультация:** напишите вопрос еще раз коротко: например, **лучшая квартира для семьи**, **до 12 млн**, **для аренды** или **какие квартиры доступны**."
+            "**Краткая консультация:** уточните бюджет, комнатность, этаж или цель покупки — город и ЖК уже выбраны в шапке."
           )
         }
       ]);
@@ -125,14 +129,14 @@ export function AiOnlyChat() {
         </div>
         <div>
           <span className="eyebrow">ИИ-консультант</span>
-          <h2>Консультация без выбора комнат</h2>
-          <p>Можно отправлять несколько запросов подряд: ответы будут приходить независимо.</p>
+          <h2>Подбор без открытия конкретной квартиры</h2>
+          <p>Город и ЖК берутся из переключателя в шапке автоматически.</p>
         </div>
       </div>
 
       <div className="chat-context">
-        <span>Контекст вопроса:</span>
-        <strong>общая консультация по квартирам</strong>
+        <span>Контекст рекомендаций:</span>
+        <strong>{selectedCity}{selectedProject ? ` · ${selectedProject}` : ""}</strong>
       </div>
 
       <div className="chat-history-actions">
@@ -157,7 +161,7 @@ export function AiOnlyChat() {
 
       <div className="prompt-row">
         {starterPrompts.map((prompt) => (
-          <button key={prompt} type="button" className="prompt-chip" onClick={() => void sendMessage(prompt)}>
+          <button key={prompt} type="button" className="prompt-chip" onClick={() => void sendMessage(prompt)} disabled={!isReady}>
             {prompt}
           </button>
         ))}
@@ -167,10 +171,10 @@ export function AiOnlyChat() {
         <textarea
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Например: лучшая квартира для семьи до 15 млн ₽..."
+          placeholder="Например: двухкомнатная до 15 млн ₽ для семьи..."
           rows={2}
         />
-        <button className="button button-primary" type="submit">
+        <button className="button button-primary" type="submit" disabled={!isReady || !input.trim()}>
           Отправить
         </button>
       </form>
