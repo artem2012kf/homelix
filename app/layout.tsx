@@ -4,6 +4,7 @@ import "./i18n.css";
 import "./security-ux.css";
 import "./hall-theme.css";
 import "./hall-components.css";
+import "./catalog-responsive.css";
 import { Header } from "@/components/Header";
 import { AuthProvider } from "@/components/AuthProvider";
 import { CityProvider } from "@/components/CityProvider";
