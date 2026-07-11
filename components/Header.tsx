@@ -55,7 +55,7 @@ export function Header() {
             <Link
               key={language}
               href={getHomeHref(language)}
-              className={`language-link ${locale === language ? "is-active" : ""}`
+              className={`language-link ${locale === language ? "is-active" : ""}`}
               lang={language}
               aria-current={locale === language ? "page" : undefined}
             >
