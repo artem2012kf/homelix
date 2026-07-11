@@ -17,6 +17,7 @@ export function Header() {
   const text = siteText[locale];
   const { selectedCity, selectedProject, openChooser } = useCity();
   const { count, openCart } = useCart();
+  const projectLabel = selectedProject || (locale === "en" ? "Any project" : "Любой ЖК");
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -36,7 +37,7 @@ export function Header() {
 
       <button className="selected-project-button" type="button" onClick={openChooser}>
         <span>{locale === "en" ? "Selected project" : "Выбран ЖК"}</span>
-        <strong>{selectedProject || selectedCity}</strong>
+        <strong>{projectLabel} · {selectedCity}</strong>
       </button>
 
       <nav className="header-nav" aria-label={text.brandSubtitle}>

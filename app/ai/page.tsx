@@ -9,6 +9,7 @@ import { formatArea, formatPrice, statusLabel } from "@/lib/format";
 
 export default function AiPage() {
   const { selectedCity, selectedProject, openChooser } = useCity();
+  const projectLabel = selectedProject || "Любой ЖК";
   const scopedApartments = useMemo(
     () =>
       apartments.filter(
@@ -25,11 +26,10 @@ export default function AiPage() {
           ← На главную
         </Link>
         <span className="eyebrow">ИИ-консультант ХОЛЛ</span>
-        <h1>Рекомендации по выбранным городу и ЖК</h1>
+        <h1>{selectedProject ? "Рекомендации по выбранному ЖК" : "Рекомендации по всем ЖК выбранного города"}</h1>
         <p>
-          Консультант автоматически использует выбор из шапки: <strong>{selectedCity}</strong>
-          {selectedProject ? <> · <strong>{selectedProject}</strong></> : null}. Можно сразу написать бюджет,
-          комнатность, этаж или цель покупки — повторно указывать город и жилой комплекс не нужно.
+          Текущий контекст: <strong>{selectedCity}</strong> · <strong>{projectLabel}</strong>. Можно сразу написать бюджет,
+          комнатность, этаж или цель покупки — повторно указывать город не нужно.
         </p>
         <button type="button" className="button button-ghost" onClick={openChooser}>
           Изменить город и ЖК
@@ -41,7 +41,7 @@ export default function AiPage() {
 
         <aside className="available-list-card">
           <span className="eyebrow">{scopedApartments.length} предложений</span>
-          <h2>{selectedProject || `Квартиры в ${selectedCity}`}</h2>
+          <h2>{selectedProject || `Все ЖК · ${selectedCity}`}</h2>
           <div className="available-list">
             {scopedApartments.map((apartment) => (
               <article key={apartment.id}>

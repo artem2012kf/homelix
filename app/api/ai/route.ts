@@ -76,8 +76,14 @@ function scopedApartments(scope: SelectionContext) {
 
 function scopeLabel(scope: SelectionContext) {
   if (scope.city && scope.project) return `${scope.city}, ${scope.project}`;
-  if (scope.city) return scope.city;
+  if (scope.city) return `${scope.city}, все ЖК`;
   return "каталогу ХОЛЛ";
+}
+
+function scopeReason(scope: SelectionContext) {
+  return scope.project
+    ? "- рекомендации ограничены выбранными городом и жилым комплексом."
+    : "- рекомендации сравнивают квартиры во всех ЖК выбранного города.";
 }
 
 function scoreApartment(apartment: (typeof apartments)[number], message: string) {
@@ -151,7 +157,7 @@ function deterministicAnswer(message: string, selected: SelectionContext) {
         : lower.includes("сем")
           ? "- площадь и комнатность лучше подходят для семьи;"
           : "- вариант выше остальных по совпадению с вашим запросом;",
-      "- рекомендации ограничены выбранными городом и жилым комплексом.",
+      scopeReason(scope),
       "",
       ...(best.length > 1 ? ["**Еще можно рассмотреть:**", ...best.slice(1).map(apartmentLine), ""] : []),
       "Цена и наличие необходимо подтвердить у менеджера."

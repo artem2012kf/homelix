@@ -31,7 +31,7 @@ export function CityChooser() {
           <div>
             <span className="eyebrow">Настройте каталог</span>
             <h2 id="city-dialog-title">Где вы ищете квартиру?</h2>
-            <p>После выбора сайт покажет квартиры, жилые комплексы, карту и офис продаж только для этого города.</p>
+            <p>Выберите город и конкретный жилой комплекс либо вариант «Любой ЖК», чтобы смотреть предложения по всему городу.</p>
           </div>
           <button className="icon-button" type="button" onClick={closeChooser} aria-label="Закрыть">
             ×
@@ -54,6 +54,7 @@ export function CityChooser() {
         <label className="project-picker">
           <span>Жилой комплекс</span>
           <select value={selectedProject} onChange={(event) => selectProject(event.target.value)}>
+            <option value="">Любой ЖК</option>
             {projects.map((project) => (
               <option key={project} value={project}>
                 {project}
@@ -63,7 +64,7 @@ export function CityChooser() {
         </label>
 
         <button className="button button-primary city-confirm" type="button" onClick={confirmSelection}>
-          Показать квартиры в {selectedCity}
+          Показать предложения в {selectedCity}
         </button>
       </section>
     </div>

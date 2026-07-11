@@ -20,6 +20,7 @@ export function LocalizedHomePage({ locale }: { locale: Locale }) {
   const text = siteText[locale].home;
   const intlLocale = getIntlLocale(locale);
   const { selectedCity, selectedProject, openChooser } = useCity();
+  const anyProjectLabel = locale === "en" ? "Any project" : "Любой ЖК";
 
   const cityApartments = useMemo(
     () => apartments.filter((item) => item.city === selectedCity),
@@ -41,7 +42,9 @@ export function LocalizedHomePage({ locale }: { locale: Locale }) {
           <p>{text.intro}</p>
           <div className="hero-selected-location">
             <span>{locale === "en" ? "Selected" : "Выбрано"}</span>
-            <strong>{translatePlace(selectedCity, locale)} · {translateComplexName(selectedProject, locale)}</strong>
+            <strong>
+              {translatePlace(selectedCity, locale)} · {selectedProject ? translateComplexName(selectedProject, locale) : anyProjectLabel}
+            </strong>
             <button type="button" onClick={openChooser}>{locale === "en" ? "Change" : "Изменить"}</button>
           </div>
           <div className="hero-actions">
@@ -71,7 +74,6 @@ export function LocalizedHomePage({ locale }: { locale: Locale }) {
         <div className="section-heading">
           <span className="eyebrow">{text.catalogEyebrow}</span>
           <h2>{text.catalogTitle}</h2>
-          <p>{text.catalogBody}</p>
         </div>
         <ApartmentCatalog apartments={apartments} locale={locale} />
       </section>
