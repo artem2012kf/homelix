@@ -15,6 +15,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { CartDrawer } from "@/components/CartDrawer";
 import { CurrencyProvider } from "@/components/CurrencyProvider";
 import { CityRecommendationBell } from "@/components/CityRecommendationBell";
+import { PageTransition } from "@/components/PageTransition";
 import { apartments } from "@/lib/apartments";
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <CartProvider>
                 <Header />
                 <CityChooser />
-                {children}
+                <PageTransition>{children}</PageTransition>
                 <SiteFooter />
                 <CityMap />
                 <CartDrawer />
