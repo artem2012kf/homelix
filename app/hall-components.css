@@ -386,6 +386,100 @@
   text-align: center;
 }
 
+.auth-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(18, 18, 17, 0.52);
+  backdrop-filter: blur(8px);
+}
+
+.auth-dialog {
+  position: relative;
+  display: grid;
+  width: min(100%, 500px);
+  max-height: calc(100vh - 36px);
+  gap: 16px;
+  overflow: auto;
+  padding: clamp(24px, 5vw, 38px);
+  border: 1px solid var(--hall-line);
+  border-radius: 24px;
+  color: var(--hall-ink);
+  background: #ffffff;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.22);
+}
+
+.auth-dialog-status {
+  text-align: center;
+}
+
+.auth-dialog h2 {
+  margin: 0;
+  font-size: clamp(30px, 6vw, 46px);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.auth-dialog p {
+  margin: 0;
+  color: var(--hall-muted);
+  line-height: 1.55;
+}
+
+.auth-dialog-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--hall-line);
+  border-radius: 12px;
+  color: var(--hall-ink);
+  background: #ffffff;
+  font: inherit;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.auth-dialog-form {
+  margin-top: 4px;
+}
+
+.auth-dialog-progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--hall-soft);
+}
+
+.auth-dialog-progress::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--hall-accent);
+  transform-origin: left;
+  animation: hall-auth-countdown 2s linear forwards;
+}
+
+@keyframes hall-auth-countdown {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-dialog-progress::after {
+    animation: none;
+  }
+}
+
 @media (max-width: 860px) {
   .hall-account-hero,
   .hall-auth-section {
@@ -413,5 +507,10 @@
 
   .purchase-row {
     grid-template-columns: 1fr;
+  }
+
+  .auth-dialog {
+    padding: 24px 18px;
+    border-radius: 20px;
   }
 }
