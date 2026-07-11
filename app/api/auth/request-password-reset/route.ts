@@ -8,6 +8,7 @@ import {
   type DbUser
 } from "@/lib/server-db";
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { isGmailSmtpConfigured, sendSmtpMail } from "@/lib/smtp-mailer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,22 +25,19 @@ function tokenHash(token: string) {
 }
 
 async function sendResetEmail(email: string, resetUrl: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.PASSWORD_RESET_FROM || process.env.EMAIL_FROM;
-  if (!apiKey || !from) return false;
+  if (!isGmailSmtpConfigured()) return false;
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [email],
+  try {
+    await sendSmtpMail({
+      to: email,
       subject: "Восстановление пароля ХОЛЛ",
       html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:32px"><h1 style="letter-spacing:.12em">ХОЛЛ</h1><p>Чтобы задать новый пароль, откройте ссылку:</p><p><a href="${resetUrl}">Восстановить пароль</a></p><p>Ссылка действует 20 минут. Если вы не запрашивали восстановление, проигнорируйте письмо.</p></div>`
-    })
-  });
-
-  return response.ok;
+    });
+    return true;
+  } catch (error) {
+    console.error("Gmail SMTP password reset email failed", error instanceof Error ? error.message : "unknown error");
+    return false;
+  }
 }
 
 export async function POST(request: Request) {
@@ -73,12 +71,8 @@ export async function POST(request: Request) {
     const origin = configuredOrigin || requestOrigin;
     const resetUrl = `${origin}/account?reset=${encodeURIComponent(result.token)}`;
 
-    try {
-      const sent = await sendResetEmail(result.email, resetUrl);
-      if (!sent && process.env.HOMELIX_ALLOW_RESET_PREVIEW === "true") previewResetUrl = resetUrl;
-    } catch {
-      if (process.env.HOMELIX_ALLOW_RESET_PREVIEW === "true") previewResetUrl = resetUrl;
-    }
+    const sent = await sendResetEmail(result.email, resetUrl);
+    if (!sent && process.env.HOMELIX_ALLOW_RESET_PREVIEW === "true") previewResetUrl = resetUrl;
   }
 
   return Response.json(
