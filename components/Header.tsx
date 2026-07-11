@@ -8,6 +8,7 @@ import { MascotLogo } from "@/components/MascotLogo";
 import { useCity } from "@/components/CityProvider";
 import { useCart } from "@/components/CartProvider";
 import { getHomeHref, getLocaleFromPathname, localeNames, siteText, type Locale } from "@/lib/i18n";
+import { localizePath, switchLocalePath } from "@/lib/locale-path";
 
 const languageOrder: Locale[] = ["ru", "en"];
 const homeSectionIds = ["apartments", "complexes", "contacts"] as const;
@@ -21,6 +22,8 @@ export function Header() {
   const { count, openCart } = useCart();
   const [activeSection, setActiveSection] = useState<HomeSectionId | "">("");
   const isHomePage = pathname === "/" || pathname === "/en";
+  const aiHref = localizePath(locale, "/ai");
+  const furnitureHref = localizePath(locale, "/furniture");
   const projectLabel = selectedProject || (locale === "en" ? "Any project" : "Любой ЖК");
   const cartLabel = locale === "en"
     ? count > 0 ? `Furniture cart, ${count} items` : "Furniture cart"
@@ -111,8 +114,8 @@ export function Header() {
         >
           {text.nav.complexes}
         </Link>
-        <Link className={`header-tab ${pathname.startsWith("/ai") ? "is-current" : ""}`} href="/ai" aria-current={pathname.startsWith("/ai") ? "page" : undefined}>{text.nav.ai}</Link>
-        <Link className={`header-tab ${pathname.startsWith("/furniture") ? "is-current" : ""}`} href="/furniture" aria-current={pathname.startsWith("/furniture") ? "page" : undefined}>{text.nav.furniture}</Link>
+        <Link className={`header-tab ${pathname.startsWith(aiHref) ? "is-current" : ""}`} href={aiHref} aria-current={pathname.startsWith(aiHref) ? "page" : undefined}>{text.nav.ai}</Link>
+        <Link className={`header-tab ${pathname.startsWith(furnitureHref) ? "is-current" : ""}`} href={furnitureHref} aria-current={pathname.startsWith(furnitureHref) ? "page" : undefined}>{text.nav.furniture}</Link>
         <Link
           href={getHomeHref(locale, "#contacts")}
           className={`header-tab ${activeSection === "contacts" ? "is-current" : ""}`}
@@ -126,11 +129,11 @@ export function Header() {
           {count > 0 ? <span aria-hidden="true">{count}</span> : null}
         </button>
         <AuthHeaderActions locale={locale} />
-        <div className="language-switch" aria-label="Language selector">
+        <div className="language-switch" aria-label={locale === "en" ? "Language selector" : "Выбор языка"}>
           {languageOrder.map((language) => (
             <Link
               key={language}
-              href={getHomeHref(language)}
+              href={switchLocalePath(pathname, language)}
               className={`language-link ${locale === language ? "is-active" : ""}`}
               lang={language}
               aria-current={locale === language ? "page" : undefined}
