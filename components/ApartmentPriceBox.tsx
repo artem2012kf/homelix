@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { Apartment } from "@/types/apartment";
 import type { FurniturePlacement } from "@/types/furniture-placement";
 import { ApartmentCardActions } from "@/components/ApartmentCardActions";
-import { formatPrice } from "@/lib/format";
+import { CurrencyPrice } from "@/components/CurrencyProvider";
+import type { Locale } from "@/lib/i18n";
 
 type FurniturePriceEvent = {
   apartmentId: string;
@@ -46,8 +47,9 @@ function readFurnitureTotal(apartmentId: string) {
   }
 }
 
-export function ApartmentPriceBox({ apartment }: { apartment: Apartment }) {
+export function ApartmentPriceBox({ apartment, locale = "ru" }: { apartment: Apartment; locale?: Locale }) {
   const [furnitureTotal, setFurnitureTotal] = useState(0);
+  const isEnglish = locale === "en";
 
   useEffect(() => {
     setFurnitureTotal(readFurnitureTotal(apartment.id));
@@ -66,18 +68,18 @@ export function ApartmentPriceBox({ apartment }: { apartment: Apartment }) {
 
   return (
     <div className="price-box">
-      <span>{furnitureTotal > 0 ? "Стоимость с мебелью" : "Стоимость"}</span>
-      <strong>{formatPrice(totalWithFurniture)}</strong>
+      <span>{furnitureTotal > 0 ? (isEnglish ? "Price with furniture" : "Стоимость с мебелью") : (isEnglish ? "Price" : "Стоимость")}</span>
+      <strong><CurrencyPrice value={totalWithFurniture} /></strong>
 
       {furnitureTotal > 0 ? (
         <small>
-          квартира {formatPrice(apartment.price)} + мебель {formatPrice(furnitureTotal)}
+          {isEnglish ? "apartment" : "квартира"} <CurrencyPrice value={apartment.price} /> + {isEnglish ? "furniture" : "мебель"} <CurrencyPrice value={furnitureTotal} />
         </small>
       ) : (
-        <small>от {formatPrice(apartment.mortgagePayment)} / мес.</small>
+        <small>{isEnglish ? "from" : "от"} <CurrencyPrice value={apartment.mortgagePayment} /> / {isEnglish ? "month" : "мес."}</small>
       )}
 
-      <ApartmentCardActions apartment={apartment} showPlanLink={false} />
+      <ApartmentCardActions apartment={apartment} showPlanLink={false} locale={locale} />
     </div>
   );
 }

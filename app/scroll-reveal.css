@@ -1,0 +1,55 @@
+/* Элементы появляются снизу при прокрутке вниз и уходят вниз при возврате вверх. */
+.hall-scroll-reveal {
+  opacity: 0;
+  filter: blur(8px);
+  transform: translate3d(0, 48px, 0) scale(0.985);
+  transition:
+    opacity 620ms cubic-bezier(0.16, 1, 0.3, 1) var(--hall-reveal-delay, 0ms),
+    transform 720ms cubic-bezier(0.16, 1, 0.3, 1) var(--hall-reveal-delay, 0ms),
+    filter 520ms ease var(--hall-reveal-delay, 0ms);
+  will-change: opacity, transform, filter;
+}
+
+.hall-scroll-reveal.is-revealed {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.hall-scroll-reveal.is-hiding-below {
+  opacity: 0;
+  filter: blur(7px);
+  transform: translate3d(0, 42px, 0) scale(0.988);
+  transition-delay: 0ms;
+  transition-duration: 420ms, 520ms, 360ms;
+}
+
+/* Карточки одной сетки проявляются каскадом. */
+.apartments-grid .hall-scroll-reveal:nth-child(4n + 2),
+.hall-furniture-grid .hall-scroll-reveal:nth-child(4n + 2),
+.account-cards-grid .hall-scroll-reveal:nth-child(4n + 2) {
+  --hall-reveal-delay: 55ms;
+}
+
+.apartments-grid .hall-scroll-reveal:nth-child(4n + 3),
+.hall-furniture-grid .hall-scroll-reveal:nth-child(4n + 3),
+.account-cards-grid .hall-scroll-reveal:nth-child(4n + 3) {
+  --hall-reveal-delay: 110ms;
+}
+
+.apartments-grid .hall-scroll-reveal:nth-child(4n),
+.hall-furniture-grid .hall-scroll-reveal:nth-child(4n),
+.account-cards-grid .hall-scroll-reveal:nth-child(4n) {
+  --hall-reveal-delay: 165ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hall-scroll-reveal,
+  .hall-scroll-reveal.is-revealed,
+  .hall-scroll-reveal.is-hiding-below {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
