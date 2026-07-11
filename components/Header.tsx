@@ -37,8 +37,7 @@ export function Header() {
 
       <button className="selected-project-button" type="button" onClick={openChooser}>
         <span>{locale === "en" ? "Selected project" : "Выбран ЖК"}</span>
-        <strong>{projectLabel}</strong>
-        <small>{selectedCity}</small>
+        <strong>{projectLabel} · {selectedCity}</strong>
       </button>
 
       <nav className="header-nav" aria-label={text.brandSubtitle}>
@@ -56,7 +55,7 @@ export function Header() {
             <Link
               key={language}
               href={getHomeHref(language)}
-              className={`language-link ${locale === language ? "is-active" : ""}`}
+              className={`language-link ${locale === language ? "is-active" : ""}`
               lang={language}
               aria-current={locale === language ? "page" : undefined}
             >
