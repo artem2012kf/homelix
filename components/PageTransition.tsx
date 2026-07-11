@@ -1,15 +1,13 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const transitionKey = `${pathname}?${searchParams.toString()}`;
 
   return (
-    <div className="hall-page-transition" key={transitionKey}>
+    <div className="hall-page-transition" key={pathname}>
       {children}
     </div>
   );
