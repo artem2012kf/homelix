@@ -18,6 +18,9 @@ export function Header() {
   const { selectedCity, selectedProject, openChooser } = useCity();
   const { count, openCart } = useCart();
   const projectLabel = selectedProject || (locale === "en" ? "Any project" : "Любой ЖК");
+  const cartLabel = locale === "en"
+    ? count > 0 ? `Furniture cart, ${count} items` : "Furniture cart"
+    : count > 0 ? `Корзина мебели, товаров: ${count}` : "Корзина мебели";
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -46,8 +49,9 @@ export function Header() {
         <Link href="/ai">{text.nav.ai}</Link>
         <Link href="/furniture">{text.nav.furniture}</Link>
         <Link href={getHomeHref(locale, "#contacts")}>{text.nav.contacts}</Link>
-        <button className="header-cart-button" type="button" onClick={openCart} aria-label={locale === "en" ? `Furniture cart, ${count} items` : `Корзина мебели, товаров: ${count}`}>
-          {locale === "en" ? "Cart" : "Корзина"}<span>{count}</span>
+        <button className="header-cart-button" type="button" onClick={openCart} aria-label={cartLabel}>
+          {locale === "en" ? "Cart" : "Корзина"}
+          {count > 0 ? <span aria-hidden="true">{count}</span> : null}
         </button>
         <AuthHeaderActions locale={locale} />
         <div className="language-switch" aria-label="Language selector">
