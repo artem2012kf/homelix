@@ -8,12 +8,20 @@ import { useCity } from "@/components/CityProvider";
 import { apartments } from "@/lib/apartments";
 import { formatArea, statusLabel } from "@/lib/format";
 import { localizePath } from "@/lib/locale-path";
-import type { Locale } from "@/lib/i18n";
+import {
+  localizeApartment,
+  translateComplexName,
+  translatePlace,
+  type Locale
+} from "@/lib/i18n";
 
 export function AiPageContent({ locale }: { locale: Locale }) {
   const { selectedCity, selectedProject, openChooser } = useCity();
   const isEnglish = locale === "en";
-  const projectLabel = selectedProject || (isEnglish ? "Any project" : "Любой ЖК");
+  const cityLabel = translatePlace(selectedCity, locale);
+  const projectLabel = selectedProject
+    ? translateComplexName(selectedProject, locale)
+    : isEnglish ? "Any project" : "Любой ЖК";
   const scopedApartments = useMemo(
     () => apartments.filter((apartment) => apartment.city === selectedCity && (!selectedProject || apartment.project === selectedProject)),
     [selectedCity, selectedProject]
@@ -33,7 +41,7 @@ export function AiPageContent({ locale }: { locale: Locale }) {
         </h1>
         <p>
           {isEnglish ? "Current context: " : "Текущий контекст: "}
-          <strong>{selectedCity}</strong> · <strong>{projectLabel}</strong>. {isEnglish
+          <strong>{cityLabel}</strong> · <strong>{projectLabel}</strong>. {isEnglish
             ? "Enter your budget, preferred number of rooms, floor or purchase goal — you do not need to repeat the city."
             : "Можно сразу написать бюджет, комнатность, этаж или цель покупки — повторно указывать город не нужно."}
         </p>
@@ -47,20 +55,23 @@ export function AiPageContent({ locale }: { locale: Locale }) {
 
         <aside className="available-list-card">
           <span className="eyebrow">{scopedApartments.length} {isEnglish ? "listings" : "предложений"}</span>
-          <h2>{selectedProject || (isEnglish ? `All projects · ${selectedCity}` : `Все ЖК · ${selectedCity}`)}</h2>
+          <h2>{selectedProject ? projectLabel : (isEnglish ? `All projects · ${cityLabel}` : `Все ЖК · ${cityLabel}`)}</h2>
           <div className="available-list">
-            {scopedApartments.map((apartment) => (
-              <article key={apartment.id}>
-                <div>
-                  <span className={`status status-${apartment.status}`}>{statusLabel(apartment.status, locale)}</span>
-                  <h3>{apartment.title}</h3>
-                  <p>
-                    {apartment.project}, {apartment.building}, {apartment.floor} {isEnglish ? "floor" : "этаж"} · {formatArea(apartment.totalArea, locale)}
-                  </p>
-                </div>
-                <strong><CurrencyPrice value={apartment.price} /></strong>
-              </article>
-            ))}
+            {scopedApartments.map((apartment) => {
+              const displayApartment = localizeApartment(apartment, locale);
+              return (
+                <article key={apartment.id}>
+                  <div>
+                    <span className={`status status-${apartment.status}`}>{statusLabel(apartment.status, locale)}</span>
+                    <h3>{displayApartment.title}</h3>
+                    <p>
+                      {translateComplexName(apartment.project, locale)}, {displayApartment.building}, {isEnglish ? `floor ${apartment.floor}` : `${apartment.floor} этаж`} · {formatArea(apartment.totalArea, locale)}
+                    </p>
+                  </div>
+                  <strong><CurrencyPrice value={apartment.price} /></strong>
+                </article>
+              );
+            })}
           </div>
         </aside>
       </section>
