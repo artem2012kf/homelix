@@ -1,0 +1,109 @@
+/* Точечные улучшения контраста после визуальной проверки каталога. */
+:root[data-theme="dark"] .apartment-card {
+  border-color: rgba(170, 187, 209, 0.18) !important;
+  background:
+    linear-gradient(180deg, rgba(27, 35, 46, 0.98) 0%, rgba(18, 24, 32, 0.98) 100%) !important;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.2) !important;
+}
+
+:root[data-theme="dark"] .apartment-card:hover {
+  border-color: rgba(255, 111, 103, 0.36) !important;
+  box-shadow: 0 24px 62px rgba(0, 0, 0, 0.3) !important;
+}
+
+:root[data-theme="dark"] .card-metrics div,
+:root[data-theme="dark"] .metrics-strip div,
+:root[data-theme="dark"] .furniture-specs div {
+  border: 1px solid rgba(184, 199, 218, 0.14) !important;
+  color: #f7f9fc !important;
+  background: linear-gradient(145deg, #222c39 0%, #1a222d 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+:root[data-theme="dark"] .card-metrics small,
+:root[data-theme="dark"] .metrics-strip span,
+:root[data-theme="dark"] .furniture-specs dt {
+  color: #9eabba !important;
+}
+
+:root[data-theme="dark"] .card-metrics strong,
+:root[data-theme="dark"] .metrics-strip strong,
+:root[data-theme="dark"] .furniture-specs dd {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .card-actions .button-ghost {
+  border-color: rgba(184, 199, 218, 0.2) !important;
+  color: #eef3f9 !important;
+  background: rgba(17, 23, 31, 0.78) !important;
+}
+
+:root[data-theme="dark"] .card-actions .button-ghost:hover {
+  border-color: rgba(255, 111, 103, 0.42) !important;
+  background: #202a36 !important;
+}
+
+:root[data-theme="dark"] .smart-reco-panel,
+:root[data-theme="dark"] .smart-reco-consent {
+  border-color: rgba(183, 199, 220, 0.18) !important;
+  color: #f6f8fb !important;
+  background:
+    linear-gradient(155deg, rgba(29, 38, 50, 0.98), rgba(16, 22, 30, 0.98)) !important;
+  box-shadow: 0 24px 68px rgba(0, 0, 0, 0.42) !important;
+}
+
+:root[data-theme="dark"] .smart-reco-panel-head button {
+  border-color: rgba(183, 199, 220, 0.2) !important;
+  color: #f5f7fb !important;
+  background: #202a36 !important;
+}
+
+:root[data-theme="dark"] .smart-reco-consent strong,
+:root[data-theme="dark"] .smart-reco-panel h3,
+:root[data-theme="dark"] .smart-reco-item strong,
+:root[data-theme="dark"] .smart-reco-item em {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .smart-reco-consent span,
+:root[data-theme="dark"] .smart-reco-panel p,
+:root[data-theme="dark"] .smart-reco-item small,
+:root[data-theme="dark"] .smart-reco-item ul {
+  color: #aeb9c8 !important;
+}
+
+:root[data-theme="dark"] .smart-reco-item,
+:root[data-theme="dark"] .smart-reco-empty,
+:root[data-theme="dark"] .smart-reco-profile {
+  border-color: rgba(183, 199, 220, 0.14) !important;
+  color: #f5f7fb !important;
+  background: rgba(32, 42, 55, 0.92) !important;
+}
+
+:root[data-theme="dark"] .smart-reco-item:hover {
+  border-color: rgba(255, 111, 103, 0.38) !important;
+  background: #263241 !important;
+}
+
+:root[data-theme="dark"] .smart-reco-item span {
+  color: #ffaaa3 !important;
+  background: rgba(255, 95, 87, 0.14) !important;
+}
+
+:root[data-theme="dark"] .smart-reco-item-top b {
+  color: #a9efc1 !important;
+  background: rgba(73, 187, 115, 0.14) !important;
+}
+
+:root[data-theme="dark"] .smart-reco-consent button,
+:root[data-theme="dark"] .smart-reco-ai-link {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ff655d, #e84642) !important;
+  box-shadow: 0 10px 24px rgba(232, 70, 66, 0.22) !important;
+}
+
+:root[data-theme="dark"] .smart-reco-button {
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: linear-gradient(135deg, #ff655d, #df3f3b) !important;
+  box-shadow: 0 18px 42px rgba(220, 61, 57, 0.3) !important;
+}
