@@ -7,6 +7,7 @@ import "./hall-components.css";
 import "./catalog-responsive.css";
 import "./transitions.css";
 import "./scroll-reveal.css";
+import "./dark-theme.css";
 import { Header } from "@/components/Header";
 import { AuthProvider } from "@/components/AuthProvider";
 import { CityProvider } from "@/components/CityProvider";
@@ -38,9 +39,14 @@ export const metadata: Metadata = {
   }
 };
 
+const themeScript = `(function(){try{var s=localStorage.getItem("hall-theme");var t=s==="dark"||s==="light"?s:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch(e){}})();`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <AuthProvider>
           <CityProvider apartments={apartments}>
