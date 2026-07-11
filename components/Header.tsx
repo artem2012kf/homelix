@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { type MouseEvent, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AuthHeaderActions } from "@/components/AuthHeaderActions";
 import { MascotLogo } from "@/components/MascotLogo";
@@ -10,6 +10,8 @@ import { useCart } from "@/components/CartProvider";
 import { getHomeHref, getLocaleFromPathname, localeNames, siteText, type Locale } from "@/lib/i18n";
 
 const languageOrder: Locale[] = ["ru", "en"];
+const homeSectionIds = ["apartments", "complexes", "contacts"] as const;
+type HomeSectionId = (typeof homeSectionIds)[number];
 
 export function Header() {
   const pathname = usePathname();
@@ -17,6 +19,8 @@ export function Header() {
   const text = siteText[locale];
   const { selectedCity, selectedProject, openChooser } = useCity();
   const { count, openCart } = useCart();
+  const [activeSection, setActiveSection] = useState<HomeSectionId | "">("");
+  const isHomePage = pathname === "/" || pathname === "/en";
   const projectLabel = selectedProject || (locale === "en" ? "Any project" : "Любой ЖК");
   const cartLabel = locale === "en"
     ? count > 0 ? `Furniture cart, ${count} items` : "Furniture cart"
@@ -25,6 +29,53 @@ export function Header() {
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
+
+  useEffect(() => {
+    if (!isHomePage) {
+      setActiveSection("");
+      return;
+    }
+
+    const sections = homeSectionIds
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section));
+
+    const hashSection = window.location.hash.slice(1) as HomeSectionId;
+    if (homeSectionIds.includes(hashSection)) setActiveSection(hashSection);
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+        if (visible && homeSectionIds.includes(visible.target.id as HomeSectionId)) {
+          setActiveSection(visible.target.id as HomeSectionId);
+        }
+      },
+      { rootMargin: "-24% 0px -58%", threshold: [0.01, 0.15, 0.35] }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [isHomePage, pathname]);
+
+  function handleSectionClick(event: MouseEvent<HTMLAnchorElement>, sectionId: HomeSectionId) {
+    if (!isHomePage) return;
+    const target = document.getElementById(sectionId);
+    if (!target) return;
+
+    event.preventDefault();
+    setActiveSection(sectionId);
+    window.history.pushState(null, "", `${pathname}#${sectionId}`);
+
+    target.classList.remove("hall-section-arrive");
+    void target.offsetWidth;
+    target.classList.add("hall-section-arrive");
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    window.setTimeout(() => target.classList.remove("hall-section-arrive"), 900);
+  }
 
   return (
     <header className="site-header hall-header">
@@ -44,11 +95,32 @@ export function Header() {
       </button>
 
       <nav className="header-nav" aria-label={text.brandSubtitle}>
-        <Link href={getHomeHref(locale, "#apartments")}>{text.nav.apartments}</Link>
-        <Link href={getHomeHref(locale, "#complexes")}>{text.nav.complexes}</Link>
-        <Link href="/ai">{text.nav.ai}</Link>
-        <Link href="/furniture">{text.nav.furniture}</Link>
-        <Link href={getHomeHref(locale, "#contacts")}>{text.nav.contacts}</Link>
+        <Link
+          href={getHomeHref(locale, "#apartments")}
+          className={`header-tab ${activeSection === "apartments" ? "is-current" : ""}`}
+          aria-current={activeSection === "apartments" ? "location" : undefined}
+          onClick={(event) => handleSectionClick(event, "apartments")}
+        >
+          {text.nav.apartments}
+        </Link>
+        <Link
+          href={getHomeHref(locale, "#complexes")}
+          className={`header-tab ${activeSection === "complexes" ? "is-current" : ""}`}
+          aria-current={activeSection === "complexes" ? "location" : undefined}
+          onClick={(event) => handleSectionClick(event, "complexes")}
+        >
+          {text.nav.complexes}
+        </Link>
+        <Link className={`header-tab ${pathname.startsWith("/ai") ? "is-current" : ""}`} href="/ai" aria-current={pathname.startsWith("/ai") ? "page" : undefined}>{text.nav.ai}</Link>
+        <Link className={`header-tab ${pathname.startsWith("/furniture") ? "is-current" : ""}`} href="/furniture" aria-current={pathname.startsWith("/furniture") ? "page" : undefined}>{text.nav.furniture}</Link>
+        <Link
+          href={getHomeHref(locale, "#contacts")}
+          className={`header-tab ${activeSection === "contacts" ? "is-current" : ""}`}
+          aria-current={activeSection === "contacts" ? "location" : undefined}
+          onClick={(event) => handleSectionClick(event, "contacts")}
+        >
+          {text.nav.contacts}
+        </Link>
         <button className="header-cart-button" type="button" onClick={openCart} aria-label={cartLabel}>
           {locale === "en" ? "Cart" : "Корзина"}
           {count > 0 ? <span aria-hidden="true">{count}</span> : null}

@@ -1,18 +1,56 @@
-/* Плавное появление страниц и вкладок без влияния на размеры блоков. */
+/* Заметные плавные переходы между страницами, секциями и вкладками. */
 .hall-page-transition {
   min-width: 0;
-  animation: hall-page-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: opacity, transform;
+  animation: hall-page-enter 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform, filter;
 }
 
 @keyframes hall-page-enter {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(12px);
+    filter: blur(9px);
+    transform: translateY(30px) scale(0.985);
   }
-  to {
+  62% {
     opacity: 1;
-    transform: translateY(0);
+    filter: blur(0);
+    transform: translateY(-3px) scale(1.002);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Переходы к разделам на главной происходят без смены pathname,
+   поэтому для них используется отдельная повторно запускаемая анимация. */
+#apartments,
+#complexes,
+#contacts {
+  scroll-margin-top: 106px;
+}
+
+.hall-section-arrive {
+  animation: hall-section-arrive 820ms cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  will-change: opacity, transform, filter;
+}
+
+@keyframes hall-section-arrive {
+  0% {
+    opacity: 0.18;
+    filter: blur(8px);
+    transform: translateY(34px) scale(0.982);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(-5px) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -23,40 +61,75 @@
 .auth-tabs button,
 .language-link {
   transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease,
-    opacity 180ms ease;
+    color 260ms ease,
+    background-color 260ms ease,
+    border-color 260ms ease,
+    box-shadow 300ms ease,
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease;
 }
 
 .hall-header .header-nav > a,
 .hall-header .header-nav > button,
 .hall-header .header-nav > div {
-  opacity: 0;
-  animation: hall-tab-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 1;
+  animation: hall-tab-enter 480ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-.hall-header .header-nav > :nth-child(1) { animation-delay: 40ms; }
-.hall-header .header-nav > :nth-child(2) { animation-delay: 75ms; }
-.hall-header .header-nav > :nth-child(3) { animation-delay: 110ms; }
-.hall-header .header-nav > :nth-child(4) { animation-delay: 145ms; }
-.hall-header .header-nav > :nth-child(5) { animation-delay: 180ms; }
-.hall-header .header-nav > :nth-child(6) { animation-delay: 215ms; }
-.hall-header .header-nav > :nth-child(7) { animation-delay: 250ms; }
-.hall-header .header-nav > :nth-child(8) { animation-delay: 285ms; }
-.hall-header .header-nav > :nth-child(9) { animation-delay: 320ms; }
+.hall-header .header-nav > :nth-child(1) { animation-delay: 55ms; }
+.hall-header .header-nav > :nth-child(2) { animation-delay: 105ms; }
+.hall-header .header-nav > :nth-child(3) { animation-delay: 155ms; }
+.hall-header .header-nav > :nth-child(4) { animation-delay: 205ms; }
+.hall-header .header-nav > :nth-child(5) { animation-delay: 255ms; }
+.hall-header .header-nav > :nth-child(6) { animation-delay: 305ms; }
+.hall-header .header-nav > :nth-child(7) { animation-delay: 355ms; }
+.hall-header .header-nav > :nth-child(8) { animation-delay: 405ms; }
+.hall-header .header-nav > :nth-child(9) { animation-delay: 455ms; }
 
 @keyframes hall-tab-enter {
   from {
     opacity: 0;
-    transform: translateY(-7px) scale(0.98);
+    filter: blur(5px);
+    transform: translateY(-13px) scale(0.94);
   }
   to {
     opacity: 1;
+    filter: blur(0);
     transform: translateY(0) scale(1);
   }
+}
+
+.header-tab {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.header-tab::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: 4px;
+  left: 12px;
+  z-index: -1;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--hall-accent);
+  opacity: 0;
+  transform: scaleX(0.18);
+  transition: opacity 220ms ease, transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hall-header .header-nav > a.header-tab.is-current {
+  color: #ffffff !important;
+  background: var(--hall-ink) !important;
+  box-shadow: 0 10px 28px rgba(23, 23, 23, 0.2);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.hall-header .header-nav > a.header-tab.is-current::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .hall-header .header-nav > a:hover,
@@ -64,7 +137,7 @@
 .auth-tabs button:hover,
 .language-link:hover,
 .selected-project-button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .hall-header .header-nav > a:active,
@@ -72,11 +145,13 @@
 .auth-tabs button:active,
 .language-link:active,
 .selected-project-button:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0) scale(0.96);
 }
 
+/* Вкладки входа и регистрации теперь явно скользят между состояниями. */
 .auth-tabs {
   isolation: isolate;
+  overflow: visible;
 }
 
 .auth-tabs button {
@@ -87,56 +162,89 @@
 .auth-tabs button::after {
   content: "";
   position: absolute;
-  inset: auto 18px 5px;
-  height: 2px;
+  inset: auto 16px 5px;
+  height: 3px;
   border-radius: 999px;
   background: currentColor;
   opacity: 0;
-  transform: scaleX(0.35);
-  transition: opacity 180ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: scaleX(0.18);
+  transition: opacity 220ms ease, transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-tabs button.is-active {
+  box-shadow: 0 10px 28px rgba(23, 23, 23, 0.17);
+  transform: translateY(-2px) scale(1.035);
 }
 
 .auth-tabs button.is-active::after {
-  opacity: 0.72;
+  opacity: 0.8;
   transform: scaleX(1);
+}
+
+.auth-form,
+.email-verification-box {
+  animation: hall-tab-content-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes hall-tab-content-enter {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
 }
 
 .city-dialog-backdrop,
 .map-modal-backdrop,
 .cart-backdrop,
 .auth-dialog-backdrop {
-  animation: hall-backdrop-enter 220ms ease-out both;
+  animation: hall-backdrop-enter 300ms ease-out both;
 }
 
 .city-dialog,
 .map-modal,
 .cart-drawer,
 .auth-dialog {
-  animation: hall-panel-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hall-panel-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: center top;
 }
 
 @keyframes hall-backdrop-enter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes hall-panel-enter {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.975);
+    filter: blur(7px);
+    transform: translateY(30px) scale(0.94);
   }
   to {
     opacity: 1;
+    filter: blur(0);
     transform: translateY(0) scale(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hall-page-transition,
+  .hall-section-arrive,
   .hall-header .header-nav > a,
   .hall-header .header-nav > button,
   .hall-header .header-nav > div,
+  .auth-form,
+  .email-verification-box,
   .city-dialog-backdrop,
   .map-modal-backdrop,
   .cart-backdrop,
@@ -146,6 +254,7 @@
   .cart-drawer,
   .auth-dialog {
     animation: none !important;
+    filter: none !important;
     opacity: 1 !important;
     transform: none !important;
   }
