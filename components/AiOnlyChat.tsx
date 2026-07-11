@@ -5,7 +5,7 @@ import { MarkdownText } from "@/components/MarkdownText";
 import { MascotImage } from "@/components/MascotImage";
 import { useCity } from "@/components/CityProvider";
 import { postJson } from "@/lib/client-api";
-import type { Locale } from "@/lib/i18n";
+import { translateComplexName, translatePlace, type Locale } from "@/lib/i18n";
 import {
   clearChatHistory,
   generalChatHistoryKey,
@@ -39,12 +39,15 @@ export function AiOnlyChat({ locale = "ru" }: { locale?: Locale }) {
   const [pendingCount, setPendingCount] = useState(0);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesRef = useRef<Message[]>(initialMessages);
-  const projectLabel = selectedProject || (isEnglish ? "Any project" : "Любой ЖК");
+  const cityLabel = translatePlace(selectedCity, locale);
+  const projectLabel = selectedProject
+    ? translateComplexName(selectedProject, locale)
+    : isEnglish ? "Any project" : "Любой ЖК";
 
   const starterPrompts = isEnglish
     ? [
-        selectedProject ? `What is available in ${selectedProject}?` : `What is available across all projects in ${selectedCity}?`,
-        `Find an apartment for a family in ${selectedCity}`,
+        selectedProject ? `What is available in ${projectLabel}?` : `What is available across all projects in ${cityLabel}?`,
+        `Find an apartment for a family in ${cityLabel}`,
         "Which apartment is best for rental income?",
         "Compare the best options"
       ]
@@ -152,7 +155,7 @@ export function AiOnlyChat({ locale = "ru" }: { locale?: Locale }) {
 
       <div className="chat-context">
         <span>{isEnglish ? "Recommendation context:" : "Контекст рекомендаций:"}</span>
-        <strong>{selectedCity} · {projectLabel}</strong>
+        <strong>{cityLabel} · {projectLabel}</strong>
       </div>
 
       <div className="chat-history-actions">
