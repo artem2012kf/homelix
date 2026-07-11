@@ -7,7 +7,15 @@ import { AuthHeaderActions } from "@/components/AuthHeaderActions";
 import { MascotLogo } from "@/components/MascotLogo";
 import { useCity } from "@/components/CityProvider";
 import { useCart } from "@/components/CartProvider";
-import { getHomeHref, getLocaleFromPathname, localeNames, siteText, type Locale } from "@/lib/i18n";
+import {
+  getHomeHref,
+  getLocaleFromPathname,
+  localeNames,
+  siteText,
+  translateComplexName,
+  translatePlace,
+  type Locale
+} from "@/lib/i18n";
 import { localizePath, switchLocalePath } from "@/lib/locale-path";
 
 const languageOrder: Locale[] = ["ru", "en"];
@@ -24,7 +32,10 @@ export function Header() {
   const isHomePage = pathname === "/" || pathname === "/en";
   const aiHref = localizePath(locale, "/ai");
   const furnitureHref = localizePath(locale, "/furniture");
-  const projectLabel = selectedProject || (locale === "en" ? "Any project" : "Любой ЖК");
+  const cityLabel = translatePlace(selectedCity, locale);
+  const projectLabel = selectedProject
+    ? translateComplexName(selectedProject, locale)
+    : locale === "en" ? "Any project" : "Любой ЖК";
   const cartLabel = locale === "en"
     ? count > 0 ? `Furniture cart, ${count} items` : "Furniture cart"
     : count > 0 ? `Корзина мебели, товаров: ${count}` : "Корзина мебели";
@@ -94,7 +105,7 @@ export function Header() {
 
       <button className="selected-project-button" type="button" onClick={openChooser}>
         <span>{locale === "en" ? "Selected project" : "Выбран ЖК"}</span>
-        <strong>{projectLabel} · {selectedCity}</strong>
+        <strong>{projectLabel} · {cityLabel}</strong>
       </button>
 
       <nav className="header-nav" aria-label={text.brandSubtitle}>
