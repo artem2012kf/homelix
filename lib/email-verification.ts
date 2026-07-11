@@ -3,6 +3,14 @@ import { isGmailSmtpConfigured, sendSmtpMail } from "@/lib/smtp-mailer";
 
 const TTL_MS = 15 * 60 * 1000;
 
+type EmailDeliveryFailureReason =
+  | "provider-not-configured"
+  | "authentication-failed"
+  | "connection-failed"
+  | "sender-rejected"
+  | "recipient-rejected"
+  | "provider-error";
+
 function secret() {
   return process.env.HOMELIX_AUTH_SECRET || process.env.AUTH_SECRET || "hall-local-development-secret-change-me";
 }
@@ -17,6 +25,41 @@ function sign(payload: string) {
 
 function codeHash(email: string, code: string, nonce: string) {
   return createHash("sha256").update(`${email}:${code}:${nonce}:${secret()}`).digest("hex");
+}
+
+function classifySmtpError(error: unknown): EmailDeliveryFailureReason {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  if (
+    message.includes("535") ||
+    message.includes("534") ||
+    message.includes("authentication") ||
+    message.includes("username and password not accepted") ||
+    message.includes("smtp password failed")
+  ) {
+    return "authentication-failed";
+  }
+
+  if (message.includes("mail from failed") || message.includes("sender address rejected")) {
+    return "sender-rejected";
+  }
+
+  if (message.includes("rcpt to failed") || message.includes("recipient address rejected")) {
+    return "recipient-rejected";
+  }
+
+  if (
+    message.includes("timeout") ||
+    message.includes("econnrefused") ||
+    message.includes("enotfound") ||
+    message.includes("ehostunreach") ||
+    message.includes("socket") ||
+    message.includes("network")
+  ) {
+    return "connection-failed";
+  }
+
+  return "provider-error";
 }
 
 export function createEmailVerificationChallenge(email: string) {
@@ -52,7 +95,7 @@ export function verifyEmailChallenge(email: string, code: string, token: string)
 
 export async function sendEmailVerificationCode(email: string, code: string) {
   if (!isGmailSmtpConfigured()) {
-    return { sent: false, reason: "provider-not-configured" as const };
+    return { sent: false as const, reason: "provider-not-configured" as const };
   }
 
   try {
@@ -63,7 +106,11 @@ export async function sendEmailVerificationCode(email: string, code: string) {
     });
     return { sent: true as const };
   } catch (error) {
-    console.error("Gmail SMTP verification email failed", error instanceof Error ? error.message : "unknown error");
-    return { sent: false as const, reason: "provider-error" as const };
+    const reason = classifySmtpError(error);
+    console.error("Gmail SMTP verification email failed", {
+      reason,
+      message: error instanceof Error ? error.message : "unknown error"
+    });
+    return { sent: false as const, reason };
   }
 }
