@@ -2,11 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { useCity } from "@/components/CityProvider";
-import { getLocaleFromPathname } from "@/lib/i18n";
+import { getLocaleFromPathname, translateComplexName, translatePlace } from "@/lib/i18n";
 
 export function CityChooser() {
   const pathname = usePathname();
-  const isEnglish = getLocaleFromPathname(pathname) === "en";
+  const locale = getLocaleFromPathname(pathname);
+  const isEnglish = locale === "en";
   const {
     cities,
     projects,
@@ -52,7 +53,7 @@ export function CityChooser() {
               className={city === selectedCity ? "is-active" : ""}
               onClick={() => selectCity(city)}
             >
-              {city}
+              {translatePlace(city, locale)}
             </button>
           ))}
         </div>
@@ -63,14 +64,16 @@ export function CityChooser() {
             <option value="">{isEnglish ? "Any project" : "Любой ЖК"}</option>
             {projects.map((project) => (
               <option key={project} value={project}>
-                {project}
+                {translateComplexName(project, locale)}
               </option>
             ))}
           </select>
         </label>
 
         <button className="button button-primary city-confirm" type="button" onClick={confirmSelection}>
-          {isEnglish ? `Show listings in ${selectedCity}` : `Показать предложения в ${selectedCity}`}
+          {isEnglish
+            ? `Show listings in ${translatePlace(selectedCity, locale)}`
+            : `Показать предложения в ${selectedCity}`}
         </button>
       </section>
     </div>
