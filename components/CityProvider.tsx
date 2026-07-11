@@ -21,6 +21,7 @@ type CityContextValue = {
 const CityContext = createContext<CityContextValue | null>(null);
 const CITY_KEY = "hall-selected-city";
 const PROJECT_KEY = "hall-selected-project";
+const ANY_PROJECT_STORAGE_VALUE = "__any_project__";
 
 export function CityProvider({ apartments, children }: { apartments: Apartment[]; children: React.ReactNode }) {
   const cities = useMemo(
@@ -43,30 +44,34 @@ export function CityProvider({ apartments, children }: { apartments: Apartment[]
     const initialCity = savedCity && cities.includes(savedCity) ? savedCity : fallbackCity;
     const allowedProjects = [...new Set(apartments.filter((item) => item.city === initialCity).map((item) => item.project))];
     const savedProject = window.localStorage.getItem(PROJECT_KEY);
+
     setSelectedCity(initialCity);
-    setSelectedProject(savedProject && allowedProjects.includes(savedProject) ? savedProject : allowedProjects[0] ?? "");
+    setSelectedProject(
+      savedProject === ANY_PROJECT_STORAGE_VALUE
+        ? ""
+        : savedProject && allowedProjects.includes(savedProject)
+          ? savedProject
+          : ""
+    );
     setChooserOpen(!savedCity);
     setReady(true);
   }, [apartments, cities, fallbackCity]);
 
   useEffect(() => {
-    if (!projects.length) {
+    if (selectedProject && !projects.includes(selectedProject)) {
       setSelectedProject("");
-      return;
     }
-    if (!projects.includes(selectedProject)) setSelectedProject(projects[0]);
   }, [projects, selectedProject]);
 
   function selectCity(city: string) {
     if (!cities.includes(city)) return;
     setSelectedCity(city);
-    const firstProject = apartments.find((item) => item.city === city)?.project ?? "";
-    setSelectedProject(firstProject);
+    setSelectedProject("");
   }
 
   function confirmSelection() {
     window.localStorage.setItem(CITY_KEY, selectedCity);
-    if (selectedProject) window.localStorage.setItem(PROJECT_KEY, selectedProject);
+    window.localStorage.setItem(PROJECT_KEY, selectedProject || ANY_PROJECT_STORAGE_VALUE);
     setChooserOpen(false);
     window.dispatchEvent(new CustomEvent("hall-city-changed", { detail: { city: selectedCity, project: selectedProject } }));
   }
