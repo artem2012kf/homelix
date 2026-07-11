@@ -1,0 +1,60 @@
+/* Надёжная адаптивная сетка фильтров: нативные select не должны расширять карточку. */
+.catalog-filter-panel,
+.filter-selects,
+.filter-selects > label,
+.filter-selects select,
+.filter-summary {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.catalog-filter-panel {
+  width: 100%;
+}
+
+.filter-selects {
+  width: 100%;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.filter-selects > label {
+  overflow: hidden;
+}
+
+.filter-selects select {
+  display: block;
+  width: 100%;
+  text-overflow: ellipsis;
+}
+
+.filter-summary > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1200px) {
+  .filter-selects {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .filter-selects {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filter-summary button {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-selects {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
