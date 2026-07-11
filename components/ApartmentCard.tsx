@@ -8,6 +8,7 @@ import { CurrencyPrice } from "@/components/CurrencyProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatArea, statusLabel } from "@/lib/format";
 import { getResidentialComplexByApartmentId } from "@/lib/residential-complexes";
+import { localizePath } from "@/lib/locale-path";
 import {
   localizeApartment,
   siteText,
@@ -33,7 +34,7 @@ export function ApartmentCard({ apartment, locale = "ru" }: { apartment: Apartme
         <span>{city} · {apartment.floor} {text.floor}</span>
       </div>
 
-      <Link href={`/apartment/${apartment.id}`} aria-label={`${text.openPlanAria}: ${displayApartment.title}`}>
+      <Link href={localizePath(locale, `/apartment/${apartment.id}`)} aria-label={`${text.openPlanAria}: ${displayApartment.title}`}>
         <ApartmentMiniPlan apartment={displayApartment} />
       </Link>
 
