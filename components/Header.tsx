@@ -5,6 +5,7 @@ import { type MouseEvent, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AuthHeaderActions } from "@/components/AuthHeaderActions";
 import { MascotLogo } from "@/components/MascotLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCity } from "@/components/CityProvider";
 import { useCart } from "@/components/CartProvider";
 import {
@@ -140,6 +141,7 @@ export function Header() {
           {count > 0 ? <span aria-hidden="true">{count}</span> : null}
         </button>
         <AuthHeaderActions locale={locale} />
+        <ThemeToggle locale={locale} />
         <div className="language-switch" aria-label={locale === "en" ? "Language selector" : "Выбор языка"}>
           {languageOrder.map((language) => (
             <Link
