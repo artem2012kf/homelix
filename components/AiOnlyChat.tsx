@@ -21,7 +21,7 @@ const initialMessages: Message[] = [
   {
     role: "assistant",
     content:
-      "Здравствуйте. Я ИИ-консультант ХОЛЛ. Учитываю город и жилой комплекс, выбранные в шапке, и помогу подобрать подходящую квартиру."
+      "Здравствуйте. Я ИИ-консультант ХОЛЛ. Учитываю город и жилой комплекс, выбранные в шапке. При выборе «Любой ЖК» сравню предложения по всему городу."
   }
 ];
 
@@ -32,9 +32,10 @@ export function AiOnlyChat() {
   const [pendingCount, setPendingCount] = useState(0);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesRef = useRef<Message[]>(initialMessages);
+  const projectLabel = selectedProject || "Любой ЖК";
 
   const starterPrompts = [
-    selectedProject ? `Что доступно в ${selectedProject}?` : `Что доступно в ${selectedCity}?`,
+    selectedProject ? `Что доступно в ${selectedProject}?` : `Что доступно во всех ЖК города ${selectedCity}?`,
     `Подберите квартиру для семьи в ${selectedCity}`,
     "Какая квартира лучше для сдачи в аренду?",
     "Сравните подходящие варианты"
@@ -78,7 +79,7 @@ export function AiOnlyChat() {
           role: "assistant",
           content: sanitizeAssistantContent(
             data.answer ?? data.error,
-            "**Краткая консультация:** уточните бюджет, комнатность, этаж или цель покупки — город и ЖК уже выбраны в шапке."
+            "**Краткая консультация:** уточните бюджет, комнатность, этаж или цель покупки — город и охват ЖК уже выбраны в шапке."
           )
         }
       ]);
@@ -130,13 +131,13 @@ export function AiOnlyChat() {
         <div>
           <span className="eyebrow">ИИ-консультант</span>
           <h2>Подбор без открытия конкретной квартиры</h2>
-          <p>Город и ЖК берутся из переключателя в шапке автоматически.</p>
+          <p>При выборе «Любой ЖК» консультант сравнивает все проекты выбранного города.</p>
         </div>
       </div>
 
       <div className="chat-context">
         <span>Контекст рекомендаций:</span>
-        <strong>{selectedCity}{selectedProject ? ` · ${selectedProject}` : ""}</strong>
+        <strong>{selectedCity} · {projectLabel}</strong>
       </div>
 
       <div className="chat-history-actions">
