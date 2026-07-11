@@ -17,6 +17,8 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
+
 export async function POST(request: Request) {
   const limit = checkRateLimit(request, "auth-login", { limit: 8, windowMs: 10 * 60 * 1000 });
   if (!limit.allowed) return rateLimitResponse(limit);
@@ -26,15 +28,28 @@ export async function POST(request: Request) {
   const cleanPassword = String(password ?? "");
 
   if (!cleanEmail || cleanEmail.length > 254 || !cleanPassword || cleanPassword.length > 128) {
-    return Response.json({ error: "Почта или пароль указаны неверно." }, { status: 401 });
+    return Response.json(
+      { error: "Почта или пароль указаны неверно.", code: "INVALID_CREDENTIALS" },
+      { status: 401, headers: NO_STORE_HEADERS }
+    );
   }
 
   return withDatabaseWriteLock(() => {
     const database = readDatabase();
     const user = database.users.find((item) => item.email === cleanEmail);
 
-    if (!user || !verifyPassword(cleanPassword, user.passwordHash)) {
-      return Response.json({ error: "Почта или пароль указаны неверно." }, { status: 401 });
+    if (!user) {
+      return Response.json(
+        { error: "Такого аккаунта не существует.", code: "ACCOUNT_NOT_FOUND" },
+        { status: 404, headers: NO_STORE_HEADERS }
+      );
+    }
+
+    if (!verifyPassword(cleanPassword, user.passwordHash)) {
+      return Response.json(
+        { error: "Неверный пароль.", code: "INVALID_PASSWORD" },
+        { status: 401, headers: NO_STORE_HEADERS }
+      );
     }
 
     if (needsPasswordRehash(user.passwordHash)) {
@@ -50,7 +65,7 @@ export async function POST(request: Request) {
         favorites: getUserFavorites(database, user.id),
         reservations: getUserReservations(database, user.id)
       },
-      { headers: { "Set-Cookie": sessionCookie(session.token), "Cache-Control": "no-store" } }
+      { headers: { "Set-Cookie": sessionCookie(session.token), ...NO_STORE_HEADERS } }
     );
   });
 }
