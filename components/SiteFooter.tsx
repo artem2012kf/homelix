@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCity } from "@/components/CityProvider";
 import { getCityInfo } from "@/lib/city-data";
-import { getLocaleFromPathname } from "@/lib/i18n";
+import { getLocaleFromPathname, translateComplexName, translatePlace } from "@/lib/i18n";
 import { localizePath } from "@/lib/locale-path";
 
 export function SiteFooter() {
@@ -13,6 +13,10 @@ export function SiteFooter() {
   const isEnglish = locale === "en";
   const { selectedCity, selectedProject, openChooser } = useCity();
   const city = getCityInfo(selectedCity);
+  const cityLabel = translatePlace(selectedCity, locale);
+  const projectLabel = selectedProject
+    ? translateComplexName(selectedProject, locale)
+    : isEnglish ? "Any project in the city" : "Любой ЖК города";
 
   return (
     <footer className="site-footer" id="contacts">
@@ -25,10 +29,10 @@ export function SiteFooter() {
         </div>
 
         <div className="footer-column">
-          <span>{isEnglish ? `Sales office · ${selectedCity}` : `Офис продаж · ${selectedCity}`}</span>
+          <span>{isEnglish ? `Sales office · ${cityLabel}` : `Офис продаж · ${cityLabel}`}</span>
           <strong>{city.officeAddress}</strong>
           <a href={`tel:${city.phone.replace(/[^+\d]/g, "")}`}>{city.phone}</a>
-          <small>{selectedProject || (isEnglish ? "Any project in the city" : "Любой ЖК города")}</small>
+          <small>{projectLabel}</small>
         </div>
 
         <div className="footer-column">
