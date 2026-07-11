@@ -39,6 +39,7 @@ export const metadata: Metadata = {
   }
 };
 
+// Тема применяется до гидратации; изменение комментария также безопасно перезапускает Vercel deployment.
 const themeScript = `(function(){try{var s=localStorage.getItem("hall-theme");var t=s==="dark"||s==="light"?s:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
