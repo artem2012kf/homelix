@@ -13,6 +13,13 @@ type ChatMessage = {
 type AiOnlyRequest = {
   message?: string;
   history?: ChatMessage[];
+  city?: string;
+  project?: string;
+};
+
+type SelectionContext = {
+  city?: string;
+  project?: string;
 };
 
 function statusLabel(status: string) {
@@ -40,6 +47,37 @@ const cities = [...new Set(apartments.map((apartment) => apartment.city))];
 function requestedCity(message: string) {
   const lower = normalizeMessage(message);
   return cities.find((city) => lower.includes(normalizeMessage(city)));
+}
+
+function resolveSelection(city?: string, project?: string): SelectionContext {
+  const cleanCity = typeof city === "string" ? city.trim() : "";
+  const validCity = cities.includes(cleanCity) ? cleanCity : undefined;
+  const cleanProject = typeof project === "string" ? project.trim() : "";
+  const validProject =
+    validCity && cleanProject && apartments.some((apartment) => apartment.city === validCity && apartment.project === cleanProject)
+      ? cleanProject
+      : undefined;
+
+  return { city: validCity, project: validProject };
+}
+
+function scopeForMessage(message: string, selected: SelectionContext): SelectionContext {
+  if (selected.city) return selected;
+  return { city: requestedCity(message) };
+}
+
+function scopedApartments(scope: SelectionContext) {
+  return apartments.filter((apartment) => {
+    if (scope.city && apartment.city !== scope.city) return false;
+    if (scope.project && apartment.project !== scope.project) return false;
+    return true;
+  });
+}
+
+function scopeLabel(scope: SelectionContext) {
+  if (scope.city && scope.project) return `${scope.city}, ${scope.project}`;
+  if (scope.city) return scope.city;
+  return "каталогу ХОЛЛ";
 }
 
 function scoreApartment(apartment: (typeof apartments)[number], message: string) {
@@ -73,34 +111,37 @@ function scoreApartment(apartment: (typeof apartments)[number], message: string)
   return score;
 }
 
-function findBestApartments(message: string, limit = 3) {
-  const city = requestedCity(message);
-  const source = city ? apartments.filter((apartment) => apartment.city === city) : apartments;
+function findBestApartments(message: string, scope: SelectionContext, limit = 3) {
+  const scoped = scopedApartments(scope);
+  const active = scoped.filter((apartment) => apartment.status !== "sold");
+  const source = active.length ? active : scoped;
+
   return [...source]
     .sort((a, b) => scoreApartment(b, message) - scoreApartment(a, message) || a.price - b.price)
     .slice(0, limit);
 }
 
 function apartmentLine(apartment: (typeof apartments)[number]) {
-  return `- **${apartment.city}, ${apartment.project}: ${apartment.title}** — ${formatArea(apartment.totalArea)}, ${apartment.floor} этаж, **${formatPrice(apartment.price)}**, статус: ${statusLabel(apartment.status)}.`;
+  return `- **${apartment.project}: ${apartment.title}** — ${formatArea(apartment.totalArea)}, ${apartment.floor} этаж, **${formatPrice(apartment.price)}**, статус: ${statusLabel(apartment.status)}.`;
 }
 
-function deterministicAnswer(message: string) {
+function deterministicAnswer(message: string, selected: SelectionContext) {
   const lower = normalizeMessage(message);
-  const city = requestedCity(message);
-  const best = findBestApartments(message, 3);
+  const scope = scopeForMessage(message, selected);
+  const source = scopedApartments(scope);
+  const best = findBestApartments(message, scope, 3);
   const main = best[0];
+  const context = scopeLabel(scope);
 
   if (!main) {
-    return city
-      ? `В городе **${city}** подходящие квартиры не найдены. Попробуйте изменить бюджет или комнатность.`
-      : "Подходящие квартиры не найдены. Уточните город, бюджет, комнатность или цель покупки.";
+    return `В выбранном контексте **${context}** подходящие квартиры не найдены. Попробуйте изменить город или ЖК в шапке либо ослабить требования.`;
   }
 
   if (lower.includes("лучш") || lower.includes("лучше") || lower.includes("подбер") || lower.includes("какая квартира")) {
     return [
-      `**Лучший вариант по вашему запросу — ${main.city}, ${main.project}, ${main.title}.**`,
+      `**Подборка для ${context}.**`,
       "",
+      `Лучший вариант по вашему запросу — **${main.project}, ${main.title}**.`,
       `Цена: **${formatPrice(main.price)}**.`,
       `Площадь: **${formatArea(main.totalArea)}**, этаж: **${main.floor}**, статус: **${statusLabel(main.status)}**.`,
       "",
@@ -110,39 +151,42 @@ function deterministicAnswer(message: string) {
         : lower.includes("сем")
           ? "- площадь и комнатность лучше подходят для семьи;"
           : "- вариант выше остальных по совпадению с вашим запросом;",
-      "- город, ЖК и цена указаны сразу для быстрого сравнения.",
+      "- рекомендации ограничены выбранными городом и жилым комплексом.",
       "",
-      "**Еще можно рассмотреть:**",
-      ...best.slice(1).map(apartmentLine),
-      "",
-      "Цена и наличие в демонстрационном каталоге требуют подтверждения менеджером."
+      ...(best.length > 1 ? ["**Еще можно рассмотреть:**", ...best.slice(1).map(apartmentLine), ""] : []),
+      "Цена и наличие необходимо подтвердить у менеджера."
     ].join("\n");
   }
 
   if (lower.includes("доступ") || lower.includes("свобод") || lower.includes("в наличии")) {
-    const available = (city ? apartments.filter((item) => item.city === city) : apartments)
+    const available = source
       .filter((item) => item.status === "available")
       .sort((a, b) => a.price - b.price)
       .slice(0, 5);
-    return [city ? `**Свободные квартиры в городе ${city}:**` : "**Сейчас доступны такие квартиры:**", "", ...available.map(apartmentLine)].join("\n");
+
+    if (!available.length) {
+      return `В **${context}** сейчас нет квартир со статусом «Свободна». Можно посмотреть варианты в брони или выбрать другой ЖК в шапке.`;
+    }
+
+    return [`**Свободные квартиры: ${context}:**`, "", ...available.map(apartmentLine)].join("\n");
   }
 
   if (lower.includes("сравн")) {
     return [
-      city ? `**Сравнение вариантов в городе ${city}:**` : "**Сравнение подходящих вариантов:**",
+      `**Сравнение вариантов: ${context}:**`,
       "",
       ...best.map(apartmentLine),
       "",
-      `Если выбирать один вариант, я бы начал с **${main.city}, ${main.title}** — цена **${formatPrice(main.price)}**.`
+      `Если выбирать один вариант, я бы начал с **${main.title}** — цена **${formatPrice(main.price)}**.`
     ].join("\n");
   }
 
   return [
-    city ? `**Краткая подборка по городу ${city}:**` : "**Краткая подборка по вашему запросу:**",
+    `**Краткая подборка: ${context}:**`,
     "",
     ...best.map(apartmentLine),
     "",
-    `Самый сильный вариант сейчас: **${main.city}, ${main.title}** за **${formatPrice(main.price)}**.`
+    `Самый сильный вариант сейчас: **${main.title}** за **${formatPrice(main.price)}**.`
   ].join("\n");
 }
 
@@ -156,7 +200,9 @@ export async function POST(request: Request) {
     if (!message || message.length > 1200) {
       return Response.json({ error: "Введите сообщение длиной до 1200 символов." }, { status: 400 });
     }
-    return Response.json({ answer: deterministicAnswer(message) });
+
+    const selection = resolveSelection(body.city, body.project);
+    return Response.json({ answer: deterministicAnswer(message, selection) });
   } catch {
     return Response.json({ error: "Не удалось обработать запрос. Попробуйте отправить вопрос еще раз." }, { status: 500 });
   }
