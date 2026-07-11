@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { useCity } from "@/components/CityProvider";
 import { getCityInfo, getOpenStreetMapEmbedUrl } from "@/lib/city-data";
+import { getLocaleFromPathname } from "@/lib/i18n";
 
 export function CityMap() {
+  const pathname = usePathname();
+  const isEnglish = getLocaleFromPathname(pathname) === "en";
   const { selectedCity, selectedProject } = useCity();
   const [open, setOpen] = useState(false);
   const city = getCityInfo(selectedCity);
@@ -15,8 +19,8 @@ export function CityMap() {
         className="city-map-trigger"
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`Открыть карту города ${selectedCity}`}
-        title={`Карта: ${selectedCity}`}
+        aria-label={isEnglish ? `Open the map of ${selectedCity}` : `Открыть карту города ${selectedCity}`}
+        title={isEnglish ? `Map: ${selectedCity}` : `Карта: ${selectedCity}`}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 21s7-5.7 7-12A7 7 0 1 0 5 9c0 6.3 7 12 7 12Z" />
@@ -26,33 +30,33 @@ export function CityMap() {
 
       {open ? (
         <div className="map-modal-backdrop" role="presentation" onMouseDown={() => setOpen(false)}>
-          <section className="map-modal" role="dialog" aria-modal="true" aria-label={`Карта ${selectedCity}`} onMouseDown={(event) => event.stopPropagation()}>
+          <section className="map-modal" role="dialog" aria-modal="true" aria-label={isEnglish ? `Map of ${selectedCity}` : `Карта ${selectedCity}`} onMouseDown={(event) => event.stopPropagation()}>
             <div className="map-modal-head">
               <div>
-                <span className="eyebrow">Карта города</span>
+                <span className="eyebrow">{isEnglish ? "City map" : "Карта города"}</span>
                 <h2>{selectedCity}</h2>
-                <p>{selectedProject || "Выбранный жилой комплекс"} · офис продаж: {city.officeAddress}</p>
+                <p>{selectedProject || (isEnglish ? "Selected residential project" : "Выбранный жилой комплекс")} · {isEnglish ? "sales office" : "офис продаж"}: {city.officeAddress}</p>
               </div>
-              <button className="icon-button" type="button" onClick={() => setOpen(false)} aria-label="Закрыть карту">
+              <button className="icon-button" type="button" onClick={() => setOpen(false)} aria-label={isEnglish ? "Close map" : "Закрыть карту"}>
                 ×
               </button>
             </div>
             <iframe
-              title={`Интерактивная карта ${selectedCity}`}
+              title={isEnglish ? `Interactive map of ${selectedCity}` : `Интерактивная карта ${selectedCity}`}
               className="city-map-frame"
               src={getOpenStreetMapEmbedUrl(selectedCity)}
               loading="lazy"
               referrerPolicy="strict-origin-when-cross-origin"
             />
             <div className="map-modal-footer">
-              <span>Карту можно перемещать и масштабировать.</span>
+              <span>{isEnglish ? "Drag and zoom the map." : "Карту можно перемещать и масштабировать."}</span>
               <a
                 className="button button-ghost"
                 href={`https://www.openstreetmap.org/?mlat=${city.lat}&mlon=${city.lon}#map=${city.zoom}/${city.lat}/${city.lon}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                Открыть большую карту
+                {isEnglish ? "Open full map" : "Открыть большую карту"}
               </a>
             </div>
           </section>
