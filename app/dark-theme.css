@@ -41,6 +41,13 @@
 :root[data-theme="dark"] .floor-filter-pills button,
 :root[data-theme="dark"] .filter-selects select,
 :root[data-theme="dark"] .complex-card,
+:root[data-theme="dark"] .hero-selected-location,
+:root[data-theme="dark"] .hall-mascot-card,
+:root[data-theme="dark"] .complex-card-metrics span,
+:root[data-theme="dark"] .empty-catalog-state,
+:root[data-theme="dark"] .hall-cart-summary,
+:root[data-theme="dark"] .furniture-store-toolbar,
+:root[data-theme="dark"] .furniture-category-nav button,
 :root[data-theme="dark"] input,
 :root[data-theme="dark"] textarea,
 :root[data-theme="dark"] select {
@@ -58,10 +65,13 @@
 :root[data-theme="dark"] .advantages-card,
 :root[data-theme="dark"] .plan-card,
 :root[data-theme="dark"] .room-card,
+:root[data-theme="dark"] .room-info-card,
+:root[data-theme="dark"] .purchase-card,
 :root[data-theme="dark"] .price-box,
 :root[data-theme="dark"] .furniture-summary-card,
 :root[data-theme="dark"] .account-location-card,
-:root[data-theme="dark"] .auth-dialog {
+:root[data-theme="dark"] .auth-dialog,
+:root[data-theme="dark"] .placed-furniture-panel {
   border-color: var(--hall-line) !important;
   color: var(--hall-ink) !important;
   background: var(--hall-surface) !important;
@@ -71,6 +81,8 @@
 :root[data-theme="dark"] .hero-widget > div,
 :root[data-theme="dark"] .plan-shell,
 :root[data-theme="dark"] .card-mini-plan,
+:root[data-theme="dark"] .plan-shell > svg,
+:root[data-theme="dark"] .card-mini-plan svg,
 :root[data-theme="dark"] .furniture-visual,
 :root[data-theme="dark"] .cart-empty,
 :root[data-theme="dark"] .cart-message,
@@ -86,7 +98,18 @@
   border-color: var(--hall-line) !important;
 }
 
-:root[data-theme="dark"] .apartment-complex-badge {
+:root[data-theme="dark"] .account-auth-aside {
+  color: #f6f6f1 !important;
+  background: #242421 !important;
+}
+
+:root[data-theme="dark"] .account-auth-aside .eyebrow,
+:root[data-theme="dark"] .account-auth-aside ul {
+  color: #c9c9c1 !important;
+}
+
+:root[data-theme="dark"] .apartment-complex-badge,
+:root[data-theme="dark"] .hero-selected-location > button {
   color: #ffb5ad !important;
   background: #3c2724 !important;
 }
@@ -97,7 +120,9 @@
 }
 
 :root[data-theme="dark"] .apartment-plan .room-group:focus rect,
-:root[data-theme="dark"] .apartment-plan .room-group:hover rect {
+:root[data-theme="dark"] .apartment-plan .room-group:hover rect,
+:root[data-theme="dark"] .apartment-plan .room-group:focus > polygon:first-child,
+:root[data-theme="dark"] .apartment-plan .room-group:hover > polygon:first-child {
   fill: #563834 !important;
 }
 
@@ -110,8 +135,28 @@
   color: var(--hall-muted) !important;
 }
 
+/* В исходной светлой теме --hall-ink используется и как текст, и как заливка.
+   Для интерактивных активных элементов в тёмном режиме явно задаём контраст. */
+:root[data-theme="dark"] .button-primary,
+:root[data-theme="dark"] .hall-header .header-nav > a.header-tab.is-current,
+:root[data-theme="dark"] .language-link.is-active,
+:root[data-theme="dark"] .auth-tabs button.is-active,
+:root[data-theme="dark"] .city-picker-grid button.is-active,
+:root[data-theme="dark"] .floor-filter-pills button.is-active,
+:root[data-theme="dark"] .furniture-category-nav button.is-active,
+:root[data-theme="dark"] .complex-card-index,
+:root[data-theme="dark"] .city-map-trigger {
+  border-color: #f4f4ef !important;
+  color: #11110f !important;
+  background: #f4f4ef !important;
+}
+
+:root[data-theme="dark"] .button-primary:hover {
+  background: #deded8 !important;
+}
+
 :root[data-theme="dark"] .theme-toggle {
-  border-color: var(--hall-line);
+  border-color: var(--hall-line) !important;
   color: #11110f;
   background: #f4f4ef;
 }
