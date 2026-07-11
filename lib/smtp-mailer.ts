@@ -72,6 +72,11 @@ function encodeHeader(value: string) {
   return `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`;
 }
 
+function encodeBody(value: string) {
+  const encoded = Buffer.from(value, "utf8").toString("base64");
+  return encoded.match(/.{1,76}/g)?.join("\r\n") ?? "";
+}
+
 function cleanHeaderValue(value: string) {
   return value.replace(/[\r\n]+/g, " ").trim();
 }
@@ -99,7 +104,6 @@ function buildMessage(input: SendSmtpMailInput, user: string) {
   const to = normalizeAddress(input.to);
   const host = user.split("@")[1] || "gmail.com";
   const messageId = `<${randomBytes(16).toString("hex")}@${host}>`;
-  const html = input.html.replace(/\r?\n/g, "\r\n").replace(/^\./gm, "..");
 
   return [
     `From: ${fromHeader(user)}`,
@@ -109,10 +113,25 @@ function buildMessage(input: SendSmtpMailInput, user: string) {
     `Message-ID: ${messageId}`,
     "MIME-Version: 1.0",
     "Content-Type: text/html; charset=UTF-8",
-    "Content-Transfer-Encoding: 8bit",
+    "Content-Transfer-Encoding: base64",
     "",
-    html
+    encodeBody(input.html)
   ].join("\r\n");
+}
+
+function waitForSecureConnection(socket: TLSSocket) {
+  return new Promise<void>((resolve, reject) => {
+    const onSecure = () => {
+      socket.off("error", onError);
+      resolve();
+    };
+    const onError = (error: Error) => {
+      socket.off("secureConnect", onSecure);
+      reject(error);
+    };
+    socket.once("secureConnect", onSecure);
+    socket.once("error", onError);
+  });
 }
 
 export function isGmailSmtpConfigured() {
@@ -138,21 +157,8 @@ export async function sendSmtpMail(input: SendSmtpMailInput) {
   socket.setTimeout(SMTP_TIMEOUT_MS, () => socket.destroy(new Error("SMTP socket timeout")));
 
   try {
-    const greetingPromise = readResponse(socket);
-    await new Promise<void>((resolve, reject) => {
-      const onSecure = () => {
-        socket.off("error", onError);
-        resolve();
-      };
-      const onError = (error: Error) => {
-        socket.off("secureConnect", onSecure);
-        reject(error);
-      };
-      socket.once("secureConnect", onSecure);
-      socket.once("error", onError);
-    });
-
-    expectCode(await greetingPromise, [220], "greeting");
+    const [greeting] = await Promise.all([readResponse(socket), waitForSecureConnection(socket)]);
+    expectCode(greeting, [220], "greeting");
     expectCode(await sendCommand(socket, `EHLO ${process.env.SMTP_EHLO_NAME || "hall-app"}`), [250], "EHLO");
     expectCode(await sendCommand(socket, "AUTH LOGIN"), [334], "AUTH LOGIN");
     expectCode(await sendCommand(socket, Buffer.from(user).toString("base64")), [334], "username");
