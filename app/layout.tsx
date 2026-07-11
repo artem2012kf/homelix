@@ -5,6 +5,7 @@ import "./security-ux.css";
 import "./hall-theme.css";
 import "./hall-components.css";
 import "./catalog-responsive.css";
+import "./transitions.css";
 import { Header } from "@/components/Header";
 import { AuthProvider } from "@/components/AuthProvider";
 import { CityProvider } from "@/components/CityProvider";
@@ -15,6 +16,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { CartDrawer } from "@/components/CartDrawer";
 import { CurrencyProvider } from "@/components/CurrencyProvider";
 import { CityRecommendationBell } from "@/components/CityRecommendationBell";
+import { PageTransition } from "@/components/PageTransition";
 import { apartments } from "@/lib/apartments";
 
 export const metadata: Metadata = {
@@ -44,7 +46,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <CartProvider>
                 <Header />
                 <CityChooser />
-                {children}
+                <PageTransition>{children}</PageTransition>
                 <SiteFooter />
                 <CityMap />
                 <CartDrawer />
