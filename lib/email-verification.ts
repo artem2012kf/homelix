@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { isGmailSmtpConfigured, sendSmtpMail } from "@/lib/smtp-mailer";
 
 const TTL_MS = 15 * 60 * 1000;
 
@@ -50,19 +51,19 @@ export function verifyEmailChallenge(email: string, code: string, token: string)
 }
 
 export async function sendEmailVerificationCode(email: string, code: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "ХОЛЛ <onboarding@resend.dev>";
-  if (!apiKey) return { sent: false, reason: "provider-not-configured" as const };
+  if (!isGmailSmtpConfigured()) {
+    return { sent: false, reason: "provider-not-configured" as const };
+  }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [email],
+  try {
+    await sendSmtpMail({
+      to: email,
       subject: "Код подтверждения ХОЛЛ",
       html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:32px"><h1 style="letter-spacing:.12em">ХОЛЛ</h1><p>Введите этот код, чтобы подтвердить адрес электронной почты:</p><p style="font-size:34px;font-weight:800;letter-spacing:.18em">${code}</p><p>Код действует 15 минут. Если вы не регистрировались, просто проигнорируйте письмо.</p></div>`
-    })
-  });
-  return response.ok ? { sent: true as const } : { sent: false as const, reason: "provider-error" as const };
+    });
+    return { sent: true as const };
+  } catch (error) {
+    console.error("Gmail SMTP verification email failed", error instanceof Error ? error.message : "unknown error");
+    return { sent: false as const, reason: "provider-error" as const };
+  }
 }
