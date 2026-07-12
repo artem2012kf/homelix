@@ -9,6 +9,7 @@ import "./transitions.css";
 import "./scroll-reveal.css";
 import "./dark-theme.css";
 import "./dark-theme-refinements.css";
+import "./product-polish.css";
 import { Header } from "@/components/Header";
 import { AuthProvider } from "@/components/AuthProvider";
 import { CityProvider } from "@/components/CityProvider";
@@ -24,8 +25,8 @@ import { ScrollRevealController } from "@/components/ScrollRevealController";
 import { apartments } from "@/lib/apartments";
 
 export const metadata: Metadata = {
-  title: "ХОЛЛ — квартиры в новостройках по всей России",
-  description: "Федеральный каталог квартир ХОЛЛ: выбор города и ЖК, фильтры, интерактивные планировки, мебель с доставкой и заявка на покупку.",
+  title: "ХОЛЛ — ИИ-маскот для агентств недвижимости",
+  description: "ИИ-маскот для сайтов агентств недвижимости: персональные рекомендации объектов, консультация клиентов и умная расстановка мебели на планировке.",
   applicationName: "ХОЛЛ",
   alternates: {
     languages: {
@@ -40,7 +41,6 @@ export const metadata: Metadata = {
   }
 };
 
-// Тема применяется до гидратации; изменение комментария также безопасно перезапускает Vercel deployment.
 const themeScript = `(function(){try{var s=localStorage.getItem("hall-theme");var t=s==="dark"||s==="light"?s:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch(e){}})();`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

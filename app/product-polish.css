@@ -1,0 +1,191 @@
+/* Продуктовая подача ИИ-маскота. */
+.product-capabilities {
+  padding-top: 34px !important;
+}
+
+.product-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.product-capability-card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-height: 250px;
+  padding: 26px;
+  overflow: hidden;
+  border: 1px solid var(--hall-line);
+  border-radius: 24px;
+  background: var(--hall-surface);
+}
+
+.product-capability-card::after {
+  position: absolute;
+  right: -44px;
+  bottom: -58px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(249, 62, 62, 0.07);
+  content: "";
+  pointer-events: none;
+}
+
+.product-capability-index {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 13px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.product-capability-card h3 {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.product-capability-card p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: var(--hall-muted);
+  line-height: 1.55;
+}
+
+.product-demo-note {
+  max-width: 820px;
+  margin-top: 14px !important;
+}
+
+/* Каталог в тёмной теме: никакого белого внутри карточек. */
+:root[data-theme="dark"] .apartment-card {
+  border-color: #2a3747 !important;
+  background: linear-gradient(160deg, #17202b 0%, #101720 100%) !important;
+}
+
+:root[data-theme="dark"] .card-metrics div,
+:root[data-theme="dark"] .metrics-strip div,
+:root[data-theme="dark"] .furniture-specs div {
+  border: 1px solid #2a3747 !important;
+  border-radius: 15px !important;
+  color: #f6f8fb !important;
+  background: #111923 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+}
+
+:root[data-theme="dark"] .card-metrics small,
+:root[data-theme="dark"] .metrics-strip span,
+:root[data-theme="dark"] .furniture-specs dt {
+  color: #9ba9ba !important;
+}
+
+:root[data-theme="dark"] .card-metrics strong,
+:root[data-theme="dark"] .metrics-strip strong,
+:root[data-theme="dark"] .furniture-specs dd {
+  color: #f7f9fc !important;
+}
+
+:root[data-theme="dark"] .card-mini-plan,
+:root[data-theme="dark"] .card-mini-plan svg {
+  border-color: #2a3747 !important;
+  background: #0d141d !important;
+}
+
+:root[data-theme="dark"] .apartment-card .muted {
+  color: #b6c0cd !important;
+}
+
+:root[data-theme="dark"] .card-actions .button-ghost {
+  border-color: #304052 !important;
+  color: #f0f4f9 !important;
+  background: #111923 !important;
+}
+
+:root[data-theme="dark"] .card-actions .button-ghost:hover {
+  border-color: rgba(255, 105, 96, 0.5) !important;
+  background: #1b2633 !important;
+}
+
+/* Рекомендации должны выглядеть частью интерфейса, а не белым баннером. */
+:root[data-theme="dark"] .smart-reco-panel,
+:root[data-theme="dark"] .smart-reco-consent {
+  border-color: #304052 !important;
+  color: #f7f9fc !important;
+  background: rgba(15, 22, 31, 0.97) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48) !important;
+}
+
+:root[data-theme="dark"] .smart-reco-consent strong,
+:root[data-theme="dark"] .smart-reco-panel h3,
+:root[data-theme="dark"] .smart-reco-item strong,
+:root[data-theme="dark"] .smart-reco-item em {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .smart-reco-consent span,
+:root[data-theme="dark"] .smart-reco-panel p,
+:root[data-theme="dark"] .smart-reco-item small,
+:root[data-theme="dark"] .smart-reco-item ul {
+  color: #aab6c5 !important;
+}
+
+:root[data-theme="dark"] .smart-reco-panel-head button,
+:root[data-theme="dark"] .smart-reco-item,
+:root[data-theme="dark"] .smart-reco-empty,
+:root[data-theme="dark"] .smart-reco-profile {
+  border-color: #304052 !important;
+  color: #f7f9fc !important;
+  background: #17212d !important;
+}
+
+:root[data-theme="dark"] .smart-reco-item:hover {
+  border-color: rgba(255, 105, 96, 0.46) !important;
+  background: #1d2a38 !important;
+}
+
+:root[data-theme="dark"] .smart-reco-consent button,
+:root[data-theme="dark"] .smart-reco-ai-link {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ff625a, #e54440) !important;
+}
+
+:root[data-theme="dark"] .product-capability-card {
+  border-color: #2a3747;
+  background: linear-gradient(155deg, #17212c 0%, #111821 100%);
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] .product-capability-card::after {
+  background: rgba(255, 98, 90, 0.08);
+}
+
+:root[data-theme="dark"] .product-capability-card p {
+  color: #aeb9c8;
+}
+
+@media (max-width: 1120px) {
+  .product-capability-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .product-capability-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-capability-card {
+    min-height: auto;
+  }
+}

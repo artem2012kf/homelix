@@ -18,6 +18,7 @@ import {
   type Locale
 } from "@/lib/i18n";
 import { localizePath, switchLocalePath } from "@/lib/locale-path";
+import { productText } from "@/lib/product-copy";
 
 const languageOrder: Locale[] = ["ru", "en"];
 const homeSectionIds = ["apartments", "complexes", "contacts"] as const;
@@ -27,6 +28,7 @@ export function Header() {
   const pathname = usePathname();
   const locale = getLocaleFromPathname(pathname);
   const text = siteText[locale];
+  const product = productText[locale];
   const { selectedCity, selectedProject, openChooser } = useCity();
   const { count, openCart } = useCart();
   const [activeSection, setActiveSection] = useState<HomeSectionId | "">("");
@@ -36,7 +38,7 @@ export function Header() {
   const cityLabel = translatePlace(selectedCity, locale);
   const projectLabel = selectedProject
     ? translateComplexName(selectedProject, locale)
-    : locale === "en" ? "Any project" : "Любой ЖК";
+    : locale === "en" ? "Any demo project" : "Любой демо-ЖК";
   const cartLabel = locale === "en"
     ? count > 0 ? `Furniture cart, ${count} items` : "Furniture cart"
     : count > 0 ? `Корзина мебели, товаров: ${count}` : "Корзина мебели";
@@ -100,23 +102,23 @@ export function Header() {
         </span>
         <span>
           <strong>{text.brand}</strong>
-          <small>{text.brandSubtitle}</small>
+          <small>{product.brandSubtitle}</small>
         </span>
       </Link>
 
       <button className="selected-project-button" type="button" onClick={openChooser}>
-        <span>{locale === "en" ? "Selected project" : "Выбран ЖК"}</span>
+        <span>{product.header.selectedProject}</span>
         <strong>{projectLabel} · {cityLabel}</strong>
       </button>
 
-      <nav className="header-nav" aria-label={text.brandSubtitle}>
+      <nav className="header-nav" aria-label={product.brandSubtitle}>
         <Link
           href={getHomeHref(locale, "#apartments")}
           className={`header-tab ${activeSection === "apartments" ? "is-current" : ""}`}
           aria-current={activeSection === "apartments" ? "location" : undefined}
           onClick={(event) => handleSectionClick(event, "apartments")}
         >
-          {text.nav.apartments}
+          {product.nav.apartments}
         </Link>
         <Link
           href={getHomeHref(locale, "#complexes")}
@@ -124,17 +126,17 @@ export function Header() {
           aria-current={activeSection === "complexes" ? "location" : undefined}
           onClick={(event) => handleSectionClick(event, "complexes")}
         >
-          {text.nav.complexes}
+          {product.nav.complexes}
         </Link>
-        <Link className={`header-tab ${pathname.startsWith(aiHref) ? "is-current" : ""}`} href={aiHref} aria-current={pathname.startsWith(aiHref) ? "page" : undefined}>{text.nav.ai}</Link>
-        <Link className={`header-tab ${pathname.startsWith(furnitureHref) ? "is-current" : ""}`} href={furnitureHref} aria-current={pathname.startsWith(furnitureHref) ? "page" : undefined}>{text.nav.furniture}</Link>
+        <Link className={`header-tab ${pathname.startsWith(aiHref) ? "is-current" : ""}`} href={aiHref} aria-current={pathname.startsWith(aiHref) ? "page" : undefined}>{product.nav.ai}</Link>
+        <Link className={`header-tab ${pathname.startsWith(furnitureHref) ? "is-current" : ""}`} href={furnitureHref} aria-current={pathname.startsWith(furnitureHref) ? "page" : undefined}>{product.nav.furniture}</Link>
         <Link
           href={getHomeHref(locale, "#contacts")}
           className={`header-tab ${activeSection === "contacts" ? "is-current" : ""}`}
           aria-current={activeSection === "contacts" ? "location" : undefined}
           onClick={(event) => handleSectionClick(event, "contacts")}
         >
-          {text.nav.contacts}
+          {product.nav.contacts}
         </Link>
         <button className="header-cart-button" type="button" onClick={openCart} aria-label={cartLabel}>
           {locale === "en" ? "Cart" : "Корзина"}
