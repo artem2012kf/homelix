@@ -64,38 +64,14 @@ export default async function EnglishApartmentPage({ params }: { params: Promise
         <div className="apartment-hero-grid">
           <div>
             <ApartmentStatusBadge apartmentId={apartment.id} baseStatus={apartment.status} locale="en" />
-            <span
-              style={{
-                display: "inline-flex",
-                margin: "0 0 14px 10px",
-                padding: "8px 12px",
-                borderRadius: 999,
-                color: "var(--primary-dark)",
-                background: "rgba(249, 62, 62, 0.08)",
-                fontSize: 13,
-                fontWeight: 900
-              }}
-            >
-              {complexName}
-            </span>
+            <span className="apartment-complex-badge">{complexName}</span>
             <h1>{displayApartment.title}</h1>
             <p className="muted">
               {complexName}, {district}, {displayApartment.building}, {displayApartment.section}, floor {apartment.floor}.
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+            <div className="apartment-feature-tags">
               {complex.tags.slice(0, 5).map((tag) => (
-                <span
-                  key={tag}
-                  style={{
-                    padding: "7px 10px",
-                    border: "1px solid var(--line)",
-                    borderRadius: 999,
-                    color: "var(--muted)",
-                    background: "#ffffff",
-                    fontSize: 12,
-                    fontWeight: 800
-                  }}
-                >
+                <span className="apartment-feature-tag" key={tag}>
                   {translateTag(tag, "en")}
                 </span>
               ))}
