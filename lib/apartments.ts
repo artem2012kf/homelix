@@ -216,7 +216,7 @@ function buildApartment(rawApartment: RawApartment, layouts: Record<string, RawL
   const { layoutId: _layoutId, ...apartment } = rawApartment;
   return {
     ...apartment,
-    status: rawApartment.status,
+    status: "available",
     rooms
   };
 }
