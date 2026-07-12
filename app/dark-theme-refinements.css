@@ -178,6 +178,23 @@
   background: rgba(255, 255, 255, 0.08) !important;
 }
 
+/* В тёмной теме белая обводка SVG совпадала с белой заливкой текста и превращала подписи в размытые пятна. */
+:root[data-theme="dark"] .apartment-plan text {
+  fill: #f7f9fc !important;
+  stroke: rgba(7, 11, 17, 0.94) !important;
+  stroke-width: 2.5px !important;
+  stroke-linejoin: round !important;
+  paint-order: stroke fill !important;
+}
+
+:root[data-theme="dark"] .apartment-plan text tspan:last-child {
+  fill: #ff9188 !important;
+}
+
+:root[data-theme="dark"] .apartment-plan .furniture-placement-label {
+  stroke-width: 2px !important;
+}
+
 @media (max-width: 720px) {
   :root[data-theme="dark"] .chat-form {
     border-top: 1px solid rgba(183, 199, 220, 0.12);
