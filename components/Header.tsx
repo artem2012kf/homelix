@@ -30,6 +30,7 @@ export function Header() {
   const { selectedCity, selectedProject, openChooser } = useCity();
   const { count, openCart } = useCart();
   const [activeSection, setActiveSection] = useState<HomeSectionId | "">("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isHomePage = pathname === "/" || pathname === "/en";
   const aiHref = localizePath(locale, "/ai");
   const furnitureHref = localizePath(locale, "/furniture");
@@ -40,10 +41,28 @@ export function Header() {
   const cartLabel = locale === "en"
     ? count > 0 ? `Furniture cart, ${count} items` : "Furniture cart"
     : count > 0 ? `Корзина мебели, товаров: ${count}` : "Корзина мебели";
+  const mobileMenuLabel = locale === "en"
+    ? isMobileMenuOpen ? "Hide menu" : "Menu"
+    : isMobileMenuOpen ? "Скрыть" : "Меню";
 
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsMobileMenuOpen(false);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     if (!isHomePage) {
@@ -104,12 +123,36 @@ export function Header() {
         </span>
       </Link>
 
-      <button className="selected-project-button" type="button" onClick={openChooser}>
+      <button
+        className="selected-project-button"
+        type="button"
+        onClick={() => {
+          setIsMobileMenuOpen(false);
+          openChooser();
+        }}
+      >
         <span>{locale === "en" ? "Selected project" : "Выбран ЖК"}</span>
         <strong>{projectLabel} · {cityLabel}</strong>
       </button>
 
-      <nav className="header-nav" aria-label={text.brandSubtitle}>
+      <button
+        className="mobile-menu-toggle"
+        type="button"
+        aria-expanded={isMobileMenuOpen}
+        aria-controls="site-navigation"
+        aria-label={mobileMenuLabel}
+        onClick={() => setIsMobileMenuOpen((current) => !current)}
+      >
+        <span aria-hidden="true">{isMobileMenuOpen ? "×" : "☰"}</span>
+        <span>{mobileMenuLabel}</span>
+      </button>
+
+      <nav
+        id="site-navigation"
+        className={`header-nav ${isMobileMenuOpen ? "is-mobile-open" : ""}`}
+        aria-label={text.brandSubtitle}
+        onClickCapture={() => setIsMobileMenuOpen(false)}
+      >
         <Link
           href={getHomeHref(locale, "#apartments")}
           className={`header-tab ${activeSection === "apartments" ? "is-current" : ""}`}
