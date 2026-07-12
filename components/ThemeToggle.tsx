@@ -50,6 +50,7 @@ export function ThemeToggle({ locale }: { locale: Locale }) {
       aria-pressed={isDark}
     >
       <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
+      <span className="theme-toggle-label">{label}</span>
     </button>
   );
 }
