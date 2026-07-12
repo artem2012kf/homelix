@@ -1,0 +1,89 @@
+/* Контраст тегов квартиры и форм авторизации в тёмной теме. */
+.apartment-feature-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.apartment-feature-tag {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+:root[data-theme="dark"] .apartment-feature-tag {
+  border-color: rgba(183, 199, 220, 0.2) !important;
+  color: #d7e0eb !important;
+  background: #202a36 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+:root[data-theme="dark"] .auth-card .auth-form label > span {
+  color: #c4cedb !important;
+}
+
+:root[data-theme="dark"] .auth-card .auth-form input,
+:root[data-theme="dark"] .auth-dialog .auth-form input {
+  border-color: rgba(183, 199, 220, 0.22) !important;
+  color: #f5f7fb !important;
+  background: #111821 !important;
+  caret-color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+}
+
+:root[data-theme="dark"] .auth-card .auth-form input:focus,
+:root[data-theme="dark"] .auth-dialog .auth-form input:focus {
+  border-color: rgba(255, 111, 103, 0.72) !important;
+  box-shadow: 0 0 0 4px rgba(255, 95, 87, 0.12) !important;
+}
+
+:root[data-theme="dark"] .auth-card .auth-form input::placeholder,
+:root[data-theme="dark"] .auth-dialog .auth-form input::placeholder {
+  color: #7f8da0 !important;
+  opacity: 1;
+}
+
+/* Chrome/Edge окрашивают автозаполненные поля в жёлто-зелёный цвет. */
+:root[data-theme="dark"] input:-webkit-autofill,
+:root[data-theme="dark"] input:-webkit-autofill:hover,
+:root[data-theme="dark"] input:-webkit-autofill:focus,
+:root[data-theme="dark"] input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f5f7fb !important;
+  caret-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #111821 inset !important;
+  box-shadow: 0 0 0 1000px #111821 inset !important;
+  border-color: rgba(183, 199, 220, 0.22) !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
+:root[data-theme="dark"] .password-field button {
+  border-color: rgba(183, 199, 220, 0.22) !important;
+  color: #e9eef5 !important;
+  background: #202a36 !important;
+}
+
+:root[data-theme="dark"] .password-field button:hover,
+:root[data-theme="dark"] .password-field button:focus-visible {
+  border-color: rgba(255, 111, 103, 0.48) !important;
+  color: #ffffff !important;
+  background: #293646 !important;
+}
+
+:root[data-theme="dark"] .auth-tabs button:not(.is-active) {
+  color: #b8c3d2 !important;
+  background: transparent !important;
+}
+
+:root[data-theme="dark"] .auth-tabs button:not(.is-active):hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+:root[data-theme="dark"] .auth-secondary-action {
+  color: #ff9188 !important;
+}
