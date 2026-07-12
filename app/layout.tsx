@@ -9,6 +9,7 @@ import "./transitions.css";
 import "./scroll-reveal.css";
 import "./dark-theme.css";
 import "./dark-theme-refinements.css";
+import "./mobile-header.css";
 import { Header } from "@/components/Header";
 import { AuthProvider } from "@/components/AuthProvider";
 import { CityProvider } from "@/components/CityProvider";
