@@ -155,4 +155,24 @@
     align-items: center;
     justify-content: center;
   }
+
+  /* Быстрые вопросы ИИ на телефоне идут сверху вниз без горизонтального скролла. */
+  .prompt-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .prompt-row .prompt-chip {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+    padding: 10px 14px;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.35;
+  }
 }
